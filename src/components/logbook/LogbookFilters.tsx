@@ -1,0 +1,98 @@
+import { useApp } from '@/contexts/AppContext';
+import { Card, CardContent } from '../ui/card';
+import { Label } from '../ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { REP_RANGES, TECHNIQUES } from '@/types';
+
+interface LogbookFiltersProps {
+  filters: {
+    exercise: string;
+    repRange: string;
+    technique: string;
+  };
+  setFilters: (filters: any) => void;
+  totalSessions: number;
+}
+
+export function LogbookFilters({ filters, setFilters, totalSessions }: LogbookFiltersProps) {
+  const { exercises } = useApp();
+
+  const uniqueExercises = Array.from(new Set(exercises.map((e) => e.name)));
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="grid gap-4 md:grid-cols-4">
+          <div className="space-y-2">
+            <Label>Esercizio</Label>
+            <Select
+              value={filters.exercise || 'all'}
+              onValueChange={(v) => setFilters({ ...filters, exercise: v === 'all' ? '' : v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Tutti" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti</SelectItem>
+                {uniqueExercises.map((exercise) => (
+                  <SelectItem key={exercise} value={exercise}>
+                    {exercise}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Rep Range</Label>
+            <Select
+              value={filters.repRange || 'all'}
+              onValueChange={(v) => setFilters({ ...filters, repRange: v === 'all' ? '' : v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Tutti" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti</SelectItem>
+                {Object.keys(REP_RANGES).map((range) => (
+                  <SelectItem key={range} value={range}>
+                    {range}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Tecnica</Label>
+            <Select
+              value={filters.technique || 'all'}
+              onValueChange={(v) => setFilters({ ...filters, technique: v === 'all' ? '' : v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Tutte" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutte</SelectItem>
+                {TECHNIQUES.map((tech) => (
+                  <SelectItem key={tech} value={tech}>
+                    {tech}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Risultati</Label>
+            <div className="h-10 flex items-center">
+              <span className="text-sm font-medium">
+                {totalSessions} sessioni trovate
+              </span>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
