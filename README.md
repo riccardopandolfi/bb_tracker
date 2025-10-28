@@ -245,15 +245,13 @@ Lo schema deve seguire il formato `numero+numero+numero...`:
 function validateSchema(schema) {
   if (!schema) return false;
   
-  // Formato valido: "10+10+10" o "15+5+5+5"
-  const parts = schema.split('+');
+  // Pattern regex per "10+10+10" o "15+5+5+5"
+  const pattern = /^\d+(\+\d+)*$/;
+  if (!pattern.test(schema)) return false;
   
-  if (parts.length < 2) return false;
-  
-  return parts.every(part => {
-    const num = parseInt(part, 10);
-    return !isNaN(num) && num > 0;
-  });
+  const clusters = parseSchema(schema);
+  // Almeno 2 cluster per tecniche (altrimenti è set normale)
+  return clusters.length >= 2;
 }
 ```
 
@@ -276,61 +274,442 @@ function handleTechniqueChange(weekNum, dayIndex, exIndex, newTechnique) {
 }
 ```
 
+### Calcolo Completamento con Tolleranza
+
+Per la visualizzazione nel Logbook, si usa una tolleranza per definire lo stato (badge colorati):
+
+```typescript
+function getCompletionStatus(completion) {
+  if (completion >= 95) return { color: 'green', label: 'Completato' };
+  if (completion >= 85) return { color: 'yellow', label: 'Quasi completato' };
+  if (completion >= 70) return { color: 'orange', label: 'Parziale' };
+  return { color: 'red', label: 'Incompleto' };
+}
+```
+
 ---
 
-## 🎨 UI/UX e Componenti
+## 🎨 4. UI/UX Requirements
 
-### Struttura Principale
+### 4.1. Tab 1: Libreria Esercizi
 
-L'applicazione è divisa in 4 sezioni principali:
+**Layout:**
+- Header: Titolo "📚 Libreria Esercizi"
+- Pulsante "Nuovo Esercizio"
+- Lista di esercizi in Card
 
-1. **Exercise Library** - Gestione esercizi
-2. **Program Planning** - Pianificazione schede
-3. **Session Logging** - Registrazione allenamenti
-4. **Logbook & Analytics** - Visualizzazione dati e grafici
+**Card Esercizio:**
+- Input per il nome
+- Sezione "Distribuzione Muscolare" (max 3):
+  - Dropdown Muscolo (Select da MUSCLE_GROUPS)
+  - Input Percentuale (0-100)
+  - Pulsante "+ Muscolo" (visibile se muscoli < 3)
+  - Icona X/Trash2 per rimuovere
+  - Indicatore "Totale %" (deve essere 100%)
+- Pulsante "Elimina Esercizio" (variant="destructive")
 
-### Componenti ShadcnUI Utilizzati
+**Funzionalità:**
+- CRUD completo per gli esercizi
+- Aggiunta/Rimozione dinamica campi muscolo
+- Validazione: Totale % deve essere 100% prima di salvare
+- Feedback visivo (bordo rosso) se non valido
+
+### 4.2. Tab 2: Scheda Allenamento
+
+#### Sezione 1: Week Selector
+- Pulsanti per selezionare settimana (ToggleGroup o Tabs)
+- Pulsante "+ Nuova Week"
+- Pulsante "Duplica Week" (copia settimana corrente)
+- Indicatore visivo (icona Check) su settimane con sessioni loggate
+
+#### Sezione 2: Volume Summary
+- Box informativo (Alert) che spiega: **Volume = Sets × Coefficient** (NON dipende dalle reps!)
+- Grid di 4 metriche (Card):
+  - **Volume (A Priori):** Sets × coeff totale
+  - **Tonnellaggio (Reale):** Somma tonnellaggio da sessioni loggate
+  - **RPE Stimato:** Media RPE stimati da coefficient
+  - **Muscoli:** Conteggio gruppi muscolari allenati
+
+**Dettaglio Volume per Gruppo Muscolare:**
+- Grid di card che mostra: Nome Muscolo, Volume calcolato, RPE Stimato
+
+#### Sezione 3: Days & Exercises
+- Componente Tabs per navigare tra giorni ("Giorno 1", "Giorno 2", ...)
+- Pulsante "+ Aggiungi Giorno"
+- Per ogni giorno: Table con gli esercizi
+
+**Colonne Tabella:**
+
+| Colonna | Tipo | Note |
+|---------|------|------|
+| # | Text | Ordine |
+| Esercizio | Select/ComboBox | Dalla Libreria |
+| Muscoli | Text | Mostrati automaticamente |
+| Sets | Input number | - |
+| Reps | Input text | Disabilitato se Tecnica ≠ "Normale" |
+| Carico | Input text | Target Load es. "80" |
+| Tecnica | Select | Dalla lista TECHNIQUES |
+| Schema | Input text | Abilitato solo se Tecnica ≠ "Normale", es. "10+10+10" |
+| Coeff. | Input number | 0.0-2.0, step 0.1 |
+| Rest | Input number | Secondi |
+| Note | Input text | - |
+| Log | Button | 📝 Arancione per aprire modal |
+| Del | Button | Destructive con icona Trash2 |
+
+- Pulsante "+ Esercizio" (in fondo)
+- Pulsante "Elimina Giorno"
+
+#### Sezione 4: Macros
+- Grid di 4 input: Kcal, Proteine, Carboidrati, Grassi
+- Textarea per note
+
+### 4.3. Tab 3: Logbook
+
+#### Sezione 1: Filtri
+- Grid 4 colonne:
+  - Esercizio (Select con "Tutti")
+  - Rep Range (Select con "Tutti")
+  - Tecnica (Select con "Tutti")
+  - Risultati (Testo: "XX sessioni trovate")
+
+#### Sezione 2: Tabella Storico
+- Table ordinata per data (più recente in alto)
+
+**Colonne:**
+
+| Colonna | Tipo | Note |
+|---------|------|------|
+| Data | Text | Formato ISO |
+| Week | Text | "W1", "W2", ... |
+| Esercizio | Text | Nome esercizio |
+| Tecnica | Text | Tecnica usata |
+| Rep Range | Text | Categoria |
+| Reps | Badge | "86 / 90" formato |
+| Completamento | Progress | Barra colorata: Verde ≥90%, Giallo 75-89%, Rosso <75% |
+| Tonnellaggio | Text | Totale |
+| RPE Reale | Badge | Media RPE colorata: Verde <7, Giallo 7-7.9, Arancione 8-8.9, Rosso ≥9 |
+
+#### Sezione 3: Grafici Progressioni
+- Vedi "Specifiche Grafici Dettagliate" (Sezione 8)
+
+### 4.4. Modal: Log Sessione
+
+**Utilizzo:** Dialog o Drawer di ShadcnUI
+
+**Header (Sticky):**
+- Titolo: "📝 Log Sessione"
+- Sottotitolo: Nome dell'esercizio
+- Info: Tecnica + Schema (se presente)
+
+**Body (Scrollabile):**
+
+#### CASO 1: Tecnica = "Normale"
+- Genera N righe (uno per setNum)
+- Ogni riga: `Set X: [__] reps × [__] kg RPE [__]`
+- Pre-compilare reps da repsBase e load da targetLoad
+
+#### CASO 2: Tecnica ≠ "Normale" (con Schema)
+- Parsare schema (es. "10+10+10")
+- Generare N gruppi (uno per setNum)
+- Ogni gruppo ha M righe (una per clusterNum)
+
+**Esempio per tecnica "Myo-Reps" con schema "10+10+10" e 2 set:**
+```
+Set 1
+  Cluster 1: [10] reps × [80] kg RPE []
+  Cluster 2: [10] reps × [80] kg RPE []
+  Cluster 3: [10] reps × [80] kg RPE []
+Set 2
+  Cluster 1: [10] reps × [80] kg RPE []
+  Cluster 2: [10] reps × [80] kg RPE []
+  Cluster 3: [10] reps × [80] kg RPE []
+```
+
+**Funzionalità Input:**
+- Input reps e load pre-compilati, ma editabili
+- Input RPE (5.0-10.0, step 0.5)
+- Pulsante "+ Aggiungi Set"
+- Icona Trash2 per rimuovere set/cluster
+
+**Box Riepilogo (Live Update):**
+- Card/Alert che mostra in tempo reale:
+  - Reps Totali
+  - Tonnellaggio (kg)
+  - RPE Medio
+
+**Footer (Sticky):**
+- Pulsante "✅ Salva Sessione"
+
+---
+
+## 🎨 5. Design System (ShadcnUI)
+
+### Colori (Tema)
+
+| Elemento | Colore | Tailwind Class |
+|----------|--------|-----------------|
+| Primary/Accent | Viola/Blu | from-purple-600 to-blue-600 |
+| Success | Verde | from-green-500 to-emerald-500 |
+| Warning | Giallo/Arancione | from-yellow-500 to-orange-500 |
+| Destructive | Rosso | from-orange-500 to-red-500 |
+| Background | Scuro/Chiaro | Dark Mode o Light Mode |
+
+### Componenti ShadcnUI
 
 - **Card** - Container per sezioni
-- **Button** - Pulsanti di azione
+- **Button** - Pulsanti di azione (varianti: primary, destructive, outline)
 - **Input** - Campi testo
 - **Select** - Dropdown
 - **Tabs** - Navigazione tra sezioni
 - **Dialog** - Modal per form
+- **Drawer** - Panel (specialmente mobile)
 - **AlertDialog** - Conferme critiche
 - **Tooltip** - Aiuto contestuale
 - **Badge** - Etichette di stato
 - **Table** - Visualizzazione tabellare
-- **Drawer** - Pannello laterale (mobile)
+- **Progress** - Barre di avanzamento
+- **Alert** - Messaggi informativi
 
-### Design System
+### Icone (lucide-react)
 
-- **Colore Primario:** Viola/Indaco
-- **Colore Warning:** Giallo/Arancione
-- **Colore Success:** Verde
-- **Colore Danger:** Rosso
+Icone chiave consigliate:
+- `Plus` - Aggiungi
+- `Trash2` - Elimina
+- `Copy` - Duplica
+- `BookOpen` - Libreria
+- `Dumbbell` - Allenamento
+- `TrendingUp` - Progressione
+- `X` - Chiudi
+- `ClipboardList` - Log
+- `Download` - Esporta
+
+### Tipografia
+
 - **Font:** Sistema nativa (San Francisco, Segoe UI, etc.)
 - **Spaziatura:** Scala 4px (4, 8, 12, 16, 24, 32...)
+- **Heading:** Bold
+- **Body:** Regular
+- **Caption:** Regular, 12px
 
 ---
 
-## 📊 Grafici e Analytics
+## 🔧 6. Implementazione Tecnica
 
-### GRAFICO 1: Volume nel Tempo
+### Tech Stack
+
+- **React 18+** - Framework con Hooks
+- **Tailwind CSS** - Styling
+- **ShadcnUI** - Componenti UI
+- **Recharts** - Grafici interattivi
+- **lucide-react** - Icone
+
+### State Management
+
+- **Context API o Zustand** per stato globale
+
+### Stati Globali Necessari
+
+```typescript
+- currentTab: 'library' | 'program' | 'logbook'
+- currentWeek: number
+- exercises: Exercise[]
+- weeks: Record<number, Week>
+- loggedSessions: LoggedSession[]
+- macros: Record<number, WeekMacros>
+```
+
+### Stati Locali
+
+```typescript
+- showLogModal: boolean
+- currentLogExercise: ProgramExercise
+- tempLogSets: LoggedSet[]
+- logbookFilters: {
+    exercise?: string;
+    repRange?: string;
+    technique?: string;
+  }
+```
+
+### Key Functions
+
+```typescript
+parseSchema(schema: string): number[]
+// Converte "10+5+5" in [10, 5, 5]
+
+calculateTargetReps(exercise: ProgramExercise): number
+// Calcola le reps target (vedi Sezione 3.3)
+
+calculateVolume(weekNum: number)
+// Calcola volume totale e byMuscle (vedi Sezione 3.1)
+
+openLogModal(weekNum, dayIndex, exerciseIndex)
+// Prepara lo stato tempLogSets per il modal
+
+saveLogSession()
+// Calcola metriche finali e salva in loggedSessions
+
+getFilteredSessions()
+// Applica i filtri del logbook a loggedSessions
+```
+
+### Auto-save in localStorage (Opzionale)
+
+```typescript
+useEffect(() => {
+  // Carica dati all'avvio
+  const saved = localStorage.getItem('bodybuilding-data');
+  if (saved) {
+    const data = JSON.parse(saved);
+    setExercises(data.exercises || DEFAULT_EXERCISES);
+    setWeeks(data.weeks || { 1: { days: [] } });
+    setLoggedSessions(data.loggedSessions || []);
+    setMacros(data.macros || { 1: {} });
+  }
+}, []);
+
+useEffect(() => {
+  // Salva dati ad ogni modifica (debounced)
+  const timeoutId = setTimeout(() => {
+    localStorage.setItem('bodybuilding-data', JSON.stringify({
+      exercises,
+      weeks,
+      loggedSessions,
+      macros
+    }));
+  }, 500); // debounce 500ms
+  
+  return () => clearTimeout(timeoutId);
+}, [exercises, weeks, loggedSessions, macros]);
+
+// Pulsante "Reset All Data"
+const handleReset = () => {
+  if (confirm('Cancellare tutti i dati? Questa azione è irreversibile!')) {
+    localStorage.removeItem('bodybuilding-data');
+    window.location.reload();
+  }
+};
+```
+
+### Export CSV (Bonus Feature)
+
+```typescript
+function exportToCSV() {
+  let csv = 'BODYBUILDING TRACKER EXPORT\n\n';
+  
+  // Esercizi
+  csv += 'LIBRERIA ESERCIZI\n';
+  csv += 'Nome,Muscolo 1,%,Muscolo 2,%,Muscolo 3,%\n';
+  exercises.forEach(ex => {
+    csv += `"${ex.name}"`;
+    for (let i = 0; i < 3; i++) {
+      if (ex.muscles[i]) {
+        csv += `,"${ex.muscles[i].muscle}",${ex.muscles[i].percent}`;
+      } else {
+        csv += ',,';
+      }
+    }
+    csv += '\n';
+  });
+  
+  csv += '\n\nSCHEDA\n';
+  csv += 'Week,Giorno,Esercizio,Sets,Reps,Carico,Tecnica,Schema,Coeff,Rest,Note\n';
+  Object.keys(weeks).sort((a,b) => Number(a)-Number(b)).forEach(weekNum => {
+    weeks[weekNum].days.forEach(day => {
+      day.exercises.forEach(ex => {
+        csv += `${weekNum},"${day.name}","${ex.exerciseName}",${ex.sets},"${ex.repsBase}","${ex.targetLoad}","${ex.technique}","${ex.techniqueSchema}",${ex.coefficient},${ex.rest},"${ex.notes}"\n`;
+      });
+    });
+  });
+  
+  csv += '\n\nSESSIONI LOGGATE\n';
+  csv += 'Data,Week,Esercizio,Tecnica,Rep Range,Reps,Target,Completamento,Tonnage,RPE\n';
+  loggedSessions.forEach(s => {
+    csv += `${s.date},${s.weekNum},"${s.exercise}","${s.technique}","${s.repRange}",${s.totalReps},${s.targetReps},${s.completion}%,${s.totalTonnage},${s.avgRPE}\n`;
+  });
+  
+  csv += '\n\nMACROS\n';
+  csv += 'Week,Kcal,Protein,Carbs,Fat,Note\n';
+  Object.keys(macros).sort((a,b) => Number(a)-Number(b)).forEach(weekNum => {
+    const m = macros[weekNum];
+    if (m) {
+      csv += `${weekNum},${m.kcal || ''},${m.protein || ''},${m.carbs || ''},${m.fat || ''},"${m.notes || ''}"\n`;
+    }
+  });
+  
+  // Download
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `bodybuilding-tracker-${new Date().toISOString().split('T')[0]}.csv`;
+  link.click();
+}
+
+// Aggiungere in UI:
+// <Button onClick={exportToCSV}>
+//   <Download size={20} />
+//   Esporta CSV
+// </Button>
+```
+
+---
+
+## ✅ 7. Checklist delle Feature
+
+### Libreria
+- [ ] CRUD completo per gli esercizi
+- [ ] Gestione distribuzione muscolare (max 3 muscoli, totale 100%)
+- [ ] Validazione 100% sul salvataggio
+
+### Scheda
+- [ ] Gestione multi-settimana (Aggiungi / Duplica / Seleziona)
+- [ ] Gestione multi-giorno per settimana
+- [ ] Tabella esercizi con tutti i campi (Select, Input, ...)
+- [ ] Logica condizionale: Reps disabilitato se Tecnica ≠ Normale
+- [ ] Logica condizionale: Schema abilitato SOLO se Tecnica ≠ Normale
+- [ ] Calcolo live del "Volume Summary" (4 card)
+- [ ] Dettaglio "Volume per Gruppo Muscolare"
+- [ ] Sezione Macros per settimana
+
+### Log Modal
+- [ ] Apertura modal tramite pulsante "📝"
+- [ ] Pre-compilazione campi (Reps e Load) dalla scheda
+- [ ] Logica Tecnica Normale: Genera N righe (1 per set)
+- [ ] Logica Tecniche Speciali: Genera N×M righe (Set × Cluster)
+- [ ] Box riepilogo con calcolo live (Reps, Tonnage, RPE)
+- [ ] Salvataggio sessione nello stato loggedSessions
+
+### Logbook
+- [ ] Filtri funzionanti (Esercizio, Rep Range, Tecnica)
+- [ ] Tabella storico ordinata per data (DESC)
+- [ ] Colonna "Reps (fatto/target)" con formattazione corretta
+- [ ] Colonna "Completamento" con Progress bar colorata
+- [ ] Colonna "RPE Reale" con Badge colorato
+
+### Grafici (con Recharts)
+- [ ] Grafico 1: Volume Totale per Settimana (Barre verticali)
+- [ ] Grafico 2: Volume per Gruppo Muscolare (Barre orizzontali + filtri)
+- [ ] Grafico 3: Tonnellaggio nel Tempo (Barre verticali)
+- [ ] Grafico 4: RPE Reale nel Tempo (Barre orizzontali colorate)
+- [ ] Grafico 5: Progressione Carico (Linea + Punti, 3 filtri dedicati)
+
+---
+
+## 📊 8. Specifiche Grafici Dettagliate (Recharts)
+
+### GRAFICO 1: Volume Totale per Settimana
 
 **Tipo:** BarChart verticale  
 **Posizione:** Logbook, primo grafico
 
-Mostra il volume totale per settimana.
-
 ```typescript
-const volumeByWeek = calculateVolume()
-  .reduce((acc, { week, volume }) => {
-    acc[week] = (acc[week] || 0) + volume;
-    return acc;
-  }, {});
-
-// Formato: [{ week: "W1", volume: 12.5 }, ...]
+const weeklyVolumes = Object.keys(weeks).map(weekNum => {
+  const vol = calculateVolume(weekNum);
+  return {
+    week: `W${weekNum}`,
+    volume: vol.total
+  };
+});
 ```
 
 - **Asse X:** Week (es. "W1", "W2")
@@ -342,8 +721,6 @@ const volumeByWeek = calculateVolume()
 
 **Tipo:** BarChart orizzontale  
 **Posizione:** Logbook, secondo grafico
-
-Mostra volume per muscolo nella settimana selezionata.
 
 **Controlli:**
 - Dropdown per selezionare settimana
@@ -366,8 +743,6 @@ const muscleData = Object.entries(volumeData.byMuscle)
 **Tipo:** BarChart verticale  
 **Posizione:** Logbook, terzo grafico
 
-Aggrega tonnellaggio per settimana dalle sessioni filtrate.
-
 ```typescript
 const tonnageByWeek = getFilteredSessions()
   .reduce((acc, session) => {
@@ -379,15 +754,13 @@ const tonnageByWeek = getFilteredSessions()
 ```
 
 - **Asse X:** Week
-- **Asse Y:** Tonnage
+- **Asse Y:** Tonnage totale
 - **Colore Barra:** Giallo/Arancione
 
 ### GRAFICO 4: RPE Reale nel Tempo
 
 **Tipo:** BarChart orizzontale  
 **Posizione:** Logbook, quarto grafico
-
-Mostra RPE medio per sessione ordinato cronologicamente.
 
 ```typescript
 const rpeData = getFilteredSessions()
@@ -409,11 +782,10 @@ const rpeData = getFilteredSessions()
   - Rosso: RPE ≥ 9
 - **Label:** RPE, reps e completamento
 
-### GRAFICO 5: Progressione Carico per Rep Range ⭐
+### GRAFICO 5: Progressione Carico per Rep Range ⭐ CRITICO
 
 **Tipo:** LineChart con punti  
-**Posizione:** Logbook, quinto grafico  
-**Importanza:** CRITICO
+**Posizione:** Logbook, quinto grafico
 
 **Controlli (3 Dropdown):**
 - Esercizio
@@ -455,7 +827,7 @@ const progressionData = progressionSessions.map(s => {
 
 ---
 
-## 🐛 Edge Cases
+## 🐛 9. Edge Cases
 
 | Caso | Comportamento |
 |------|---------------|
@@ -472,7 +844,7 @@ const progressionData = progressionSessions.map(s => {
 
 ---
 
-## 📱 Responsive Breakpoints
+## 📱 10. Responsive Breakpoints
 
 Approccio **Mobile-First** con Tailwind CSS.
 
@@ -496,13 +868,13 @@ Approccio **Mobile-First** con Tailwind CSS.
 
 ---
 
-## 🛠️ Stack Tecnologico
+## 🛠️ 11. Stack Tecnologico
 
 - **Frontend:** React 18+
 - **UI Library:** ShadcnUI
 - **Styling:** Tailwind CSS
 - **Charts:** Recharts
-- **State Management:** React Hooks
+- **State Management:** React Hooks + Context/Zustand
 - **Build:** Vite
 - **Package Manager:** npm/yarn
 
