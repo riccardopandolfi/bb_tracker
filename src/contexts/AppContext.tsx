@@ -14,6 +14,8 @@ interface AppContextType extends AppState {
   duplicateWeek: (weekNum: number) => void;
   updateWeek: (weekNum: number, week: Week) => void;
   addLoggedSession: (session: LoggedSession) => void;
+  updateLoggedSession: (session: LoggedSession) => void;
+  deleteLoggedSession: (sessionId: number) => void;
   setMacros: (weekNum: number, macros: WeekMacros) => void;
   resetAllData: () => void;
 }
@@ -44,12 +46,76 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (saved) {
       try {
         const data = JSON.parse(saved);
+
+        // Migrate old data: add techniqueParams and targetRPE to exercises if missing
+        const migratedWeeks = data.weeks || { 1: { days: [] } };
+        Object.keys(migratedWeeks).forEach((weekKey) => {
+          const week = migratedWeeks[Number(weekKey)];
+          if (week && week.days) {
+            week.days.forEach((day: any) => {
+              if (day && day.exercises) {
+                day.exercises.forEach((ex: any) => {
+                  if (!ex.hasOwnProperty('techniqueParams')) {
+                    ex.techniqueParams = {};
+                  }
+                  if (!ex.hasOwnProperty('targetRPE')) {
+                    // Set default targetRPE based on coefficient
+                    if (ex.coefficient <= 0.7) ex.targetRPE = 5.5;
+                    else if (ex.coefficient <= 0.9) ex.targetRPE = 7.5;
+                    else if (ex.coefficient <= 1.0) ex.targetRPE = 8.5;
+                    else ex.targetRPE = 10.0;
+                  }
+                  // Migrate targetLoad (string) to targetLoads (array)
+                  if (ex.hasOwnProperty('targetLoad') && typeof ex.targetLoad === 'string') {
+                    const sets = ex.sets || 3;
+                    ex.targetLoads = Array(sets).fill(ex.targetLoad);
+                    delete ex.targetLoad;
+                  } else if (!ex.hasOwnProperty('targetLoads') || !Array.isArray(ex.targetLoads)) {
+                    const sets = ex.sets || 3;
+                    ex.targetLoads = Array(sets).fill('80');
+                  }
+                });
+              }
+            });
+          }
+        });
+
+        // Migrate old logged sessions: add targetRPE if missing, convert targetLoad to targetLoads array
+        const migratedSessions = (data.loggedSessions || []).map((session: any) => {
+          const migrated = { ...session };
+
+          // Add targetRPE if missing
+          if (!migrated.hasOwnProperty('targetRPE')) {
+            // Set default targetRPE based on coefficient
+            if (migrated.coefficient <= 0.7) migrated.targetRPE = 5.5;
+            else if (migrated.coefficient <= 0.9) migrated.targetRPE = 7.5;
+            else if (migrated.coefficient <= 1.0) migrated.targetRPE = 8.5;
+            else migrated.targetRPE = 10.0;
+          }
+
+          // Migrate targetLoad (string) to targetLoads (array)
+          if (migrated.hasOwnProperty('targetLoad') && typeof migrated.targetLoad === 'string') {
+            const numSets = migrated.sets?.length || 1;
+            migrated.targetLoads = Array(numSets).fill(migrated.targetLoad);
+            delete migrated.targetLoad;
+          } else if (!migrated.hasOwnProperty('targetLoads') || !Array.isArray(migrated.targetLoads)) {
+            migrated.targetLoads = [];
+          }
+
+          // Remove totalTonnage field (no longer used)
+          if (migrated.hasOwnProperty('totalTonnage')) {
+            delete migrated.totalTonnage;
+          }
+
+          return migrated;
+        });
+
         setState({
           currentTab: data.currentTab || 'library',
           currentWeek: data.currentWeek || 1,
           exercises: data.exercises || DEFAULT_EXERCISES,
-          weeks: data.weeks || { 1: { days: [] } },
-          loggedSessions: data.loggedSessions || [],
+          weeks: migratedWeeks,
+          loggedSessions: migratedSessions,
           macros: data.macros || { 1: { kcal: '', protein: '', carbs: '', fat: '', notes: '' } },
         });
       } catch (error) {
@@ -155,6 +221,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const updateLoggedSession = (session: LoggedSession) => {
+    setState((prev) => ({
+      ...prev,
+      loggedSessions: prev.loggedSessions.map((s) => (s.id === session.id ? session : s)),
+    }));
+  };
+
+  const deleteLoggedSession = (sessionId: number) => {
+    if (confirm('Eliminare questa sessione loggata?')) {
+      setState((prev) => ({
+        ...prev,
+        loggedSessions: prev.loggedSessions.filter((s) => s.id !== sessionId),
+      }));
+    }
+  };
+
   const setMacros = (weekNum: number, macros: WeekMacros) => {
     setState((prev) => ({
       ...prev,
@@ -187,6 +269,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         duplicateWeek,
         updateWeek,
         addLoggedSession,
+        updateLoggedSession,
+        deleteLoggedSession,
         setMacros,
         resetAllData,
       }}

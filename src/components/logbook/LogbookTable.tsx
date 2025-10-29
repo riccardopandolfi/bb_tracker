@@ -1,15 +1,24 @@
+import { useState } from 'react';
 import { LoggedSession } from '@/types';
+import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
-import { Progress } from '../ui/progress';
+import { Button } from '../ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { Pencil, Trash2 } from 'lucide-react';
 import { getRPEColor } from '@/lib/calculations';
+import { EditSessionModal } from './EditSessionModal';
 
 interface LogbookTableProps {
   sessions: LoggedSession[];
 }
 
 export function LogbookTable({ sessions }: LogbookTableProps) {
+  const { deleteLoggedSession } = useApp();
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<LoggedSession | null>(null);
+
   const sortedSessions = [...sessions].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
@@ -44,15 +53,19 @@ export function LogbookTable({ sessions }: LogbookTableProps) {
                 <TableHead>Week</TableHead>
                 <TableHead>Esercizio</TableHead>
                 <TableHead>Tecnica</TableHead>
+                <TableHead>Target</TableHead>
                 <TableHead>Rep Range</TableHead>
                 <TableHead>Reps</TableHead>
-                <TableHead>Completamento</TableHead>
-                <TableHead>Tonnellaggio</TableHead>
+                <TableHead>Carichi (kg)</TableHead>
                 <TableHead>RPE Reale</TableHead>
+                <TableHead className="w-16">Azioni</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sortedSessions.map((session) => {
+                // Count unique setNum to get the actual number of sets
+                const numSets = new Set(session.sets.map(s => s.setNum)).size;
+
                 return (
                   <TableRow key={session.id}>
                     <TableCell className="font-medium">{session.date}</TableCell>
@@ -64,26 +77,56 @@ export function LogbookTable({ sessions }: LogbookTableProps) {
                       {session.technique}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{session.repRange}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {session.totalReps} / {session.targetReps}
+                      <Badge variant="outline" className="font-mono">
+                        {session.technique === 'Normale'
+                          ? `${numSets}x${session.targetReps / numSets}`
+                          : `${numSets} x ${session.techniqueSchema}`}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="space-y-1">
-                        <Progress
-                          value={Math.min(session.completion, 100)}
-                          className="h-2"
-                        />
-                        <span className="text-xs text-muted-foreground">
-                          {session.completion.toFixed(0)}%
-                        </span>
+                      <Badge variant="secondary">{session.repRange}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1 flex-wrap">
+                        {session.sets.map((set, i) => (
+                          <Tooltip key={i}>
+                            <TooltipTrigger asChild>
+                              <Badge variant="secondary" className="font-mono cursor-help">
+                                {set.reps}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <div className="text-xs">
+                                <p className="font-semibold">Set {i + 1}</p>
+                                <p>Reps: {set.reps}</p>
+                                <p>Carico: {set.load} kg</p>
+                                {set.rpe && <p>RPE: {set.rpe}</p>}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        ))}
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium">
-                      {session.totalTonnage.toFixed(0)} kg
+                    <TableCell>
+                      <div className="flex gap-1 flex-wrap">
+                        {session.sets.map((set, i) => (
+                          <Tooltip key={i}>
+                            <TooltipTrigger asChild>
+                              <Badge variant="outline" className="font-mono cursor-help">
+                                {set.load}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <div className="text-xs">
+                                <p className="font-semibold">Set {i + 1}</p>
+                                <p>Reps: {set.reps}</p>
+                                <p>Carico: {set.load} kg</p>
+                                {set.rpe && <p>RPE: {set.rpe}</p>}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        ))}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -93,6 +136,29 @@ export function LogbookTable({ sessions }: LogbookTableProps) {
                         {session.avgRPE > 0 ? session.avgRPE.toFixed(1) : '-'}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setSelectedSession(session);
+                            setEditModalOpen(true);
+                          }}
+                          className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => deleteLoggedSession(session.id)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -100,6 +166,13 @@ export function LogbookTable({ sessions }: LogbookTableProps) {
           </Table>
         </div>
       </CardContent>
+      {selectedSession && (
+        <EditSessionModal
+          open={editModalOpen}
+          onOpenChange={setEditModalOpen}
+          session={selectedSession}
+        />
+      )}
     </Card>
   );
 }

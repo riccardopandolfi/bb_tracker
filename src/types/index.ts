@@ -66,9 +66,11 @@ export interface ProgramExercise {
   sets: number;
   repsBase: string;
   repRange: RepRangeKey;
-  targetLoad: string;
+  targetLoads: string[]; // Array di carichi, uno per ogni set
+  targetRPE: number; // RPE pianificato a priori (5-10)
   technique: Technique;
   techniqueSchema: string;
+  techniqueParams: Record<string, any>; // Parametri tecnica (per sistema parametrizzato)
   coefficient: number;
   notes: string;
 }
@@ -100,11 +102,12 @@ export interface LoggedSession {
   techniqueSchema: string;
   repRange: RepRangeKey;
   coefficient: number;
+  targetLoads: string[]; // Array di carichi pianificati dalla scheda
+  targetRPE: number; // RPE pianificato dalla scheda
   sets: LoggedSet[];
   totalReps: number;
   targetReps: number;
-  totalTonnage: number;
-  avgRPE: number;
+  avgRPE: number; // RPE effettivo (media dei set)
   completion: number;
 }
 
@@ -138,7 +141,6 @@ export interface VolumeByMuscle {
 export interface VolumeData {
   total: number;
   byMuscle: VolumeByMuscle;
-  totalTonnage: number;
   estimatedRPE: number;
   muscleCount: number;
 }

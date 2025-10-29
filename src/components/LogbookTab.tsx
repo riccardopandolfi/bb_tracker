@@ -14,6 +14,8 @@ export function LogbookTab() {
     exercise: '',
     repRange: '',
     technique: '',
+    dateFrom: '',
+    dateTo: '',
   });
 
   const handleExport = () => {
@@ -24,6 +26,8 @@ export function LogbookTab() {
     if (filters.exercise && session.exercise !== filters.exercise) return false;
     if (filters.repRange && session.repRange !== filters.repRange) return false;
     if (filters.technique && session.technique !== filters.technique) return false;
+    if (filters.dateFrom && session.date < filters.dateFrom) return false;
+    if (filters.dateTo && session.date > filters.dateTo) return false;
     return true;
   });
 
@@ -52,7 +56,7 @@ export function LogbookTab() {
         <LogbookTable sessions={filteredSessions} />
 
         {/* Charts */}
-        <ChartsSection filteredSessions={filteredSessions} />
+        <ChartsSection />
       </div>
     );
 }

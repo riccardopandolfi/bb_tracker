@@ -1,14 +1,18 @@
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent } from '../ui/card';
 import { Label } from '../ui/label';
+import { DatePicker } from '../ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { REP_RANGES, TECHNIQUES } from '@/types';
+import { format } from 'date-fns';
 
 interface LogbookFiltersProps {
   filters: {
     exercise: string;
     repRange: string;
     technique: string;
+    dateFrom: string;
+    dateTo: string;
   };
   setFilters: (filters: any) => void;
   totalSessions: number;
@@ -22,7 +26,7 @@ export function LogbookFilters({ filters, setFilters, totalSessions }: LogbookFi
   return (
     <Card>
       <CardContent className="pt-6">
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
           <div className="space-y-2">
             <Label>Esercizio</Label>
             <Select
@@ -84,13 +88,34 @@ export function LogbookFilters({ filters, setFilters, totalSessions }: LogbookFi
           </div>
 
           <div className="space-y-2">
-            <Label>Risultati</Label>
-            <div className="h-10 flex items-center">
-              <span className="text-sm font-medium">
-                {totalSessions} sessioni trovate
-              </span>
-            </div>
+            <Label>Data Da</Label>
+            <DatePicker
+              date={filters.dateFrom ? new Date(filters.dateFrom) : undefined}
+              onSelect={(date) => setFilters({ ...filters, dateFrom: date ? format(date, 'yyyy-MM-dd') : '' })}
+              placeholder="Seleziona data inizio"
+            />
           </div>
+
+          <div className="space-y-2">
+            <Label>Data A</Label>
+            <DatePicker
+              date={filters.dateTo ? new Date(filters.dateTo) : undefined}
+              onSelect={(date) => setFilters({ ...filters, dateTo: date ? format(date, 'yyyy-MM-dd') : '' })}
+              placeholder="Seleziona data fine"
+            />
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between">
+          <span className="text-sm font-medium">
+            {totalSessions} sessioni trovate
+          </span>
+          <button
+            onClick={() => setFilters({ exercise: '', repRange: '', technique: '', dateFrom: '', dateTo: '' })}
+            className="text-sm text-muted-foreground hover:text-foreground underline"
+          >
+            Resetta filtri
+          </button>
         </div>
       </CardContent>
     </Card>

@@ -58,7 +58,6 @@ export function calculateVolume(
     return {
       total: 0,
       byMuscle: {},
-      totalTonnage: 0,
       estimatedRPE: 0,
       muscleCount: 0,
     };
@@ -94,22 +93,9 @@ export function calculateVolume(
   return {
     total: Math.round(totalVolume * 10) / 10,
     byMuscle,
-    totalTonnage: 0, // Calcolato da sessioni loggate
     estimatedRPE: exerciseCount > 0 ? totalEstimatedRPE / exerciseCount : 0,
     muscleCount: Object.keys(byMuscle).length,
   };
-}
-
-/**
- * Calcola tonnellaggio reale da sessioni loggate
- */
-export function calculateRealTonnage(
-  sessions: LoggedSession[],
-  weekNum: number
-): number {
-  return sessions
-    .filter((s) => s.weekNum === weekNum)
-    .reduce((sum, s) => sum + s.totalTonnage, 0);
 }
 
 /**
@@ -119,21 +105,17 @@ export function calculateSessionMetrics(
   sets: Array<{ reps: string; load: string; rpe: string }>
 ): {
   totalReps: number;
-  totalTonnage: number;
   avgRPE: number;
 } {
   let totalReps = 0;
-  let totalTonnage = 0;
   let rpeSum = 0;
   let rpeCount = 0;
 
   sets.forEach((set) => {
     const reps = parseInt(set.reps, 10) || 0;
-    const load = parseFloat(set.load) || 0;
     const rpe = parseFloat(set.rpe) || 0;
 
     totalReps += reps;
-    totalTonnage += reps * load;
 
     if (rpe > 0) {
       rpeSum += rpe;
@@ -143,7 +125,6 @@ export function calculateSessionMetrics(
 
   return {
     totalReps,
-    totalTonnage: Math.round(totalTonnage * 10) / 10,
     avgRPE: rpeCount > 0 ? Math.round((rpeSum / rpeCount) * 10) / 10 : 0,
   };
 }
@@ -205,21 +186,22 @@ export function exportToCSV(data: {
   });
 
   csv += '\n\nSCHEDA\n';
-  csv += 'Week,Giorno,Esercizio,Sets,Reps,Carico,Tecnica,Schema,Coeff,Rest,Note\n';
+  csv += 'Week,Giorno,Esercizio,Sets,Reps,Carichi,Tecnica,Schema,Coeff,Rest,Note\n';
   Object.keys(data.weeks)
     .sort((a, b) => Number(a) - Number(b))
     .forEach((weekNum) => {
       data.weeks[Number(weekNum)].days.forEach((day) => {
         day.exercises.forEach((ex) => {
-          csv += `${weekNum},"${day.name}","${ex.exerciseName}",${ex.sets},"${ex.repsBase}","${ex.targetLoad}","${ex.technique}","${ex.techniqueSchema}",${ex.coefficient},${ex.rest},"${ex.notes}"\n`;
+          const loads = (ex.targetLoads || []).join('-');
+          csv += `${weekNum},"${day.name}","${ex.exerciseName}",${ex.sets},"${ex.repsBase}","${loads}","${ex.technique}","${ex.techniqueSchema}",${ex.coefficient},${ex.rest},"${ex.notes}"\n`;
         });
       });
     });
 
   csv += '\n\nSESSIONI LOGGATE\n';
-  csv += 'Data,Week,Esercizio,Tecnica,Rep Range,Reps,Target,Completamento,Tonnage,RPE\n';
+  csv += 'Data,Week,Esercizio,Tecnica,Rep Range,Reps,Target,Completamento,RPE\n';
   data.loggedSessions.forEach((s) => {
-    csv += `${s.date},${s.weekNum},"${s.exercise}","${s.technique}","${s.repRange}",${s.totalReps},${s.targetReps},${s.completion}%,${s.totalTonnage},${s.avgRPE}\n`;
+    csv += `${s.date},${s.weekNum},"${s.exercise}","${s.technique}","${s.repRange}",${s.totalReps},${s.targetReps},${s.completion}%,${s.avgRPE}\n`;
   });
 
   csv += '\n\nMACROS\n';

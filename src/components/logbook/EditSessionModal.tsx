@@ -7,74 +7,28 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card } from '../ui/card';
 import { Plus, Trash2, CheckCircle } from 'lucide-react';
-import { parseSchema, calculateTargetReps, calculateSessionMetrics } from '@/lib/calculations';
+import { calculateSessionMetrics } from '@/lib/calculations';
 
-interface LogSessionModalProps {
+interface EditSessionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  dayIndex: number;
-  exerciseIndex: number;
+  session: LoggedSession;
 }
 
-export function LogSessionModal({
+export function EditSessionModal({
   open,
   onOpenChange,
-  dayIndex,
-  exerciseIndex,
-}: LogSessionModalProps) {
-  const { currentWeek, weeks, addLoggedSession } = useApp();
-  const week = weeks[currentWeek];
-  const day = week?.days[dayIndex];
-  const exercise = day?.exercises[exerciseIndex];
-
+  session,
+}: EditSessionModalProps) {
+  const { updateLoggedSession } = useApp();
   const [tempLogSets, setTempLogSets] = useState<LoggedSet[]>([]);
 
   useEffect(() => {
-    if (open && exercise) {
-      // Initialize temp log sets
-      initializeTempSets();
+    if (open && session) {
+      // Initialize with existing sets
+      setTempLogSets(session.sets);
     }
-  }, [open, exercise]);
-
-  const initializeTempSets = () => {
-    if (!exercise) return;
-
-    const sets: LoggedSet[] = [];
-
-    if (exercise.technique === 'Normale') {
-      // Normal technique: N sets
-      for (let setNum = 1; setNum <= exercise.sets; setNum++) {
-        sets.push({
-          reps: exercise.repsBase || '',
-          load: exercise.targetLoads?.[setNum - 1] || '80',
-          rpe: '',
-          setNum,
-          clusterNum: 1,
-        });
-      }
-    } else {
-      // Special technique: N sets × M clusters
-      const clusters = parseSchema(exercise.techniqueSchema);
-      if (clusters.length === 0) {
-        alert('Schema tecnica non valido!');
-        return;
-      }
-
-      for (let setNum = 1; setNum <= exercise.sets; setNum++) {
-        for (let clusterNum = 1; clusterNum <= clusters.length; clusterNum++) {
-          sets.push({
-            reps: clusters[clusterNum - 1]?.toString() || '',
-            load: exercise.targetLoads?.[setNum - 1] || '80',
-            rpe: '',
-            setNum,
-            clusterNum,
-          });
-        }
-      }
-    }
-
-    setTempLogSets(sets);
-  };
+  }, [open, session]);
 
   const handleUpdateSet = (index: number, field: keyof LoggedSet, value: string) => {
     const updated = [...tempLogSets];
@@ -86,17 +40,15 @@ export function LogSessionModal({
   };
 
   const handleAddSet = () => {
-    if (!exercise) return;
-
     const lastSet = tempLogSets[tempLogSets.length - 1];
     const newSetNum = lastSet ? lastSet.setNum + 1 : 1;
     const lastLoad = lastSet?.load || '80';
 
-    if (exercise.technique === 'Normale') {
+    if (session.technique === 'Normale') {
       setTempLogSets([
         ...tempLogSets,
         {
-          reps: exercise.repsBase || '',
+          reps: '',
           load: lastLoad,
           rpe: '',
           setNum: newSetNum,
@@ -104,11 +56,12 @@ export function LogSessionModal({
         },
       ]);
     } else {
-      const clusters = parseSchema(exercise.techniqueSchema);
+      // For special techniques, add clusters based on existing pattern
+      const clustersInLastSet = tempLogSets.filter(s => s.setNum === lastSet.setNum).length;
       const newSets: LoggedSet[] = [];
-      for (let clusterNum = 1; clusterNum <= clusters.length; clusterNum++) {
+      for (let clusterNum = 1; clusterNum <= clustersInLastSet; clusterNum++) {
         newSets.push({
-          reps: clusters[clusterNum - 1]?.toString() || '',
+          reps: '',
           load: lastLoad,
           rpe: '',
           setNum: newSetNum,
@@ -124,34 +77,19 @@ export function LogSessionModal({
   };
 
   const handleSave = () => {
-    if (!exercise) return;
-
-    const targetReps = calculateTargetReps(exercise);
     const metrics = calculateSessionMetrics(tempLogSets);
 
-    const session: LoggedSession = {
-      id: Date.now(),
-      date: new Date().toISOString().split('T')[0],
-      weekNum: currentWeek,
-      exercise: exercise.exerciseName,
-      technique: exercise.technique,
-      techniqueSchema: exercise.techniqueSchema,
-      repRange: exercise.repRange,
-      coefficient: exercise.coefficient,
-      targetLoads: exercise.targetLoads || [],
-      targetRPE: exercise.targetRPE,
+    const updatedSession: LoggedSession = {
+      ...session,
       sets: tempLogSets,
       totalReps: metrics.totalReps,
-      targetReps,
       avgRPE: metrics.avgRPE,
-      completion: targetReps > 0 ? (metrics.totalReps / targetReps) * 100 : 0,
+      completion: session.targetReps > 0 ? (metrics.totalReps / session.targetReps) * 100 : 0,
     };
 
-    addLoggedSession(session);
+    updateLoggedSession(updatedSession);
     onOpenChange(false);
   };
-
-  if (!exercise) return null;
 
   const metrics = calculateSessionMetrics(tempLogSets);
 
@@ -166,10 +104,10 @@ export function LogSessionModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Log Sessione</DialogTitle>
+          <DialogTitle>Modifica Sessione</DialogTitle>
           <DialogDescription>
-            {exercise.exerciseName} - {exercise.technique}
-            {exercise.techniqueSchema && ` (${exercise.techniqueSchema})`}
+            {session.exercise} - {session.technique}
+            {session.techniqueSchema && ` (${session.techniqueSchema})`}
           </DialogDescription>
         </DialogHeader>
 
@@ -198,7 +136,7 @@ export function LogSessionModal({
 
                     return (
                       <div key={clusterIndex} className="flex gap-2 items-end">
-                        {exercise.technique !== 'Normale' && (
+                        {session.technique !== 'Normale' && (
                           <div className="text-sm font-medium text-muted-foreground w-20">
                             Cluster {set.clusterNum}
                           </div>
@@ -273,7 +211,7 @@ export function LogSessionModal({
         <DialogFooter>
           <Button onClick={handleSave} className="w-full">
             <CheckCircle className="w-4 h-4 mr-2" />
-            Salva Sessione
+            Salva Modifiche
           </Button>
         </DialogFooter>
       </DialogContent>
