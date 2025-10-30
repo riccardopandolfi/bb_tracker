@@ -1,9 +1,11 @@
 import { useApp } from './contexts/AppContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { ExerciseLibrary } from './components/ExerciseLibrary';
+import { ProgramsTab } from './components/ProgramsTab';
 import { ProgramTab } from './components/ProgramTab';
 import { LogbookTab } from './components/LogbookTab';
-import { BookOpen, Dumbbell, TrendingUp } from 'lucide-react';
+import { MacrosTab } from './components/MacrosTab';
+import { BookOpen, Dumbbell, TrendingUp, Folder, Apple } from 'lucide-react';
 
 function App() {
   const { currentTab, setCurrentTab } = useApp();
@@ -23,11 +25,16 @@ function App() {
 
         {/* Main Tabs */}
         <Tabs value={currentTab} onValueChange={(v) => setCurrentTab(v as any)} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-[600px]">
+          <TabsList className="grid w-full grid-cols-5 lg:w-[1000px]">
             <TabsTrigger value="library" className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
               <span className="hidden sm:inline">Libreria Esercizi</span>
               <span className="sm:hidden">Libreria</span>
+            </TabsTrigger>
+            <TabsTrigger value="programs" className="flex items-center gap-2">
+              <Folder className="w-4 h-4" />
+              <span className="hidden sm:inline">Programmi</span>
+              <span className="sm:hidden">Programmi</span>
             </TabsTrigger>
             <TabsTrigger value="program" className="flex items-center gap-2">
               <Dumbbell className="w-4 h-4" />
@@ -38,10 +45,19 @@ function App() {
               <TrendingUp className="w-4 h-4" />
               <span>Logbook</span>
             </TabsTrigger>
+            <TabsTrigger value="macros" className="flex items-center gap-2">
+              <Apple className="w-4 h-4" />
+              <span className="hidden sm:inline">Macronutrienti</span>
+              <span className="sm:hidden">Macros</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="library" className="space-y-4">
             <ExerciseLibrary />
+          </TabsContent>
+
+          <TabsContent value="programs" className="space-y-4">
+            <ProgramsTab />
           </TabsContent>
 
           <TabsContent value="program" className="space-y-4">
@@ -50,6 +66,10 @@ function App() {
 
           <TabsContent value="logbook" className="space-y-4">
             <LogbookTab />
+          </TabsContent>
+
+          <TabsContent value="macros" className="space-y-4">
+            <MacrosTab />
           </TabsContent>
         </Tabs>
       </div>

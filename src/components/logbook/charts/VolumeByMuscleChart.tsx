@@ -7,10 +7,11 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { calculateVolume } from '@/lib/calculations';
 
 export function VolumeByMuscleChart() {
-  const { weeks, exercises, currentWeek } = useApp();
+  const { getCurrentWeeks, exercises, currentWeek } = useApp();
   const [selectedWeek, setSelectedWeek] = useState(currentWeek);
   const [selectedMuscle, setSelectedMuscle] = useState('all');
 
+  const weeks = getCurrentWeeks();
   const weekNumbers = Object.keys(weeks)
     .map(Number)
     .sort((a, b) => a - b);

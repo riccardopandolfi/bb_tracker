@@ -3,7 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { calculateVolume } from '@/lib/calculations';
 
 export function VolumeSummary() {
-  const { currentWeek, weeks, exercises } = useApp();
+  const { currentWeek, getCurrentWeeks, exercises } = useApp();
+  const weeks = getCurrentWeeks();
   const week = weeks[currentWeek];
 
   const volumeData = calculateVolume(week, exercises);

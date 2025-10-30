@@ -4,11 +4,12 @@ import { Button } from '../ui/button';
 import { Plus, Copy, Check } from 'lucide-react';
 
 export function WeekSelector() {
-  const { currentWeek, weeks, setCurrentWeek, addWeek, duplicateWeek, loggedSessions } = useApp();
+  const { currentWeek, getCurrentWeeks, setCurrentWeek, addWeek, duplicateWeek, loggedSessions, currentProgramId } = useApp();
+  const weeks = getCurrentWeeks();
   const weekNumbers = Object.keys(weeks).map(Number).sort((a, b) => a - b);
 
   const hasLoggedSessions = (weekNum: number) => {
-    return loggedSessions.some((s) => s.weekNum === weekNum);
+    return loggedSessions.some((s) => s.weekNum === weekNum && s.programId === currentProgramId);
   };
 
   const handleAddWeek = () => {

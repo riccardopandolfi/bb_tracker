@@ -5,7 +5,8 @@ import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 
 export function MacrosSection() {
-  const { currentWeek, macros, setMacros } = useApp();
+  const { currentWeek, getCurrentMacros, setMacros } = useApp();
+  const macros = getCurrentMacros();
   const weekMacros = macros[currentWeek] || {
     kcal: '',
     protein: '',

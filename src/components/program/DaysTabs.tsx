@@ -7,7 +7,8 @@ import { Plus, Trash2 } from 'lucide-react';
 import { ExercisesTable } from './ExercisesTable';
 
 export function DaysTabs() {
-  const { currentWeek, weeks, updateWeek } = useApp();
+  const { currentWeek, getCurrentWeeks, updateWeek } = useApp();
+  const weeks = getCurrentWeeks();
   const week = weeks[currentWeek];
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
 

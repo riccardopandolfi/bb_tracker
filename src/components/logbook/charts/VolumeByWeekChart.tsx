@@ -4,8 +4,9 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { calculateVolume } from '@/lib/calculations';
 
 export function VolumeByWeekChart() {
-  const { weeks, exercises } = useApp();
+  const { getCurrentWeeks, exercises } = useApp();
 
+  const weeks = getCurrentWeeks();
   const weekNumbers = Object.keys(weeks)
     .map(Number)
     .sort((a, b) => a - b);

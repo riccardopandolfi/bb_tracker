@@ -22,7 +22,8 @@ export function LogSessionModal({
   dayIndex,
   exerciseIndex,
 }: LogSessionModalProps) {
-  const { currentWeek, weeks, addLoggedSession } = useApp();
+  const { currentWeek, getCurrentWeeks, currentProgramId, addLoggedSession } = useApp();
+  const weeks = getCurrentWeeks();
   const week = weeks[currentWeek];
   const day = week?.days[dayIndex];
   const exercise = day?.exercises[exerciseIndex];
@@ -134,6 +135,7 @@ export function LogSessionModal({
 
     const session: LoggedSession = {
       id: Date.now(),
+      programId: currentProgramId,
       date: new Date().toISOString().split('T')[0],
       weekNum: currentWeek,
       exercise: exercise.exerciseName,

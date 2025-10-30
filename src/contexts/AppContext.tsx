@@ -1,15 +1,20 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { AppState, Exercise, Week, LoggedSession, WeekMacros, CustomTechnique } from '@/types';
+import { AppState, Exercise, Week, LoggedSession, WeekMacros, CustomTechnique, Program } from '@/types';
 import { DEFAULT_EXERCISES } from '@/lib/constants';
 import { DEFAULT_MUSCLE_GROUPS } from '@/types';
 
 interface AppContextType extends AppState {
   setCurrentTab: (tab: 'library' | 'program' | 'logbook') => void;
+  setCurrentProgram: (programId: number) => void;
   setCurrentWeek: (week: number) => void;
   setExercises: (exercises: Exercise[]) => void;
   addExercise: (exercise: Exercise) => void;
   updateExercise: (index: number, exercise: Exercise) => void;
   deleteExercise: (index: number) => void;
+  addProgram: (name: string, description?: string) => void;
+  updateProgram: (programId: number, program: Program) => void;
+  deleteProgram: (programId: number) => void;
+  duplicateProgram: (programId: number) => void;
   setWeeks: (weeks: Record<number, Week>) => void;
   addWeek: (weekNum: number) => void;
   duplicateWeek: (weekNum: number) => void;
@@ -17,11 +22,16 @@ interface AppContextType extends AppState {
   addLoggedSession: (session: LoggedSession) => void;
   updateLoggedSession: (session: LoggedSession) => void;
   deleteLoggedSession: (sessionId: number) => void;
-  setMacros: (weekNum: number, macros: WeekMacros) => void;
+  setMacros: (weekNum: number, macros: WeekMacros, programId?: number) => void;
   addMuscleGroup: (muscleGroup: string) => void;
   addCustomTechnique: (technique: CustomTechnique) => void;
   deleteCustomTechnique: (techniqueName: string) => void;
   resetAllData: () => void;
+
+  // Helper getters
+  getCurrentProgram: () => Program | undefined;
+  getCurrentWeeks: () => Record<number, Week>;
+  getCurrentMacros: () => Record<number, WeekMacros>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -30,15 +40,24 @@ const STORAGE_KEY = 'bodybuilding-data';
 
 const defaultState: AppState = {
   currentTab: 'library',
+  currentProgramId: 1,
   currentWeek: 1,
   exercises: DEFAULT_EXERCISES,
-  weeks: {
-    1: { days: [] },
+  programs: {
+    1: {
+      id: 1,
+      name: 'Programma Default',
+      description: 'Il tuo primo programma di allenamento',
+      createdAt: new Date().toISOString(),
+      weeks: {
+        1: { days: [] },
+      },
+      macros: {
+        1: { kcal: '', protein: '', carbs: '', fat: '', notes: '' },
+      },
+    },
   },
   loggedSessions: [],
-  macros: {
-    1: { kcal: '', protein: '', carbs: '', fat: '', notes: '' },
-  },
   muscleGroups: [...DEFAULT_MUSCLE_GROUPS],
   customTechniques: [],
 };
@@ -53,42 +72,82 @@ export function AppProvider({ children }: { children: ReactNode }) {
       try {
         const data = JSON.parse(saved);
 
-        // Migrate old data: add techniqueParams and targetRPE to exercises if missing
-        const migratedWeeks = data.weeks || { 1: { days: [] } };
-        Object.keys(migratedWeeks).forEach((weekKey) => {
-          const week = migratedWeeks[Number(weekKey)];
-          if (week && week.days) {
-            week.days.forEach((day: any) => {
-              if (day && day.exercises) {
-                day.exercises.forEach((ex: any) => {
-                  if (!ex.hasOwnProperty('techniqueParams')) {
-                    ex.techniqueParams = {};
-                  }
-                  if (!ex.hasOwnProperty('targetRPE')) {
-                    // Set default targetRPE based on coefficient
-                    if (ex.coefficient <= 0.7) ex.targetRPE = 5.5;
-                    else if (ex.coefficient <= 0.9) ex.targetRPE = 7.5;
-                    else if (ex.coefficient <= 1.0) ex.targetRPE = 8.5;
-                    else ex.targetRPE = 10.0;
-                  }
-                  // Migrate targetLoad (string) to targetLoads (array)
-                  if (ex.hasOwnProperty('targetLoad') && typeof ex.targetLoad === 'string') {
-                    const sets = ex.sets || 3;
-                    ex.targetLoads = Array(sets).fill(ex.targetLoad);
-                    delete ex.targetLoad;
-                  } else if (!ex.hasOwnProperty('targetLoads') || !Array.isArray(ex.targetLoads)) {
-                    const sets = ex.sets || 3;
-                    ex.targetLoads = Array(sets).fill('80');
-                  }
-                });
-              }
-            });
-          }
+        // MIGRATION: Convert old format (weeks/macros at root) to new format (programs)
+        let migratedPrograms: Record<number, Program>;
+        let migratedCurrentProgramId: number;
+
+        if (data.programs) {
+          // New format already exists
+          migratedPrograms = data.programs;
+          migratedCurrentProgramId = data.currentProgramId || 1;
+        } else {
+          // Old format: convert weeks/macros to Program 1
+          console.log('Migrating old data format to new program structure...');
+
+          const oldWeeks = data.weeks || { 1: { days: [] } };
+          const oldMacros = data.macros || { 1: { kcal: '', protein: '', carbs: '', fat: '', notes: '' } };
+
+          migratedPrograms = {
+            1: {
+              id: 1,
+              name: 'Programma Default',
+              description: 'Programma migrato dalla versione precedente',
+              createdAt: new Date().toISOString(),
+              weeks: oldWeeks,
+              macros: oldMacros,
+            },
+          };
+
+          migratedCurrentProgramId = 1;
+        }
+
+        // Migrate weeks within each program: add techniqueParams and targetRPE to exercises if missing
+        Object.keys(migratedPrograms).forEach((programKey) => {
+          const program = migratedPrograms[Number(programKey)];
+          const migratedWeeks = program.weeks || { 1: { days: [] } };
+          Object.keys(migratedWeeks).forEach((weekKey) => {
+            const week = migratedWeeks[Number(weekKey)];
+            if (week && week.days) {
+              week.days.forEach((day: any) => {
+                if (day && day.exercises) {
+                  day.exercises.forEach((ex: any) => {
+                    if (!ex.hasOwnProperty('techniqueParams')) {
+                      ex.techniqueParams = {};
+                    }
+                    if (!ex.hasOwnProperty('targetRPE')) {
+                      // Set default targetRPE based on coefficient
+                      if (ex.coefficient <= 0.7) ex.targetRPE = 5.5;
+                      else if (ex.coefficient <= 0.9) ex.targetRPE = 7.5;
+                      else if (ex.coefficient <= 1.0) ex.targetRPE = 8.5;
+                      else ex.targetRPE = 10.0;
+                    }
+                    // Migrate targetLoad (string) to targetLoads (array)
+                    if (ex.hasOwnProperty('targetLoad') && typeof ex.targetLoad === 'string') {
+                      const sets = ex.sets || 3;
+                      ex.targetLoads = Array(sets).fill(ex.targetLoad);
+                      delete ex.targetLoad;
+                    } else if (!ex.hasOwnProperty('targetLoads') || !Array.isArray(ex.targetLoads)) {
+                      const sets = ex.sets || 3;
+                      ex.targetLoads = Array(sets).fill('80');
+                    }
+                  });
+                }
+              });
+            }
+          });
+
+          // Update the program with migrated weeks
+          program.weeks = migratedWeeks;
         });
 
-        // Migrate old logged sessions: add targetRPE if missing, convert targetLoad to targetLoads array
+        // Migrate old logged sessions: add programId and other missing fields
         const migratedSessions = (data.loggedSessions || []).map((session: any) => {
           const migrated = { ...session };
+
+          // Add programId if missing (old sessions belong to Program 1)
+          if (!migrated.hasOwnProperty('programId')) {
+            migrated.programId = 1;
+          }
 
           // Add targetRPE if missing
           if (!migrated.hasOwnProperty('targetRPE')) {
@@ -130,11 +189,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         setState({
           currentTab: data.currentTab || 'library',
+          currentProgramId: migratedCurrentProgramId,
           currentWeek: data.currentWeek || 1,
           exercises: migratedExercises,
-          weeks: migratedWeeks,
+          programs: migratedPrograms,
           loggedSessions: migratedSessions,
-          macros: data.macros || { 1: { kcal: '', protein: '', carbs: '', fat: '', notes: '' } },
           muscleGroups: data.muscleGroups || [...DEFAULT_MUSCLE_GROUPS],
           customTechniques: data.customTechniques || [],
         });
@@ -153,8 +212,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(timeoutId);
   }, [state]);
 
+  // Helper getters
+  const getCurrentProgram = () => state.programs[state.currentProgramId];
+
+  const getCurrentWeeks = () => {
+    const program = getCurrentProgram();
+    return program?.weeks || {};
+  };
+
+  const getCurrentMacros = () => {
+    const program = getCurrentProgram();
+    return program?.macros || {};
+  };
+
   const setCurrentTab = (tab: 'library' | 'program' | 'logbook') => {
     setState((prev) => ({ ...prev, currentTab: tab }));
+  };
+
+  const setCurrentProgram = (programId: number) => {
+    setState((prev) => ({ ...prev, currentProgramId: programId, currentWeek: 1 }));
   };
 
   const setCurrentWeek = (week: number) => {
@@ -187,51 +263,154 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  // Program management
+  const addProgram = (name: string, description?: string) => {
+    const newId = Math.max(...Object.keys(state.programs).map(Number), 0) + 1;
+    const newProgram: Program = {
+      id: newId,
+      name,
+      description: description || '',
+      createdAt: new Date().toISOString(),
+      weeks: { 1: { days: [] } },
+      macros: { 1: { kcal: '', protein: '', carbs: '', fat: '', notes: '' } },
+    };
+
+    setState((prev) => ({
+      ...prev,
+      programs: {
+        ...prev.programs,
+        [newId]: newProgram,
+      },
+      currentProgramId: newId,
+      currentWeek: 1,
+    }));
+  };
+
+  const updateProgram = (programId: number, program: Program) => {
+    setState((prev) => ({
+      ...prev,
+      programs: {
+        ...prev.programs,
+        [programId]: program,
+      },
+    }));
+  };
+
+  const deleteProgram = (programId: number) => {
+    if (Object.keys(state.programs).length === 1) {
+      alert('Non puoi eliminare l\'ultimo programma!');
+      return;
+    }
+
+    if (confirm(`Eliminare il programma "${state.programs[programId]?.name}"?`)) {
+      setState((prev) => {
+        const newPrograms = { ...prev.programs };
+        delete newPrograms[programId];
+
+        // If deleting current program, switch to first available
+        const newCurrentId = prev.currentProgramId === programId
+          ? Number(Object.keys(newPrograms)[0])
+          : prev.currentProgramId;
+
+        // Remove logged sessions for this program
+        const filteredSessions = prev.loggedSessions.filter(s => s.programId !== programId);
+
+        return {
+          ...prev,
+          programs: newPrograms,
+          currentProgramId: newCurrentId,
+          currentWeek: 1,
+          loggedSessions: filteredSessions,
+        };
+      });
+    }
+  };
+
+  const duplicateProgram = (programId: number) => {
+    const sourceProgram = state.programs[programId];
+    if (!sourceProgram) return;
+
+    const newId = Math.max(...Object.keys(state.programs).map(Number)) + 1;
+    const newProgram: Program = {
+      ...JSON.parse(JSON.stringify(sourceProgram)),
+      id: newId,
+      name: `${sourceProgram.name} (Copia)`,
+      createdAt: new Date().toISOString(),
+    };
+
+    setState((prev) => ({
+      ...prev,
+      programs: {
+        ...prev.programs,
+        [newId]: newProgram,
+      },
+      currentProgramId: newId,
+      currentWeek: 1,
+    }));
+  };
+
   const setWeeks = (weeks: Record<number, Week>) => {
-    setState((prev) => ({ ...prev, weeks }));
+    const program = getCurrentProgram();
+    if (!program) return;
+
+    updateProgram(state.currentProgramId, {
+      ...program,
+      weeks,
+    });
   };
 
   const addWeek = (weekNum: number) => {
-    setState((prev) => ({
-      ...prev,
+    const program = getCurrentProgram();
+    if (!program) return;
+
+    updateProgram(state.currentProgramId, {
+      ...program,
       weeks: {
-        ...prev.weeks,
+        ...program.weeks,
         [weekNum]: { days: [] },
       },
       macros: {
-        ...prev.macros,
+        ...program.macros,
         [weekNum]: { kcal: '', protein: '', carbs: '', fat: '', notes: '' },
       },
-    }));
+    });
   };
 
   const duplicateWeek = (weekNum: number) => {
-    const sourceWeek = state.weeks[weekNum];
+    const program = getCurrentProgram();
+    if (!program) return;
+
+    const sourceWeek = program.weeks[weekNum];
     if (!sourceWeek) return;
 
-    const newWeekNum = Math.max(...Object.keys(state.weeks).map(Number)) + 1;
-    setState((prev) => ({
-      ...prev,
+    const newWeekNum = Math.max(...Object.keys(program.weeks).map(Number)) + 1;
+
+    updateProgram(state.currentProgramId, {
+      ...program,
       weeks: {
-        ...prev.weeks,
+        ...program.weeks,
         [newWeekNum]: JSON.parse(JSON.stringify(sourceWeek)),
       },
       macros: {
-        ...prev.macros,
-        [newWeekNum]: JSON.parse(JSON.stringify(prev.macros[weekNum] || {})),
+        ...program.macros,
+        [newWeekNum]: JSON.parse(JSON.stringify(program.macros[weekNum] || {})),
       },
-      currentWeek: newWeekNum,
-    }));
+    });
+
+    setState((prev) => ({ ...prev, currentWeek: newWeekNum }));
   };
 
   const updateWeek = (weekNum: number, week: Week) => {
-    setState((prev) => ({
-      ...prev,
+    const program = getCurrentProgram();
+    if (!program) return;
+
+    updateProgram(state.currentProgramId, {
+      ...program,
       weeks: {
-        ...prev.weeks,
+        ...program.weeks,
         [weekNum]: week,
       },
-    }));
+    });
   };
 
   const addLoggedSession = (session: LoggedSession) => {
@@ -257,14 +436,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const setMacros = (weekNum: number, macros: WeekMacros) => {
-    setState((prev) => ({
-      ...prev,
+  const setMacros = (weekNum: number, macros: WeekMacros, programId?: number) => {
+    const targetProgramId = programId ?? state.currentProgramId;
+    const program = state.programs[targetProgramId];
+    if (!program) return;
+
+    updateProgram(targetProgramId, {
+      ...program,
       macros: {
-        ...prev.macros,
+        ...program.macros,
         [weekNum]: macros,
       },
-    }));
+    });
   };
 
   const addMuscleGroup = (muscleGroup: string) => {
@@ -302,11 +485,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       value={{
         ...state,
         setCurrentTab,
+        setCurrentProgram,
         setCurrentWeek,
         setExercises,
         addExercise,
         updateExercise,
         deleteExercise,
+        addProgram,
+        updateProgram,
+        deleteProgram,
+        duplicateProgram,
         setWeeks,
         addWeek,
         duplicateWeek,
@@ -319,6 +507,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addCustomTechnique,
         deleteCustomTechnique,
         resetAllData,
+        getCurrentProgram,
+        getCurrentWeeks,
+        getCurrentMacros,
       }}
     >
       {children}

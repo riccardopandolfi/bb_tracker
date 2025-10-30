@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { ProgramExercise, DEFAULT_TECHNIQUES } from '@/types';
 import { Button } from '../ui/button';
+import { Label } from '../ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Plus } from 'lucide-react';
 import { LogSessionModal } from './LogSessionModal';
 import { ExerciseCard } from './ExerciseCard';
@@ -12,11 +15,16 @@ interface ExercisesTableProps {
 }
 
 export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
-  const { currentWeek, weeks, updateWeek, exercises, customTechniques } = useApp();
+  const { currentWeek, getCurrentWeeks, updateWeek, exercises, customTechniques } = useApp();
   const [logModalOpen, setLogModalOpen] = useState(false);
   const [selectedExerciseIndex, setSelectedExerciseIndex] = useState<number | null>(null);
   const [expandedExercises, setExpandedExercises] = useState<Set<number>>(new Set());
 
+  // Add exercise modal state
+  const [showAddExerciseModal, setShowAddExerciseModal] = useState(false);
+  const [selectedExerciseName, setSelectedExerciseName] = useState<string>('');
+
+  const weeks = getCurrentWeeks();
   const week = weeks[currentWeek];
   const day = week?.days[dayIndex];
   const allTechniques = [...DEFAULT_TECHNIQUES, ...customTechniques.map(t => t.name)];
@@ -26,10 +34,25 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
   }
 
   const handleAddExercise = () => {
-    const firstExercise = exercises[0];
+    // Open modal to select exercise
+    if (exercises.length > 0) {
+      setSelectedExerciseName(exercises[0].name);
+    }
+    setShowAddExerciseModal(true);
+  };
+
+  const handleConfirmAddExercise = () => {
+    if (!selectedExerciseName) {
+      alert('Seleziona un esercizio');
+      return;
+    }
+
+    const selectedExercise = exercises.find(ex => ex.name === selectedExerciseName);
+    if (!selectedExercise) return;
+
     const newExercise: ProgramExercise = {
-      exerciseName: firstExercise?.name || '',
-      exerciseType: firstExercise?.type || 'resistance',
+      exerciseName: selectedExercise.name,
+      exerciseType: selectedExercise.type,
       rest: 90,
       sets: 3,
       repsBase: '10',
@@ -54,6 +77,15 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
     };
 
     updateWeek(currentWeek, updatedWeek);
+    setShowAddExerciseModal(false);
+    setSelectedExerciseName('');
+
+    // Auto-expand the newly added exercise
+    setExpandedExercises(prev => {
+      const newExpanded = new Set(prev);
+      newExpanded.add(day.exercises.length);
+      return newExpanded;
+    });
   };
 
   const handleUpdateExercise = (exIndex: number, field: keyof ProgramExercise, value: any) => {
@@ -160,43 +192,43 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
     setExpandedExercises(newExpanded);
   };
 
-  if (day.exercises.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground mb-4">Nessun esercizio in questo giorno</p>
-        <Button onClick={handleAddExercise}>
-          <Plus className="w-4 h-4 mr-2" />
-          Aggiungi Esercizio
-        </Button>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-4">
-      {/* Grid of Exercise Cards */}
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-        {day.exercises.map((ex, exIndex) => (
-          <ExerciseCard
-            key={exIndex}
-            exercise={ex}
-            exerciseIndex={exIndex}
-            exerciseLibrary={exercises}
-            allTechniques={allTechniques}
-            isExpanded={expandedExercises.has(exIndex)}
-            onToggleExpand={() => toggleExpanded(exIndex)}
-            onUpdate={(field, value) => handleUpdateExercise(exIndex, field, value)}
-            onDelete={() => handleDeleteExercise(exIndex)}
-            onLog={() => handleOpenLogModal(exIndex)}
-          />
-        ))}
-      </div>
+    <>
+      {day.exercises.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground mb-4">Nessun esercizio in questo giorno</p>
+          <Button onClick={handleAddExercise}>
+            <Plus className="w-4 h-4 mr-2" />
+            Aggiungi Esercizio
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* Grid of Exercise Cards */}
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+            {day.exercises.map((ex, exIndex) => (
+              <ExerciseCard
+                key={exIndex}
+                exercise={ex}
+                exerciseIndex={exIndex}
+                exerciseLibrary={exercises}
+                allTechniques={allTechniques}
+                isExpanded={expandedExercises.has(exIndex)}
+                onToggleExpand={() => toggleExpanded(exIndex)}
+                onUpdate={(field, value) => handleUpdateExercise(exIndex, field, value)}
+                onDelete={() => handleDeleteExercise(exIndex)}
+                onLog={() => handleOpenLogModal(exIndex)}
+              />
+            ))}
+          </div>
 
-      {/* Add Exercise Button */}
-      <Button onClick={handleAddExercise} variant="outline" className="w-full">
-        <Plus className="w-4 h-4 mr-2" />
-        Aggiungi Esercizio
-      </Button>
+          {/* Add Exercise Button */}
+          <Button onClick={handleAddExercise} variant="outline" className="w-full">
+            <Plus className="w-4 h-4 mr-2" />
+            Aggiungi Esercizio
+          </Button>
+        </div>
+      )}
 
       {/* Log Session Modal */}
       {selectedExerciseIndex !== null && (
@@ -207,6 +239,54 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
           exerciseIndex={selectedExerciseIndex}
         />
       )}
-    </div>
+
+      {/* Add Exercise Modal - Sempre renderizzato */}
+      <Dialog open={showAddExerciseModal} onOpenChange={setShowAddExerciseModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Seleziona Esercizio</DialogTitle>
+            <DialogDescription>
+              Scegli l'esercizio dalla libreria che vuoi aggiungere a questo giorno.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="exercise-select">Esercizio</Label>
+              <Select
+                value={selectedExerciseName}
+                onValueChange={setSelectedExerciseName}
+              >
+                <SelectTrigger id="exercise-select">
+                  <SelectValue placeholder="Seleziona un esercizio">
+                    {selectedExerciseName}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {exercises.length === 0 ? (
+                    <div className="p-2 text-sm text-muted-foreground text-center">
+                      Nessun esercizio disponibile. Aggiungi esercizi dalla libreria.
+                    </div>
+                  ) : (
+                    exercises.map((ex) => (
+                      <SelectItem key={ex.name} value={ex.name}>
+                        {ex.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddExerciseModal(false)}>
+              Annulla
+            </Button>
+            <Button onClick={handleConfirmAddExercise} disabled={exercises.length === 0 || !selectedExerciseName}>
+              Aggiungi Esercizio
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

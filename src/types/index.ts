@@ -119,6 +119,16 @@ export interface Week {
   days: Day[];
 }
 
+// Program (Macro Programma)
+export interface Program {
+  id: number;
+  name: string;
+  description?: string;
+  createdAt: string;
+  weeks: Record<number, Week>;
+  macros: Record<number, WeekMacros>;
+}
+
 // Logged Sessions
 export interface LoggedSet {
   reps: string;
@@ -130,6 +140,7 @@ export interface LoggedSet {
 
 export interface LoggedSession {
   id: number;
+  programId: number; // ID del programma a cui appartiene
   date: string;
   weekNum: number;
   exercise: string;
@@ -157,12 +168,12 @@ export interface WeekMacros {
 
 // Global State
 export interface AppState {
-  currentTab: 'library' | 'program' | 'logbook';
+  currentTab: 'library' | 'programs' | 'program' | 'logbook' | 'macros';
+  currentProgramId: number;
   currentWeek: number;
   exercises: Exercise[];
-  weeks: Record<number, Week>;
+  programs: Record<number, Program>;
   loggedSessions: LoggedSession[];
-  macros: Record<number, WeekMacros>;
   muscleGroups: string[]; // Gruppi muscolari personalizzati
   customTechniques: CustomTechnique[]; // Tecniche personalizzate
 }

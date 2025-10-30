@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Button } from './ui/button';
-import { Download } from 'lucide-react';
+import { Badge } from './ui/badge';
+import { Download, Folder } from 'lucide-react';
 import { exportToCSV } from '@/lib/calculations';
 import { LogbookFilters } from './logbook/LogbookFilters';
 import { LogbookTable } from './logbook/LogbookTable';
 import { ChartsSection } from './logbook/ChartsSection';
 
 export function LogbookTab() {
-  const { exercises, weeks, loggedSessions, macros } = useApp();
+  const { exercises, getCurrentWeeks, getCurrentMacros, getCurrentProgram, loggedSessions, currentProgramId } = useApp();
 
   const [filters, setFilters] = useState({
     exercise: '',
@@ -18,11 +19,19 @@ export function LogbookTab() {
     dateTo: '',
   });
 
+  const weeks = getCurrentWeeks();
+  const macros = getCurrentMacros();
+  const currentProgram = getCurrentProgram();
+
   const handleExport = () => {
     exportToCSV({ exercises, weeks, loggedSessions, macros });
   };
 
+  // Filter sessions by current program
   const filteredSessions = loggedSessions.filter((session) => {
+    // First filter by program
+    if (session.programId !== currentProgramId) return false;
+    // Then apply user filters
     if (filters.exercise && session.exercise !== filters.exercise) return false;
     if (filters.repRange && session.repRange !== filters.repRange) return false;
     if (filters.technique && session.technique !== filters.technique) return false;
@@ -39,10 +48,18 @@ export function LogbookTab() {
             <h2 className="text-2xl font-bold">Logbook e Progressioni</h2>
             <p className="text-muted-foreground">Analizza i tuoi allenamenti e le tue progressioni</p>
           </div>
-          <Button onClick={handleExport} variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Esporta CSV
-          </Button>
+          <div className="flex items-center gap-3">
+            {currentProgram && (
+              <Badge variant="secondary" className="gap-2 px-3 py-1.5">
+                <Folder className="w-4 h-4" />
+                <span>{currentProgram.name}</span>
+              </Badge>
+            )}
+            <Button onClick={handleExport} variant="outline">
+              <Download className="w-4 h-4 mr-2" />
+              Esporta CSV
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
