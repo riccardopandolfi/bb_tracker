@@ -116,10 +116,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return migrated;
         });
 
+        // Migrate exercises: add type field if missing
+        const migratedExercises = (data.exercises || DEFAULT_EXERCISES).map((ex: any) => {
+          if (!ex.type) {
+            // If no type, assume resistance if it has muscles, cardio otherwise
+            return {
+              ...ex,
+              type: ex.muscles ? 'resistance' : 'cardio',
+            };
+          }
+          return ex;
+        });
+
         setState({
           currentTab: data.currentTab || 'library',
           currentWeek: data.currentWeek || 1,
-          exercises: data.exercises || DEFAULT_EXERCISES,
+          exercises: migratedExercises,
           weeks: migratedWeeks,
           loggedSessions: migratedSessions,
           macros: data.macros || { 1: { kcal: '', protein: '', carbs: '', fat: '', notes: '' } },
