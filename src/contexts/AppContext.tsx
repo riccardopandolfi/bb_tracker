@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { AppState, Exercise, Week, LoggedSession, WeekMacros } from '@/types';
+import { AppState, Exercise, Week, LoggedSession, WeekMacros, CustomTechnique } from '@/types';
 import { DEFAULT_EXERCISES } from '@/lib/constants';
+import { DEFAULT_MUSCLE_GROUPS } from '@/types';
 
 interface AppContextType extends AppState {
   setCurrentTab: (tab: 'library' | 'program' | 'logbook') => void;
@@ -17,6 +18,9 @@ interface AppContextType extends AppState {
   updateLoggedSession: (session: LoggedSession) => void;
   deleteLoggedSession: (sessionId: number) => void;
   setMacros: (weekNum: number, macros: WeekMacros) => void;
+  addMuscleGroup: (muscleGroup: string) => void;
+  addCustomTechnique: (technique: CustomTechnique) => void;
+  deleteCustomTechnique: (techniqueName: string) => void;
   resetAllData: () => void;
 }
 
@@ -35,6 +39,8 @@ const defaultState: AppState = {
   macros: {
     1: { kcal: '', protein: '', carbs: '', fat: '', notes: '' },
   },
+  muscleGroups: [...DEFAULT_MUSCLE_GROUPS],
+  customTechniques: [],
 };
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -117,6 +123,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           weeks: migratedWeeks,
           loggedSessions: migratedSessions,
           macros: data.macros || { 1: { kcal: '', protein: '', carbs: '', fat: '', notes: '' } },
+          muscleGroups: data.muscleGroups || [...DEFAULT_MUSCLE_GROUPS],
+          customTechniques: data.customTechniques || [],
         });
       } catch (error) {
         console.error('Error loading data from localStorage:', error);
@@ -247,6 +255,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const addMuscleGroup = (muscleGroup: string) => {
+    setState((prev) => ({
+      ...prev,
+      muscleGroups: [...prev.muscleGroups, muscleGroup],
+    }));
+  };
+
+  const addCustomTechnique = (technique: CustomTechnique) => {
+    setState((prev) => ({
+      ...prev,
+      customTechniques: [...prev.customTechniques, technique],
+    }));
+  };
+
+  const deleteCustomTechnique = (techniqueName: string) => {
+    if (confirm(`Eliminare la tecnica "${techniqueName}"?`)) {
+      setState((prev) => ({
+        ...prev,
+        customTechniques: prev.customTechniques.filter((t) => t.name !== techniqueName),
+      }));
+    }
+  };
+
   const resetAllData = () => {
     if (confirm('Cancellare tutti i dati? Questa azione è irreversibile!')) {
       localStorage.removeItem(STORAGE_KEY);
@@ -272,6 +303,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         updateLoggedSession,
         deleteLoggedSession,
         setMacros,
+        addMuscleGroup,
+        addCustomTechnique,
+        deleteCustomTechnique,
         resetAllData,
       }}
     >

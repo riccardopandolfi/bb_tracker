@@ -23,6 +23,9 @@ export function validateSchema(schema: string): boolean {
  * Calcola target reps per un esercizio
  */
 export function calculateTargetReps(exercise: ProgramExercise): number {
+  if (exercise.exerciseType === 'cardio') return 0;
+  if (!exercise.sets || !exercise.repsBase) return 0;
+
   if (exercise.technique !== 'Normale' && exercise.techniqueSchema) {
     const clusters = parseSchema(exercise.techniqueSchema);
     if (clusters.length > 0) {
@@ -70,6 +73,10 @@ export function calculateVolume(
 
   week.days.forEach((day) => {
     day.exercises.forEach((ex) => {
+      // Skip cardio exercises
+      if (ex.exerciseType === 'cardio') return;
+      if (!ex.sets || ex.coefficient === undefined) return;
+
       const volume = ex.sets * ex.coefficient;
       totalVolume += volume;
       totalEstimatedRPE += getEstimatedRPE(ex.coefficient);
@@ -77,14 +84,15 @@ export function calculateVolume(
 
       // Trova l'esercizio nella libreria
       const libraryExercise = exercises.find((e) => e.name === ex.exerciseName);
-      if (libraryExercise) {
+      const coefficient = ex.coefficient; // Already checked above
+      if (libraryExercise && libraryExercise.muscles && coefficient !== undefined) {
         libraryExercise.muscles.forEach((m) => {
           const muscleVolume = (volume * m.percent) / 100;
           if (!byMuscle[m.muscle]) {
             byMuscle[m.muscle] = { volume: 0, estimatedRPE: 0 };
           }
           byMuscle[m.muscle].volume += muscleVolume;
-          byMuscle[m.muscle].estimatedRPE = getEstimatedRPE(ex.coefficient);
+          byMuscle[m.muscle].estimatedRPE = getEstimatedRPE(coefficient);
         });
       }
     });
@@ -172,28 +180,37 @@ export function exportToCSV(data: {
 
   // Esercizi
   csv += 'LIBRERIA ESERCIZI\n';
-  csv += 'Nome,Muscolo 1,%,Muscolo 2,%,Muscolo 3,%\n';
+  csv += 'Nome,Tipo,Muscolo 1,%,Muscolo 2,%,Muscolo 3,%,Attrezzatura Cardio\n';
   data.exercises.forEach((ex) => {
-    csv += `"${ex.name}"`;
-    for (let i = 0; i < 3; i++) {
-      if (ex.muscles[i]) {
-        csv += `,"${ex.muscles[i].muscle}",${ex.muscles[i].percent}`;
-      } else {
-        csv += ',,';
+    csv += `"${ex.name}","${ex.type}"`;
+    if (ex.type === 'cardio') {
+      csv += ',,,,,,' + (ex.cardioEquipment || '');
+    } else {
+      for (let i = 0; i < 3; i++) {
+        if (ex.muscles && ex.muscles[i]) {
+          csv += `,"${ex.muscles[i].muscle}",${ex.muscles[i].percent}`;
+        } else {
+          csv += ',,';
+        }
       }
+      csv += ',';
     }
     csv += '\n';
   });
 
   csv += '\n\nSCHEDA\n';
-  csv += 'Week,Giorno,Esercizio,Sets,Reps,Carichi,Tecnica,Schema,Coeff,Rest,Note\n';
+  csv += 'Week,Giorno,Esercizio,Tipo,Sets,Reps,Carichi,Tecnica,Schema,Coeff,Rest,Durata,Note\n';
   Object.keys(data.weeks)
     .sort((a, b) => Number(a) - Number(b))
     .forEach((weekNum) => {
       data.weeks[Number(weekNum)].days.forEach((day) => {
         day.exercises.forEach((ex) => {
-          const loads = (ex.targetLoads || []).join('-');
-          csv += `${weekNum},"${day.name}","${ex.exerciseName}",${ex.sets},"${ex.repsBase}","${loads}","${ex.technique}","${ex.techniqueSchema}",${ex.coefficient},${ex.rest},"${ex.notes}"\n`;
+          if (ex.exerciseType === 'cardio') {
+            csv += `${weekNum},"${day.name}","${ex.exerciseName}","cardio",,,,,,,,"${ex.duration || ''}","${ex.notes}"\n`;
+          } else {
+            const loads = (ex.targetLoads || []).join('-');
+            csv += `${weekNum},"${day.name}","${ex.exerciseName}","resistance",${ex.sets || ''},"${ex.repsBase || ''}","${loads}","${ex.technique || ''}","${ex.techniqueSchema || ''}",${ex.coefficient || ''},${ex.rest || ''},,"${ex.notes}"\n`;
+          }
         });
       });
     });

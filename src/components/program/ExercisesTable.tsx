@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { ProgramExercise, TECHNIQUES, REP_RANGES } from '@/types';
+import { ProgramExercise, DEFAULT_TECHNIQUES, REP_RANGES } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -16,21 +16,24 @@ interface ExercisesTableProps {
 }
 
 export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
-  const { currentWeek, weeks, updateWeek, exercises } = useApp();
+  const { currentWeek, weeks, updateWeek, exercises, customTechniques } = useApp();
   const [logModalOpen, setLogModalOpen] = useState(false);
   const [selectedExerciseIndex, setSelectedExerciseIndex] = useState<number | null>(null);
   const [expandedExercises, setExpandedExercises] = useState<Set<number>>(new Set());
 
   const week = weeks[currentWeek];
   const day = week?.days[dayIndex];
+  const allTechniques = [...DEFAULT_TECHNIQUES, ...customTechniques.map(t => t.name)];
 
   if (!day) {
     return <div>Giorno non trovato</div>;
   }
 
   const handleAddExercise = () => {
+    const firstExercise = exercises[0];
     const newExercise: ProgramExercise = {
-      exerciseName: exercises[0]?.name || '',
+      exerciseName: firstExercise?.name || '',
+      exerciseType: firstExercise?.type || 'resistance',
       rest: 90,
       sets: 3,
       repsBase: '10',
@@ -73,8 +76,15 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
         updatedExercise.repsBase = '';
         updatedExercise.techniqueParams = {};
         // Generate schema with default params
-        const schema = generateSchemaFromParams(value, {});
-        updatedExercise.techniqueSchema = schema;
+        const customTech = customTechniques.find(t => t.name === value);
+        if (customTech) {
+          // Custom technique: generate simple schema from default values
+          const values = customTech.parameters.map(p => p.defaultValue).filter(v => v);
+          updatedExercise.techniqueSchema = values.join('+');
+        } else {
+          const schema = generateSchemaFromParams(value, {});
+          updatedExercise.techniqueSchema = schema;
+        }
       } else {
         updatedExercise.techniqueSchema = '';
         updatedExercise.techniqueParams = {};
@@ -83,9 +93,20 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
     }
 
     // Generate schema from params if techniqueParams changed
-    if (field === 'techniqueParams') {
-      const schema = generateSchemaFromParams(updatedExercise.technique, value);
-      updatedExercise.techniqueSchema = schema;
+    if (field === 'techniqueParams' && updatedExercise.technique) {
+      const customTech = customTechniques.find(t => t.name === updatedExercise.technique);
+      if (customTech) {
+        // Custom technique: generate schema from params
+        const values = customTech.parameters
+          .map(p => value[p.name] ?? p.defaultValue)
+          .filter(v => v !== undefined && v !== '');
+        updatedExercise.techniqueSchema = values.every(v => !isNaN(Number(v)))
+          ? values.join('+')
+          : values.join('-');
+      } else {
+        const schema = generateSchemaFromParams(updatedExercise.technique, value);
+        updatedExercise.techniqueSchema = schema;
+      }
     }
 
     // Adjust targetLoads array when sets change
@@ -165,7 +186,7 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
 
   const getExerciseMuscles = (exerciseName: string) => {
     const exercise = exercises.find((e) => e.name === exerciseName);
-    if (!exercise || exercise.muscles.length === 0) return null;
+    if (!exercise || !exercise.muscles || exercise.muscles.length === 0) return null;
 
     // Sort muscles by percentage (descending)
     const sortedMuscles = [...exercise.muscles].sort((a, b) => b.percent - a.percent);
@@ -357,7 +378,7 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {TECHNIQUES.map((tech) => (
+                          {allTechniques.map((tech) => (
                             <SelectItem key={tech} value={tech}>
                               {tech}
                             </SelectItem>
@@ -444,7 +465,7 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
                   </TableRow>
 
                   {/* Expanded row for technique params */}
-                  {isExpanded && !isNormalTechnique && (
+                  {isExpanded && !isNormalTechnique && ex.technique && (
                     <TableRow>
                       <TableCell colSpan={16} className="bg-muted/50 p-4">
                         <TechniqueParamsForm

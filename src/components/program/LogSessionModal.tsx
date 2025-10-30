@@ -37,7 +37,8 @@ export function LogSessionModal({
   }, [open, exercise]);
 
   const initializeTempSets = () => {
-    if (!exercise) return;
+    if (!exercise || exercise.exerciseType === 'cardio') return;
+    if (!exercise.sets || !exercise.technique) return;
 
     const sets: LoggedSet[] = [];
 
@@ -54,7 +55,7 @@ export function LogSessionModal({
       }
     } else {
       // Special technique: N sets × M clusters
-      const clusters = parseSchema(exercise.techniqueSchema);
+      const clusters = parseSchema(exercise.techniqueSchema || '');
       if (clusters.length === 0) {
         alert('Schema tecnica non valido!');
         return;
@@ -86,7 +87,8 @@ export function LogSessionModal({
   };
 
   const handleAddSet = () => {
-    if (!exercise) return;
+    if (!exercise || exercise.exerciseType === 'cardio') return;
+    if (!exercise.technique) return;
 
     const lastSet = tempLogSets[tempLogSets.length - 1];
     const newSetNum = lastSet ? lastSet.setNum + 1 : 1;
@@ -104,7 +106,7 @@ export function LogSessionModal({
         },
       ]);
     } else {
-      const clusters = parseSchema(exercise.techniqueSchema);
+      const clusters = parseSchema(exercise.techniqueSchema || '');
       const newSets: LoggedSet[] = [];
       for (let clusterNum = 1; clusterNum <= clusters.length; clusterNum++) {
         newSets.push({
@@ -124,7 +126,8 @@ export function LogSessionModal({
   };
 
   const handleSave = () => {
-    if (!exercise) return;
+    if (!exercise || exercise.exerciseType === 'cardio') return;
+    if (!exercise.technique || !exercise.repRange || exercise.coefficient === undefined || exercise.targetRPE === undefined) return;
 
     const targetReps = calculateTargetReps(exercise);
     const metrics = calculateSessionMetrics(tempLogSets);
@@ -135,7 +138,7 @@ export function LogSessionModal({
       weekNum: currentWeek,
       exercise: exercise.exerciseName,
       technique: exercise.technique,
-      techniqueSchema: exercise.techniqueSchema,
+      techniqueSchema: exercise.techniqueSchema || '',
       repRange: exercise.repRange,
       coefficient: exercise.coefficient,
       targetLoads: exercise.targetLoads || [],

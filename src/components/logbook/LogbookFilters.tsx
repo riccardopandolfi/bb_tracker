@@ -3,7 +3,7 @@ import { Card, CardContent } from '../ui/card';
 import { Label } from '../ui/label';
 import { DatePicker } from '../ui/date-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { REP_RANGES, TECHNIQUES } from '@/types';
+import { REP_RANGES, DEFAULT_TECHNIQUES } from '@/types';
 import { format } from 'date-fns';
 
 interface LogbookFiltersProps {
@@ -19,9 +19,10 @@ interface LogbookFiltersProps {
 }
 
 export function LogbookFilters({ filters, setFilters, totalSessions }: LogbookFiltersProps) {
-  const { exercises } = useApp();
+  const { exercises, customTechniques } = useApp();
 
   const uniqueExercises = Array.from(new Set(exercises.map((e) => e.name)));
+  const allTechniques = [...DEFAULT_TECHNIQUES, ...customTechniques.map(t => t.name)];
 
   return (
     <Card>
@@ -78,7 +79,7 @@ export function LogbookFilters({ filters, setFilters, totalSessions }: LogbookFi
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutte</SelectItem>
-                {TECHNIQUES.map((tech) => (
+                {allTechniques.map((tech) => (
                   <SelectItem key={tech} value={tech}>
                     {tech}
                   </SelectItem>

@@ -1,5 +1,5 @@
-// Gruppi muscolari disponibili
-export const MUSCLE_GROUPS = [
+// Gruppi muscolari default (ora dinamici nello state)
+export const DEFAULT_MUSCLE_GROUPS = [
   'Petto',
   'Dorso - Lats',
   'Dorso - Upper Back',
@@ -19,9 +19,9 @@ export const MUSCLE_GROUPS = [
   'Addome',
   'Obliqui',
   'Core',
-] as const;
+];
 
-export type MuscleGroup = typeof MUSCLE_GROUPS[number];
+export type MuscleGroup = string; // Ora dinamico
 
 // Rep Ranges
 export const REP_RANGES = {
@@ -34,8 +34,8 @@ export const REP_RANGES = {
 
 export type RepRangeKey = keyof typeof REP_RANGES;
 
-// Tecniche di allenamento
-export const TECHNIQUES = [
+// Tecniche di allenamento default
+export const DEFAULT_TECHNIQUES = [
   'Normale',
   'Rest-Pause',
   'Myo-Reps',
@@ -44,9 +44,33 @@ export const TECHNIQUES = [
   'Reps Scalare',
   'Reps Crescente',
   '1.5 Reps',
+];
+
+export type Technique = string; // Ora dinamico
+
+// Attrezzature cardio
+export const CARDIO_EQUIPMENT = [
+  'Cyclette',
+  'Tapis Roulant',
+  'Stair Master',
 ] as const;
 
-export type Technique = typeof TECHNIQUES[number];
+export type CardioEquipment = typeof CARDIO_EQUIPMENT[number];
+
+// Tecnica personalizzata
+export interface TechniqueParameter {
+  name: string;
+  type: 'number' | 'text' | 'select';
+  label: string;
+  options?: string[]; // Per type="select"
+  defaultValue?: any;
+}
+
+export interface CustomTechnique {
+  name: string;
+  description: string;
+  parameters: TechniqueParameter[];
+}
 
 // Exercise Library
 export interface MuscleDistribution {
@@ -54,24 +78,35 @@ export interface MuscleDistribution {
   percent: number;
 }
 
+export type ExerciseType = 'resistance' | 'cardio';
+
 export interface Exercise {
   name: string;
-  muscles: MuscleDistribution[]; // Max 3 muscoli
+  type: ExerciseType;
+  muscles?: MuscleDistribution[]; // Solo per resistance
+  cardioEquipment?: CardioEquipment; // Solo per cardio
 }
 
 // Program (Scheda)
 export interface ProgramExercise {
   exerciseName: string;
-  rest: number;
-  sets: number;
-  repsBase: string;
-  repRange: RepRangeKey;
-  targetLoads: string[]; // Array di carichi, uno per ogni set
-  targetRPE: number; // RPE pianificato a priori (5-10)
-  technique: Technique;
-  techniqueSchema: string;
-  techniqueParams: Record<string, any>; // Parametri tecnica (per sistema parametrizzato)
-  coefficient: number;
+  exerciseType: ExerciseType; // 'resistance' o 'cardio'
+
+  // Per resistance
+  rest?: number;
+  sets?: number;
+  repsBase?: string;
+  repRange?: RepRangeKey;
+  targetLoads?: string[]; // Array di carichi, uno per ogni set
+  targetRPE?: number; // RPE pianificato a priori (5-10)
+  technique?: Technique;
+  techniqueSchema?: string;
+  techniqueParams?: Record<string, any>; // Parametri tecnica (per sistema parametrizzato)
+  coefficient?: number;
+
+  // Per cardio
+  duration?: number; // Minuti
+
   notes: string;
 }
 
@@ -128,6 +163,8 @@ export interface AppState {
   weeks: Record<number, Week>;
   loggedSessions: LoggedSession[];
   macros: Record<number, WeekMacros>;
+  muscleGroups: string[]; // Gruppi muscolari personalizzati
+  customTechniques: CustomTechnique[]; // Tecniche personalizzate
 }
 
 // Volume calculations
