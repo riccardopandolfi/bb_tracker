@@ -1,24 +1,31 @@
 import { useState } from 'react';
-import { ProgramExercise, Exercise, REP_RANGES } from '@/types';
+import { ProgramExercise, Exercise, ExerciseBlock } from '@/types';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
-import { ChevronDown, ChevronUp, Trash2, ClipboardList } from 'lucide-react';
-import { TechniqueParamsForm } from './TechniqueParamsForm';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
+import { ChevronDown, ChevronUp, Trash2, ClipboardList, Plus } from 'lucide-react';
+import { ExerciseBlockCard } from './ExerciseBlockCard';
+import { getExerciseBlocks } from '@/lib/exerciseUtils';
+import { REP_RANGES } from '@/types';
 
 interface ExerciseCardProps {
   exercise: ProgramExercise;
   exerciseIndex: number;
   exerciseLibrary: Exercise[];
   allTechniques: string[];
+  customTechniques: any[];
   isExpanded: boolean;
   onToggleExpand: () => void;
   onUpdate: (field: keyof ProgramExercise, value: any) => void;
+  onUpdateBlock: (blockIndex: number, field: keyof ExerciseBlock, value: any) => void;
+  onUpdateBlockBatch?: (blockIndex: number, updates: Partial<ExerciseBlock>) => void;
+  onAddBlock: () => void;
+  onDeleteBlock: (blockIndex: number) => void;
   onDelete: () => void;
-  onLog: () => void;
+  onLog: (blockIndex?: number) => void;
 }
 
 export function ExerciseCard({
@@ -26,13 +33,35 @@ export function ExerciseCard({
   exerciseIndex,
   exerciseLibrary,
   allTechniques,
+  customTechniques,
   isExpanded,
   onToggleExpand,
   onUpdate,
+  onUpdateBlock,
+  onUpdateBlockBatch,
+  onAddBlock,
+  onDeleteBlock,
   onDelete,
   onLog,
 }: ExerciseCardProps) {
-  const [showLoadModal, setShowLoadModal] = useState(false);
+  const [showBlockSelector, setShowBlockSelector] = useState(false);
+  const blocks = getExerciseBlocks(exercise);
+
+  const handleLogClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (blocks.length === 1) {
+      // Un solo blocco: logga direttamente
+      onLog(0);
+    } else {
+      // Più blocchi: mostra il selettore
+      setShowBlockSelector(true);
+    }
+  };
+
+  const handleSelectBlock = (blockIndex: number) => {
+    setShowBlockSelector(false);
+    onLog(blockIndex);
+  };
 
   const getMuscleColor = (muscle: string): string => {
     const colorMap: Record<string, string> = {
@@ -68,58 +97,156 @@ export function ExerciseCard({
   };
 
   const primaryMuscle = getPrimaryMuscle();
-  const isNormalTechnique = exercise.technique === 'Normale';
-  const loadsDisplay = exercise.targetLoads?.join('-') || '0';
+  // blocks è già dichiarato sopra
 
   // Cardio view
   if (exercise.exerciseType === 'cardio') {
     return (
-      <Card className="hover:shadow-md transition-shadow">
-        <CardContent className="pt-6">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="px-3 py-1 rounded-full bg-orange-100 text-orange-800 text-sm font-medium">
-                  🏃 Cardio
-                </span>
-                <span className="text-sm text-muted-foreground">#{exerciseIndex + 1}</span>
+      <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-3 py-1 rounded-full bg-orange-100 text-orange-800 text-sm font-medium">
+                    🏃 Cardio
+                  </span>
+                  <span className="text-sm text-muted-foreground">#{exerciseIndex + 1}</span>
+                </div>
+              <h3 className="text-lg font-semibold mb-1">{exercise.exerciseName}</h3>
+              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                {blocks.map((block, idx) => {
+                  const duration = block.duration || 0;
+                  const restIntraSet = block.rest ? `rest: ${block.rest}s` : '';
+                  const restBetweenBlocks = idx < blocks.length - 1 && block.blockRest ? `rest blocco: ${block.blockRest}s` : '';
+                  const restParts = [restIntraSet, restBetweenBlocks].filter(Boolean);
+                  const restDisplay = restParts.length > 0 ? ` (${restParts.join(', ')})` : '';
+                  
+                  return (
+                    <span key={idx} className="inline-flex items-center gap-1">
+                      <span className="px-2 py-0.5 rounded bg-orange-50 text-orange-700 text-xs font-medium">
+                        B{idx + 1}
+                      </span>
+                      <span>{duration}min</span>
+                      {restDisplay && <span className="text-xs italic">{restDisplay}</span>}
+                      {idx < blocks.length - 1 && <span className="text-muted-foreground/50 ml-1">•</span>}
+                    </span>
+                  );
+                })}
               </div>
-              <h3 className="text-lg font-semibold mb-2">{exercise.exerciseName}</h3>
-              <div className="text-sm text-muted-foreground">
-                {exercise.duration || 0} minuti
+              </div>
+              <div className="flex gap-1">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onLog(); // Log del primo blocco
+                  }}
+                  title="Log sessione"
+                >
+                  <ClipboardList className="w-4 h-4 text-orange-500" />
+                </Button>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    {isExpanded ? (
+                      <ChevronUp className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+                <Button variant="ghost" size="icon" onClick={onDelete}>
+                  <Trash2 className="w-4 h-4 text-red-500" />
+                </Button>
               </div>
             </div>
-            <div className="flex gap-1">
-              <Button variant="ghost" size="icon" onClick={onDelete}>
-                <Trash2 className="w-4 h-4 text-red-500" />
-              </Button>
-            </div>
-          </div>
 
-          {isExpanded && (
-            <div className="mt-4 pt-4 border-t space-y-3">
-              <div>
-                <Label className="text-xs">Durata (minuti)</Label>
-                <Input
-                  type="number"
-                  value={exercise.duration || 0}
-                  onChange={(e) => onUpdate('duration', parseInt(e.target.value) || 0)}
-                  className="h-9"
-                />
+            <CollapsibleContent>
+              <div className="pt-4 border-t space-y-4">
+                {/* Blocks */}
+                <div className="space-y-3">
+                  {blocks.map((block, blockIndex) => (
+                    <ExerciseBlockCard
+                      key={blockIndex}
+                      block={block}
+                      blockIndex={blockIndex}
+                      exerciseType="cardio"
+                      allTechniques={allTechniques}
+                      customTechniques={customTechniques}
+                      onUpdate={onUpdateBlock}
+                      onUpdateBatch={onUpdateBlockBatch}
+                      onDelete={onDeleteBlock}
+                      isLast={blockIndex === blocks.length - 1}
+                      canDelete={blocks.length > 1}
+                    />
+                  ))}
+                </div>
+
+                {/* Add Block Button */}
+                <Button variant="outline" onClick={onAddBlock} className="w-full">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Aggiungi Blocco
+                </Button>
+
+                {/* Note */}
+                <div>
+                  <Label className="text-xs">Note</Label>
+                  <Input
+                    value={exercise.notes || ''}
+                    onChange={(e) => onUpdate('notes', e.target.value)}
+                    placeholder="Aggiungi note..."
+                    className="h-9"
+                  />
+                </div>
               </div>
-              <div>
-                <Label className="text-xs">Note</Label>
-                <Input
-                  value={exercise.notes}
-                  onChange={(e) => onUpdate('notes', e.target.value)}
-                  placeholder="Aggiungi note..."
-                  className="h-9"
-                />
-              </div>
-            </div>
-          )}
+          </CollapsibleContent>
         </CardContent>
       </Card>
+
+      {/* Block Selector Dialog per Cardio */}
+      <Dialog open={showBlockSelector} onOpenChange={setShowBlockSelector}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Seleziona Blocco da Loggare</DialogTitle>
+            <DialogDescription>
+              Scegli quale blocco dell'esercizio <strong>{exercise.exerciseName}</strong> vuoi loggare.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-4">
+            {blocks.map((block, blockIndex) => {
+              const duration = block.duration || 0;
+              const restIntraSet = block.rest ? `${block.rest}s` : '-';
+              const restBetweenBlocks = blockIndex < blocks.length - 1 && block.blockRest ? `${block.blockRest}s` : null;
+              
+              return (
+                <Button
+                  key={blockIndex}
+                  variant="outline"
+                  className="w-full justify-start h-auto p-4"
+                  onClick={() => handleSelectBlock(blockIndex)}
+                >
+                  <div className="flex flex-col items-start gap-1 text-left">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-orange-50 text-orange-700 text-xs font-medium">
+                        Blocco {blockIndex + 1}
+                      </span>
+                    </div>
+                    <div className="text-sm">
+                      <span>{duration} minuti</span>
+                      <span className="text-muted-foreground ml-2">
+                        • Rest: {restIntraSet}
+                        {restBetweenBlocks && ` • Rest blocco: ${restBetweenBlocks}`}
+                      </span>
+                    </div>
+                  </div>
+                </Button>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
+      </Collapsible>
     );
   }
 
@@ -128,7 +255,6 @@ export function ExerciseCard({
     <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
       <Card className="hover:shadow-md transition-shadow">
         <CardContent className="pt-6">
-          {/* Header - Always Visible */}
           <div className="flex items-start justify-between mb-3">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
@@ -140,30 +266,120 @@ export function ExerciseCard({
                 <span className="text-sm text-muted-foreground">#{exerciseIndex + 1}</span>
               </div>
               <h3 className="text-lg font-semibold mb-1">{exercise.exerciseName}</h3>
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                {isNormalTechnique ? (
-                  <span>{exercise.sets || 0} × {exercise.repsBase || 0}</span>
-                ) : (
-                  <span>{exercise.sets || 0} × {exercise.techniqueSchema || '-'}</span>
-                )}
-                <span>•</span>
-                <span>@ {loadsDisplay}kg</span>
-                {isNormalTechnique && (
-                  <>
-                    <span>•</span>
-                    <span>{exercise.repRange}</span>
-                  </>
-                )}
-                <span>•</span>
-                <span>RPE {exercise.targetRPE?.toFixed(1) || 0}</span>
+              <div className="flex flex-wrap items-start gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                {blocks.map((block, idx) => {
+                  const isNormal = block.technique === 'Normale';
+                  const sets = block.sets || 0;
+                  const restIntraSet = block.rest ? `rest: ${block.rest}s` : '';
+                  const restBetweenBlocks = idx < blocks.length - 1 && block.blockRest ? `rest blocco: ${block.blockRest}s` : '';
+                  
+                  // Controlla se ci sono carichi diversi per cluster che richiedono visualizzazione espansa
+                  const hasDifferentLoadsByCluster = !isNormal && 
+                    block.targetLoadsByCluster && 
+                    block.targetLoadsByCluster.length > 0;
+                  
+                  // Per tecniche speciali con targetLoadsByCluster, mostra sempre una riga per set
+                  // con tutti i carichi del set (es. @ 80-70-60 se diversi, @ 80 se tutti uguali)
+                  if (hasDifferentLoadsByCluster) {
+                    const numSets = block.sets || block.targetLoadsByCluster!.length;
+                    
+                    return (
+                      <div key={idx} className="flex flex-col gap-0.5 w-full">
+                        {block.targetLoadsByCluster!.map((setLoads, setIdx) => {
+                          const isLastSet = setIdx === block.targetLoadsByCluster!.length - 1;
+                          
+                          // Formato carichi: tutti i carichi del set separati da '-'
+                          const loadsDisplay = `${setLoads.join('-')}kg`;
+                          
+                          return (
+                            <div key={setIdx} className="inline-flex items-center gap-1">
+                              <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-xs font-medium">
+                                B{idx + 1}.{setIdx + 1}
+                              </span>
+                              <span>{numSets}×{block.techniqueSchema || ''}</span>
+                              <span className="font-medium">@ {loadsDisplay}</span>
+                              {isLastSet && restIntraSet && (
+                                <span className="text-xs italic">({restIntraSet})</span>
+                              )}
+                              {isLastSet && restBetweenBlocks && (
+                                <span className="text-xs italic">({restBetweenBlocks})</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  }
+                  
+                  // Visualizzazione normale (orizzontale)
+                  let loads = '0';
+                  if (isNormal) {
+                    // Tecnica normale: mostra tutti i carichi separati da '-'
+                    const loadsArray = block.targetLoads || [];
+                    loads = loadsArray.length > 0 ? loadsArray.join('-') : '0';
+                  } else {
+                    // Tecnica speciale: mostra carichi per cluster se disponibili
+                    if (block.targetLoadsByCluster && block.targetLoadsByCluster.length > 0) {
+                      // Se tutti i carichi sono uguali per set, mostra solo il primo
+                      const firstSetLoads = block.targetLoadsByCluster[0];
+                      const allSetsSame = block.targetLoadsByCluster.every(setLoads => 
+                        setLoads.length === firstSetLoads.length && 
+                        setLoads.every((load, i) => load === firstSetLoads[i])
+                      );
+                      
+                      if (allSetsSame && firstSetLoads.length > 0) {
+                        const allClustersSame = firstSetLoads.every(load => load === firstSetLoads[0]);
+                        if (allClustersSame) {
+                          loads = firstSetLoads[0];
+                        } else {
+                          loads = firstSetLoads.join('/');
+                        }
+                      } else {
+                        // Per ogni set, mostra i carichi separati da '/' e i set separati da '-'
+                        loads = block.targetLoadsByCluster.map(setLoads => setLoads.join('/')).join('-');
+                      }
+                    } else {
+                      // Fallback a targetLoads
+                      const loadsArray = block.targetLoads || [];
+                      loads = loadsArray.length > 0 ? loadsArray.join('-') : '0';
+                    }
+                  }
+                  
+                  const restParts = [restIntraSet, restBetweenBlocks].filter(Boolean);
+                  const restDisplay = restParts.length > 0 ? ` (${restParts.join(', ')})` : '';
+                  
+                  return (
+                    <span key={idx} className="inline-flex items-center gap-1">
+                      <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-xs font-medium">
+                        B{idx + 1}
+                      </span>
+                      {isNormal ? (
+                        <span>{sets}×{block.repsBase || 0}</span>
+                      ) : (
+                        <span>{sets}×{block.techniqueSchema || '-'}</span>
+                      )}
+                      <span className="font-medium">@ {loads}kg</span>
+                      {restDisplay && <span className="text-xs italic">{restDisplay}</span>}
+                      {idx < blocks.length - 1 && <span className="text-muted-foreground/50 ml-1">•</span>}
+                    </span>
+                  );
+                })}
               </div>
-              {!isNormalTechnique && (
+              {blocks.some(b => b.technique && b.technique !== 'Normale') && (
                 <div className="text-xs text-muted-foreground mt-1">
-                  {exercise.technique}
+                  {blocks.filter(b => b.technique && b.technique !== 'Normale').map(b => b.technique).join(', ')}
                 </div>
               )}
             </div>
             <div className="flex gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleLogClick}
+                title="Log sessione"
+              >
+                <ClipboardList className="w-4 h-4 text-blue-500" />
+              </Button>
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" size="icon">
                   {isExpanded ? (
@@ -173,229 +389,64 @@ export function ExerciseCard({
                   )}
                 </Button>
               </CollapsibleTrigger>
-              <Button variant="ghost" size="icon" onClick={onLog}>
-                <ClipboardList className="w-4 h-4 text-blue-500" />
-              </Button>
               <Button variant="ghost" size="icon" onClick={onDelete}>
                 <Trash2 className="w-4 h-4 text-red-500" />
               </Button>
             </div>
           </div>
 
-          {/* Expanded Content */}
           <CollapsibleContent>
             <div className="pt-4 border-t space-y-4">
-              {/* Esercizio Select */}
-              <div>
-                <Label className="text-xs">Esercizio</Label>
-                <Select
-                  value={exercise.exerciseName}
-                  onValueChange={(v) => onUpdate('exerciseName', v)}
-                >
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Seleziona esercizio">
-                      {exercise.exerciseName}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {exerciseLibrary
-                      .filter(e => e.type === 'resistance')
-                      .map((ex) => (
-                        <SelectItem key={ex.name} value={ex.name}>
-                          {ex.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
 
-              {/* Tecnica */}
-              <div>
-                <Label className="text-xs">Tecnica</Label>
-                <Select
-                  value={exercise.technique}
-                  onValueChange={(v) => onUpdate('technique', v)}
-                >
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Seleziona tecnica">
-                      {exercise.technique}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {allTechniques.map((tech) => (
-                      <SelectItem key={tech} value={tech}>
-                        {tech}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Technique Params Form (solo per tecniche speciali) */}
-              {!isNormalTechnique && exercise.technique && (
-                <TechniqueParamsForm
-                  technique={exercise.technique}
-                  params={exercise.techniqueParams || {}}
-                  onChange={(params) => onUpdate('techniqueParams', params)}
-                />
-              )}
-
-              {/* Sets & Reps (condizionale) */}
-              {isNormalTechnique ? (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs">Sets</Label>
-                    <Input
-                      type="number"
-                      value={exercise.sets || 0}
-                      onChange={(e) => onUpdate('sets', parseInt(e.target.value) || 0)}
-                      min="1"
-                      max="10"
-                      className="h-9"
+              {/* Blocks */}
+              <div className="space-y-3">
+                {blocks.map((block, blockIndex) => (
+                  <div key={blockIndex}>
+                    <ExerciseBlockCard
+                      block={block}
+                      blockIndex={blockIndex}
+                      exerciseType="resistance"
+                      exerciseLibrary={exerciseLibrary}
+                      allTechniques={allTechniques}
+                      customTechniques={customTechniques}
+                      onUpdate={onUpdateBlock}
+                      onUpdateBatch={onUpdateBlockBatch}
+                      onDelete={onDeleteBlock}
+                      isLast={blockIndex === blocks.length - 1}
+                      canDelete={blocks.length > 1}
                     />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Reps Base</Label>
-                    <Input
-                      type="number"
-                      value={exercise.repsBase || ''}
-                      onChange={(e) => onUpdate('repsBase', e.target.value)}
-                      className="h-9"
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <Label className="text-xs">Sets (numero di serie complete)</Label>
-                  <Input
-                    type="number"
-                    value={exercise.sets || 0}
-                    onChange={(e) => onUpdate('sets', parseInt(e.target.value) || 0)}
-                    min="1"
-                    max="10"
-                    className="h-9"
-                  />
-                </div>
-              )}
-
-              {/* Rep Range (solo per tecniche normali) */}
-              {isNormalTechnique && (
-                <div>
-                  <Label className="text-xs">Rep Range</Label>
-                  <Select
-                    value={exercise.repRange}
-                    onValueChange={(v) => onUpdate('repRange', v)}
-                  >
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="Seleziona range">
-                        {exercise.repRange && `${exercise.repRange} - ${REP_RANGES[exercise.repRange as keyof typeof REP_RANGES]?.focus || ''}`}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.keys(REP_RANGES).map((range) => (
-                        <SelectItem key={range} value={range}>
-                          {range} - {REP_RANGES[range as keyof typeof REP_RANGES].focus}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {/* Carichi */}
-              <div>
-                <Label className="text-xs">Carichi per Set (kg)</Label>
-                <div className="flex gap-2 items-center">
-                  <div className="flex-1 px-3 py-2 border rounded-md bg-muted text-sm">
-                    {exercise.targetLoads?.join(' - ') || '-'}
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowLoadModal(true)}
-                  >
-                    ✏️ Modifica
-                  </Button>
-                </div>
-              </div>
-
-              {/* Load Modal */}
-              {showLoadModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                  <Card className="w-full max-w-md mx-4">
-                    <CardContent className="pt-6 space-y-3">
-                      <h3 className="text-lg font-semibold mb-4">Modifica Carichi</h3>
-                      {exercise.targetLoads?.map((load, i) => (
-                        <div key={i}>
-                          <Label className="text-xs">Set {i + 1}</Label>
-                          <Input
-                            type="number"
-                            value={load}
-                            onChange={(e) => {
-                              const newLoads = [...(exercise.targetLoads || [])];
-                              newLoads[i] = e.target.value;
-                              onUpdate('targetLoads', newLoads);
-                            }}
-                            className="h-9"
-                          />
-                        </div>
-                      ))}
-                      <div className="flex gap-2 pt-4">
+                    {blockIndex < blocks.length - 1 && block.blockRest && (
+                      <div className="text-center py-2 text-xs text-muted-foreground">
+                        Rest: {block.blockRest}s
+                      </div>
+                    )}
+                    {blocks.length > 1 && (
+                      <div className="flex justify-center mt-2">
                         <Button
-                          variant="outline"
-                          className="flex-1"
-                          onClick={() => setShowLoadModal(false)}
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onLog(blockIndex)}
                         >
-                          Chiudi
+                          <ClipboardList className="w-4 h-4 mr-2" />
+                          Log Blocco {blockIndex + 1}
                         </Button>
                       </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-
-              {/* Intensità */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs">Coefficiente</Label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    value={exercise.coefficient || 0}
-                    onChange={(e) => onUpdate('coefficient', parseFloat(e.target.value) || 0)}
-                    className="h-9"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">RPE Target</Label>
-                  <Input
-                    type="number"
-                    step="0.5"
-                    min="5"
-                    max="10"
-                    value={exercise.targetRPE || 0}
-                    onChange={(e) => onUpdate('targetRPE', parseFloat(e.target.value) || 0)}
-                    className="h-9"
-                  />
-                </div>
+                    )}
+                  </div>
+                ))}
               </div>
 
-              {/* Recupero */}
-              <div>
-                <Label className="text-xs">Recupero (secondi)</Label>
-                <Input
-                  type="number"
-                  value={exercise.rest || 0}
-                  onChange={(e) => onUpdate('rest', parseInt(e.target.value) || 0)}
-                  className="h-9"
-                />
-              </div>
+              {/* Add Block Button */}
+              <Button variant="outline" onClick={onAddBlock} className="w-full">
+                <Plus className="w-4 h-4 mr-2" />
+                Aggiungi Blocco
+              </Button>
 
               {/* Note */}
               <div>
                 <Label className="text-xs">Note</Label>
                 <Input
-                  value={exercise.notes}
+                  value={exercise.notes || ''}
                   onChange={(e) => onUpdate('notes', e.target.value)}
                   placeholder="Aggiungi note..."
                   className="h-9"
@@ -405,6 +456,83 @@ export function ExerciseCard({
           </CollapsibleContent>
         </CardContent>
       </Card>
+
+      {/* Block Selector Dialog */}
+      <Dialog open={showBlockSelector} onOpenChange={setShowBlockSelector}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Seleziona Blocco da Loggare</DialogTitle>
+            <DialogDescription>
+              Scegli quale blocco dell'esercizio <strong>{exercise.exerciseName}</strong> vuoi loggare.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-4">
+            {blocks.map((block, blockIndex) => {
+              const isNormal = block.technique === 'Normale';
+              const sets = block.sets || 0;
+              
+              // Determina i carichi da mostrare
+              let loads = '0';
+              if (isNormal) {
+                // Tecnica normale: mostra tutti i carichi separati da '-'
+                const loadsArray = block.targetLoads || [];
+                loads = loadsArray.length > 0 ? loadsArray.join('-') : '0';
+              } else {
+                // Tecnica speciale: mostra carichi per cluster se disponibili
+                if (block.targetLoadsByCluster && block.targetLoadsByCluster.length > 0) {
+                  // Per ogni set, mostra i carichi separati da '/' e i set separati da '-'
+                  loads = block.targetLoadsByCluster.map(setLoads => setLoads.join('/')).join('-');
+                } else {
+                  // Fallback a targetLoads
+                  const loadsArray = block.targetLoads || [];
+                  loads = loadsArray.length > 0 ? loadsArray.join('-') : '0';
+                }
+              }
+              
+              const restIntraSet = block.rest ? `${block.rest}s` : '-';
+              const restBetweenBlocks = blockIndex < blocks.length - 1 && block.blockRest ? `${block.blockRest}s` : null;
+              
+              return (
+                <Button
+                  key={blockIndex}
+                  variant="outline"
+                  className="w-full justify-start h-auto p-4"
+                  onClick={() => handleSelectBlock(blockIndex)}
+                >
+                  <div className="flex flex-col items-start gap-1 text-left">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-xs font-medium">
+                        Blocco {blockIndex + 1}
+                      </span>
+                      {block.technique && block.technique !== 'Normale' && (
+                        <span className="text-xs text-muted-foreground">
+                          {block.technique}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm">
+                      {isNormal ? (
+                        <span>{sets}×{block.repsBase || 0} @ {loads}kg</span>
+                      ) : (
+                        <span>{sets}×{block.techniqueSchema || '-'} @ {loads}kg</span>
+                      )}
+                      <span className="text-muted-foreground ml-2">
+                        • Rest: {restIntraSet}
+                        {restBetweenBlocks && ` • Rest blocco: ${restBetweenBlocks}`}
+                      </span>
+                    </div>
+                    {block.technique === 'Normale' && block.repRange && (
+                      <div className="text-xs text-muted-foreground">
+                        Range: {block.repRange} - {REP_RANGES[block.repRange as keyof typeof REP_RANGES]?.focus || ''}
+                      </div>
+                    )}
+                  </div>
+                </Button>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Collapsible>
   );
 }

@@ -7,11 +7,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
+import { getExerciseBlocks } from '@/lib/exerciseUtils';
 
 type MetricType = 'load' | 'reps';
 
 export function LoadProgressionChart() {
-  const { loggedSessions } = useApp();
+  const { loggedSessions, getCurrentWeeks } = useApp();
+  const weeks = getCurrentWeeks();
+  
+  // Funzione per ottenere il blocco originale dalla scheda di allenamento
+  const getOriginalBlock = (session: any) => {
+    const week = weeks[session.weekNum];
+    if (!week) return null;
+    
+    // Cerca l'esercizio nel programma
+    for (const day of week.days) {
+      const exercise = day.exercises.find((e: any) => e.exerciseName === session.exercise);
+      if (exercise) {
+        const blocks = getExerciseBlocks(exercise);
+        const block = blocks[session.blockIndex];
+        return block || null;
+      }
+    }
+    return null;
+  };
 
   // Filters
   const [selectedExercise, setSelectedExercise] = useState('');
@@ -66,19 +85,85 @@ export function LoadProgressionChart() {
 
   // Expand sessions into individual sets/mini-sets
   const data = sortedSessions.flatMap((session) => {
+    // Recupera il blocco originale per ottenere i carichi corretti
+    const originalBlock = getOriginalBlock(session);
+    
     return session.sets.map((set) => {
-      // Get target values for this set
-      const targetLoad = session.targetLoads?.[set.setNum - 1] ? parseFloat(session.targetLoads[set.setNum - 1]) : 0;
+      // Get target values for this set - allineato con la visualizzazione nella card
+      let targetLoad = 0;
+      
+      if (originalBlock) {
+        // Usa i carichi dal blocco originale della scheda
+        if (originalBlock.targetLoadsByCluster && originalBlock.targetLoadsByCluster.length > 0) {
+          // Carichi per cluster disponibili
+          const setLoads = originalBlock.targetLoadsByCluster[set.setNum - 1] || 
+                          originalBlock.targetLoadsByCluster[originalBlock.targetLoadsByCluster.length - 1] || 
+                          [];
+          // Per tecniche speciali, usa il carico del cluster corrispondente
+          if (set.clusterNum && setLoads.length >= set.clusterNum) {
+            targetLoad = parseFloat(setLoads[set.clusterNum - 1] || '0');
+          } else if (setLoads.length > 0) {
+            targetLoad = parseFloat(setLoads[0] || '0');
+          }
+        } else if (originalBlock.targetLoads && originalBlock.targetLoads.length > 0) {
+          // Carichi normali (un carico per set)
+          targetLoad = parseFloat(originalBlock.targetLoads[set.setNum - 1] || originalBlock.targetLoads[0] || '0');
+        }
+      } else {
+        // Fallback: usa i carichi salvati nella sessione
+        const loadFromSession = session.targetLoads?.[set.setNum - 1];
+        if (loadFromSession) {
+          // Se contiene '/', è un carico per cluster (formato "80/70/60")
+          if (typeof loadFromSession === 'string' && loadFromSession.includes('/')) {
+            const clusterLoads = loadFromSession.split('/');
+            if (set.clusterNum && clusterLoads.length >= set.clusterNum) {
+              targetLoad = parseFloat(clusterLoads[set.clusterNum - 1] || '0');
+            } else {
+              targetLoad = parseFloat(clusterLoads[0] || '0');
+            }
+          } else {
+            targetLoad = parseFloat(loadFromSession || '0');
+          }
+        }
+      }
 
-      // For normal technique, calculate target reps per set
-      // For special techniques, we don't have a specific target per mini-set, so use actual
-      const targetReps = session.technique === 'Normale'
-        ? session.targetReps / new Set(session.sets.map(s => s.setNum)).size
-        : parseFloat(set.reps || '0');
+      // Target reps: sempre dal programma originale
+      let targetReps = 0;
+      if (originalBlock) {
+        if (originalBlock.technique === 'Normale') {
+          // Tecnica normale: reps base per set
+          const repsBase = parseFloat(originalBlock.repsBase || '0');
+          targetReps = repsBase;
+        } else if (originalBlock.techniqueSchema) {
+          // Tecnica speciale: schema (es. "10+10+10")
+          const clusters = originalBlock.techniqueSchema.split('+').map(n => parseInt(n.trim(), 10)).filter(n => !isNaN(n));
+          if (set.clusterNum && clusters.length >= set.clusterNum) {
+            // Usa le reps del cluster corrispondente
+            targetReps = clusters[set.clusterNum - 1] || 0;
+          } else if (clusters.length > 0) {
+            // Fallback: prima cluster
+            targetReps = clusters[0] || 0;
+          }
+        }
+      } else {
+        // Fallback: usa i target dalla sessione
+        targetReps = session.technique === 'Normale'
+          ? session.targetReps / new Set(session.sets.map(s => s.setNum)).size
+          : parseFloat(set.reps || '0');
+      }
+      
+      // Actual reps: sempre dal logbook (dal set effettivo)
+      const actualReps = parseFloat(set.reps || '0');
 
-      const setLabel = session.technique === 'Normale'
-        ? `${session.date} - Set ${set.setNum}`
-        : `${session.date} - Set ${set.setNum}.${set.clusterNum}`;
+      // Label semplificata: solo data, blocco e set
+      const blockNum = session.blockIndex !== undefined ? session.blockIndex + 1 : 1;
+      
+      let setLabel: string;
+      if (session.technique === 'Normale') {
+        setLabel = `${session.date}\nB${blockNum} - S${set.setNum}`;
+      } else {
+        setLabel = `${session.date}\nB${blockNum} - S${set.setNum}.${set.clusterNum}`;
+      }
 
       return {
         name: setLabel,
@@ -86,11 +171,14 @@ export function LoadProgressionChart() {
         setNum: set.setNum,
         clusterNum: set.clusterNum,
         exercise: session.exercise,
+        blockNum,
         technique: session.technique,
-        actualLoad: Math.round(parseFloat(set.load || '0') * 10) / 10,
+        // Target: dal programma (già calcolato sopra)
         targetLoad: Math.round(targetLoad * 10) / 10,
-        actualReps: parseFloat(set.reps || '0'),
         targetReps: Math.round(targetReps),
+        // Actual: dal logbook (dalla sessione loggata)
+        actualLoad: Math.round(parseFloat(set.load || '0') * 10) / 10,
+        actualReps: actualReps,
         rpe: set.rpe ? Math.round(parseFloat(set.rpe) * 10) / 10 : 0,
       };
     });
@@ -110,7 +198,9 @@ export function LoadProgressionChart() {
     <Card>
       <CardHeader>
         <CardTitle>Progressione Set per Set</CardTitle>
-        <CardDescription>Visualizza ogni singolo set con carico e ripetizioni effettive</CardDescription>
+        <CardDescription>
+          Confronto tra <span className="font-semibold text-blue-600">Programma (Target)</span> e <span className="font-semibold text-green-600">Eseguito (Actual)</span> per ogni blocco e sottoblocco
+        </CardDescription>
 
         {/* Toggle */}
         <div className="space-y-4 mt-4">
@@ -216,9 +306,10 @@ export function LoadProgressionChart() {
                   dataKey="name"
                   angle={-45}
                   textAnchor="end"
-                  height={100}
+                  height={120}
                   interval={0}
-                  tick={{ fontSize: 10 }}
+                  tick={{ fontSize: 9 }}
+                  allowDataOverflow={false}
                 />
                 <YAxis label={{ value: yAxisLabel, angle: -90, position: 'insideLeft' }} />
                 <Tooltip
@@ -228,42 +319,98 @@ export function LoadProgressionChart() {
                     const setLabel = data.technique === 'Normale'
                       ? `Set ${data.setNum}`
                       : `Set ${data.setNum}.${data.clusterNum}`;
+                    
+                    const targetValue = metricType === 'load' ? data.targetLoad : data.targetReps;
+                    const actualValue = metricType === 'load' ? data.actualLoad : data.actualReps;
+                    const unit = metricType === 'load' ? 'kg' : '';
+                    
+                    // Calcola differenza e colore
+                    const diff = actualValue - targetValue;
+                    const diffPercent = targetValue > 0 ? ((diff / targetValue) * 100).toFixed(1) : '0';
+                    const diffColor = diff >= 0 ? 'text-green-600' : 'text-red-600';
+                    const diffSign = diff >= 0 ? '+' : '';
+                    
                     return (
-                      <div className="bg-background border rounded p-3 shadow-lg">
-                        <p className="font-bold">{data.date} - {setLabel}</p>
-                        <p className="text-sm">{data.exercise}</p>
-                        <p className="text-sm">Tecnica: {data.technique}</p>
-                        <div className="mt-2 space-y-1">
-                          <p className="text-sm text-blue-600">
-                            Target {metricType === 'load' ? 'Carico' : 'Reps'}: {metricType === 'load' ? data.targetLoad : data.targetReps} {metricType === 'load' ? 'kg' : ''}
+                      <div className="bg-background border-2 rounded-lg p-4 shadow-xl min-w-[250px]">
+                        <div className="mb-3 pb-2 border-b">
+                          <p className="font-bold text-base">{data.exercise}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {data.date} • Blocco {data.blockNum} • {setLabel}
                           </p>
-                          <p className="text-sm text-green-600">
-                            Effettivo {metricType === 'load' ? 'Carico' : 'Reps'}: {metricType === 'load' ? data.actualLoad : data.actualReps} {metricType === 'load' ? 'kg' : ''}
-                          </p>
+                          <p className="text-xs text-muted-foreground">Tecnica: {data.technique}</p>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="bg-blue-50 border border-blue-200 rounded p-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-semibold text-blue-800">📋 Programma:</span>
+                              <span className="text-sm font-bold text-blue-900">
+                                {targetValue.toFixed(metricType === 'load' ? 1 : 0)} {unit}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="bg-green-50 border border-green-200 rounded p-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-semibold text-green-800">✓ Eseguito:</span>
+                              <span className="text-sm font-bold text-green-900">
+                                {actualValue.toFixed(metricType === 'load' ? 1 : 0)} {unit}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {diff !== 0 && (
+                            <div className={`bg-gray-50 border rounded p-2 ${diffColor}`}>
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-semibold">Differenza:</span>
+                                <span className="text-sm font-bold">
+                                  {diffSign}{diff.toFixed(metricType === 'load' ? 1 : 0)} {unit} ({diffSign}{diffPercent}%)
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          
                           {data.rpe > 0 && (
-                            <p className="text-sm text-orange-600">
-                              RPE: {data.rpe}
-                            </p>
+                            <div className="bg-orange-50 border border-orange-200 rounded p-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-semibold text-orange-800">RPE:</span>
+                                <span className="text-sm font-bold text-orange-900">{data.rpe}</span>
+                              </div>
+                            </div>
                           )}
                         </div>
                       </div>
                     );
                   }}
                 />
-                <Legend />
+                <Legend 
+                  wrapperStyle={{ paddingTop: '20px' }}
+                  iconType="rect"
+                  formatter={(value) => {
+                    if (value === 'Programma (Target)') return '📋 Programma';
+                    if (value === 'Eseguito (Actual)') return '✓ Eseguito';
+                    return value;
+                  }}
+                />
 
                 <Bar
                   dataKey={metricType === 'load' ? 'targetLoad' : 'targetReps'}
-                  name="Target"
+                  name="Programma (Target)"
                   fill="hsl(221.2 83.2% 53.3%)"
-                  radius={[8, 8, 0, 0]}
+                  stroke="hsl(221.2 83.2% 43.3%)"
+                  strokeWidth={1.5}
+                  radius={[4, 4, 0, 0]}
+                  opacity={0.85}
                 />
 
                 <Bar
                   dataKey={metricType === 'load' ? 'actualLoad' : 'actualReps'}
-                  name="Effettivo"
+                  name="Eseguito (Actual)"
                   fill="hsl(142.1 76.2% 36.3%)"
-                  radius={[8, 8, 0, 0]}
+                  stroke="hsl(142.1 76.2% 26.3%)"
+                  strokeWidth={1.5}
+                  radius={[4, 4, 0, 0]}
+                  opacity={0.85}
                 />
               </BarChart>
             </ResponsiveContainer>

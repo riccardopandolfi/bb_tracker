@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { ProgramExercise, DEFAULT_TECHNIQUES } from '@/types';
+import { ProgramExercise, ExerciseBlock, DEFAULT_TECHNIQUES } from '@/types';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -9,6 +9,7 @@ import { Plus } from 'lucide-react';
 import { LogSessionModal } from './LogSessionModal';
 import { ExerciseCard } from './ExerciseCard';
 import { generateSchemaFromParams } from '@/lib/techniques';
+import { getExerciseBlocks, createDefaultBlock } from '@/lib/exerciseUtils';
 
 interface ExercisesTableProps {
   dayIndex: number;
@@ -18,6 +19,7 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
   const { currentWeek, getCurrentWeeks, updateWeek, exercises, customTechniques } = useApp();
   const [logModalOpen, setLogModalOpen] = useState(false);
   const [selectedExerciseIndex, setSelectedExerciseIndex] = useState<number | null>(null);
+  const [selectedBlockIndex, setSelectedBlockIndex] = useState<number | null>(null);
   const [expandedExercises, setExpandedExercises] = useState<Set<number>>(new Set());
 
   // Add exercise modal state
@@ -50,9 +52,10 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
     const selectedExercise = exercises.find(ex => ex.name === selectedExerciseName);
     if (!selectedExercise) return;
 
-    const newExercise: ProgramExercise = {
-      exerciseName: selectedExercise.name,
-      exerciseType: selectedExercise.type,
+    // Crea il primo blocco con valori di default
+    const firstBlock: ExerciseBlock = selectedExercise.type === 'cardio' ? {
+      duration: 30,
+    } : {
       rest: 90,
       sets: 3,
       repsBase: '10',
@@ -63,6 +66,12 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
       techniqueSchema: '',
       techniqueParams: {},
       coefficient: 1.0,
+    };
+
+    const newExercise: ProgramExercise = {
+      exerciseName: selectedExercise.name,
+      exerciseType: selectedExercise.type,
+      blocks: [firstBlock],
       notes: '',
     };
 
@@ -89,8 +98,16 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
   };
 
   const handleUpdateExercise = (exIndex: number, field: keyof ProgramExercise, value: any) => {
+    const currentExercise = day.exercises[exIndex];
+    
+    // Migra l'esercizio se necessario
+    const exercise = getExerciseBlocks(currentExercise).length > 0 ? currentExercise : {
+      ...currentExercise,
+      blocks: currentExercise.blocks || [createDefaultBlock(currentExercise.exerciseType || 'resistance')],
+    };
+    
     const updatedExercise: ProgramExercise = {
-      ...day.exercises[exIndex],
+      ...exercise,
       [field]: value,
     };
 
@@ -163,6 +180,130 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
     updateWeek(currentWeek, updatedWeek);
   };
 
+  // Aggiornamento batch per gestire più modifiche contemporanee (evita race conditions)
+  const handleUpdateBlockBatch = (exIndex: number, blockIndex: number, updates: Partial<ExerciseBlock>) => {
+    const currentExercise = day.exercises[exIndex];
+    const exercise = getExerciseBlocks(currentExercise).length > 0 ? currentExercise : {
+      ...currentExercise,
+      blocks: currentExercise.blocks || [createDefaultBlock(currentExercise.exerciseType || 'resistance')],
+    };
+    
+    const updatedBlocks = [...(exercise.blocks || [])];
+    // Applica tutti gli aggiornamenti in una singola operazione
+    updatedBlocks[blockIndex] = {
+      ...updatedBlocks[blockIndex],
+      ...updates,
+    };
+
+    const updatedExercise: ProgramExercise = {
+      ...exercise,
+      blocks: updatedBlocks,
+    };
+
+    const updatedDay = {
+      ...day,
+      exercises: day.exercises.map((ex, i) => (i === exIndex ? updatedExercise : ex)),
+    };
+
+    const updatedWeek = {
+      ...week,
+      days: week.days.map((d, i) => (i === dayIndex ? updatedDay : d)),
+    };
+
+    updateWeek(currentWeek, updatedWeek);
+  };
+
+  const handleUpdateBlock = (exIndex: number, blockIndex: number, field: keyof ExerciseBlock, value: any) => {
+    const currentExercise = day.exercises[exIndex];
+    const exercise = getExerciseBlocks(currentExercise).length > 0 ? currentExercise : {
+      ...currentExercise,
+      blocks: currentExercise.blocks || [createDefaultBlock(currentExercise.exerciseType || 'resistance')],
+    };
+    
+    const updatedBlocks = [...(exercise.blocks || [])];
+    updatedBlocks[blockIndex] = {
+      ...updatedBlocks[blockIndex],
+      [field]: value,
+    };
+
+    const updatedExercise: ProgramExercise = {
+      ...exercise,
+      blocks: updatedBlocks,
+    };
+
+    const updatedDay = {
+      ...day,
+      exercises: day.exercises.map((ex, i) => (i === exIndex ? updatedExercise : ex)),
+    };
+
+    const updatedWeek = {
+      ...week,
+      days: week.days.map((d, i) => (i === dayIndex ? updatedDay : d)),
+    };
+
+    updateWeek(currentWeek, updatedWeek);
+  };
+
+  const handleAddBlock = (exIndex: number) => {
+    const currentExercise = day.exercises[exIndex];
+    const exercise = getExerciseBlocks(currentExercise).length > 0 ? currentExercise : {
+      ...currentExercise,
+      blocks: currentExercise.blocks || [createDefaultBlock(currentExercise.exerciseType || 'resistance')],
+    };
+    
+    const newBlock = createDefaultBlock(exercise.exerciseType || 'resistance');
+    const updatedBlocks = [...(exercise.blocks || []), newBlock];
+
+    const updatedExercise: ProgramExercise = {
+      ...exercise,
+      blocks: updatedBlocks,
+    };
+
+    const updatedDay = {
+      ...day,
+      exercises: day.exercises.map((ex, i) => (i === exIndex ? updatedExercise : ex)),
+    };
+
+    const updatedWeek = {
+      ...week,
+      days: week.days.map((d, i) => (i === dayIndex ? updatedDay : d)),
+    };
+
+    updateWeek(currentWeek, updatedWeek);
+  };
+
+  const handleDeleteBlock = (exIndex: number, blockIndex: number) => {
+    const currentExercise = day.exercises[exIndex];
+    const exercise = getExerciseBlocks(currentExercise).length > 0 ? currentExercise : {
+      ...currentExercise,
+      blocks: currentExercise.blocks || [createDefaultBlock(currentExercise.exerciseType || 'resistance')],
+    };
+    
+    const updatedBlocks = (exercise.blocks || []).filter((_, i) => i !== blockIndex);
+    
+    if (updatedBlocks.length === 0) {
+      // Se rimuoviamo l'ultimo blocco, ricreiamone uno di default
+      updatedBlocks.push(createDefaultBlock(exercise.exerciseType || 'resistance'));
+    }
+
+    const updatedExercise: ProgramExercise = {
+      ...exercise,
+      blocks: updatedBlocks,
+    };
+
+    const updatedDay = {
+      ...day,
+      exercises: day.exercises.map((ex, i) => (i === exIndex ? updatedExercise : ex)),
+    };
+
+    const updatedWeek = {
+      ...week,
+      days: week.days.map((d, i) => (i === dayIndex ? updatedDay : d)),
+    };
+
+    updateWeek(currentWeek, updatedWeek);
+  };
+
   const handleDeleteExercise = (exIndex: number) => {
     const updatedDay = {
       ...day,
@@ -177,8 +318,9 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
     updateWeek(currentWeek, updatedWeek);
   };
 
-  const handleOpenLogModal = (exIndex: number) => {
+  const handleOpenLogModal = (exIndex: number, blockIndex?: number) => {
     setSelectedExerciseIndex(exIndex);
+    setSelectedBlockIndex(blockIndex ?? null);
     setLogModalOpen(true);
   };
 
@@ -213,11 +355,16 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
                 exerciseIndex={exIndex}
                 exerciseLibrary={exercises}
                 allTechniques={allTechniques}
+                customTechniques={customTechniques}
                 isExpanded={expandedExercises.has(exIndex)}
                 onToggleExpand={() => toggleExpanded(exIndex)}
                 onUpdate={(field, value) => handleUpdateExercise(exIndex, field, value)}
+                onUpdateBlock={(blockIndex, field, value) => handleUpdateBlock(exIndex, blockIndex, field, value)}
+                onUpdateBlockBatch={(blockIndex, updates) => handleUpdateBlockBatch(exIndex, blockIndex, updates)}
+                onAddBlock={() => handleAddBlock(exIndex)}
+                onDeleteBlock={(blockIndex) => handleDeleteBlock(exIndex, blockIndex)}
                 onDelete={() => handleDeleteExercise(exIndex)}
-                onLog={() => handleOpenLogModal(exIndex)}
+                onLog={(blockIndex) => handleOpenLogModal(exIndex, blockIndex)}
               />
             ))}
           </div>
@@ -237,6 +384,7 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
           onOpenChange={setLogModalOpen}
           dayIndex={dayIndex}
           exerciseIndex={selectedExerciseIndex}
+          blockIndex={selectedBlockIndex}
         />
       )}
 

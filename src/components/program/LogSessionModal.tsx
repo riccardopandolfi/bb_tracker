@@ -7,13 +7,15 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card } from '../ui/card';
 import { Plus, Trash2, CheckCircle } from 'lucide-react';
-import { parseSchema, calculateTargetReps, calculateSessionMetrics } from '@/lib/calculations';
+import { parseSchema, calculateBlockTargetReps, calculateSessionMetrics } from '@/lib/calculations';
+import { getExerciseBlocks } from '@/lib/exerciseUtils';
 
 interface LogSessionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   dayIndex: number;
   exerciseIndex: number;
+  blockIndex?: number | null;
 }
 
 export function LogSessionModal({
@@ -21,34 +23,39 @@ export function LogSessionModal({
   onOpenChange,
   dayIndex,
   exerciseIndex,
+  blockIndex,
 }: LogSessionModalProps) {
   const { currentWeek, getCurrentWeeks, currentProgramId, addLoggedSession } = useApp();
   const weeks = getCurrentWeeks();
   const week = weeks[currentWeek];
   const day = week?.days[dayIndex];
   const exercise = day?.exercises[exerciseIndex];
+  
+  // Ottieni il blocco specifico (o il primo se non specificato)
+  const blocks = exercise ? getExerciseBlocks(exercise) : [];
+  const currentBlockIndex = blockIndex !== null && blockIndex !== undefined ? blockIndex : (blocks.length > 0 ? 0 : null);
+  const block = currentBlockIndex !== null ? blocks[currentBlockIndex] : null;
 
   const [tempLogSets, setTempLogSets] = useState<LoggedSet[]>([]);
 
   useEffect(() => {
-    if (open && exercise) {
+    if (open && exercise && block) {
       // Initialize temp log sets
       initializeTempSets();
     }
-  }, [open, exercise]);
+  }, [open, exercise, block]);
 
   const initializeTempSets = () => {
-    if (!exercise || exercise.exerciseType === 'cardio') return;
-    if (!exercise.sets || !exercise.technique) return;
+    if (!block || !block.sets || !block.technique) return;
 
     const sets: LoggedSet[] = [];
 
-    if (exercise.technique === 'Normale') {
+    if (block.technique === 'Normale') {
       // Normal technique: N sets
-      for (let setNum = 1; setNum <= exercise.sets; setNum++) {
+      for (let setNum = 1; setNum <= block.sets; setNum++) {
         sets.push({
-          reps: exercise.repsBase || '',
-          load: exercise.targetLoads?.[setNum - 1] || '80',
+          reps: block.repsBase || '',
+          load: block.targetLoads?.[setNum - 1] || '80',
           rpe: '',
           setNum,
           clusterNum: 1,
@@ -56,17 +63,23 @@ export function LogSessionModal({
       }
     } else {
       // Special technique: N sets × M clusters
-      const clusters = parseSchema(exercise.techniqueSchema || '');
+      const clusters = parseSchema(block.techniqueSchema || '');
       if (clusters.length === 0) {
         alert('Schema tecnica non valido!');
         return;
       }
 
-      for (let setNum = 1; setNum <= exercise.sets; setNum++) {
+      // Usa targetLoadsByCluster se disponibile, altrimenti fallback a targetLoads
+      const loadsByCluster = block.targetLoadsByCluster || 
+        (block.targetLoads?.map(load => Array(clusters.length).fill(load)) || 
+         Array(block.sets || 1).fill(Array(clusters.length).fill('80')));
+      
+      for (let setNum = 1; setNum <= block.sets; setNum++) {
+        const setLoads = loadsByCluster[setNum - 1] || Array(clusters.length).fill('80');
         for (let clusterNum = 1; clusterNum <= clusters.length; clusterNum++) {
           sets.push({
             reps: clusters[clusterNum - 1]?.toString() || '',
-            load: exercise.targetLoads?.[setNum - 1] || '80',
+            load: setLoads[clusterNum - 1] || '80',
             rpe: '',
             setNum,
             clusterNum,
@@ -88,18 +101,17 @@ export function LogSessionModal({
   };
 
   const handleAddSet = () => {
-    if (!exercise || exercise.exerciseType === 'cardio') return;
-    if (!exercise.technique) return;
+    if (!block || !block.technique) return;
 
     const lastSet = tempLogSets[tempLogSets.length - 1];
     const newSetNum = lastSet ? lastSet.setNum + 1 : 1;
     const lastLoad = lastSet?.load || '80';
 
-    if (exercise.technique === 'Normale') {
+    if (block.technique === 'Normale') {
       setTempLogSets([
         ...tempLogSets,
         {
-          reps: exercise.repsBase || '',
+          reps: block.repsBase || '',
           load: lastLoad,
           rpe: '',
           setNum: newSetNum,
@@ -107,7 +119,7 @@ export function LogSessionModal({
         },
       ]);
     } else {
-      const clusters = parseSchema(exercise.techniqueSchema || '');
+      const clusters = parseSchema(block.techniqueSchema || '');
       const newSets: LoggedSet[] = [];
       for (let clusterNum = 1; clusterNum <= clusters.length; clusterNum++) {
         newSets.push({
@@ -127,10 +139,12 @@ export function LogSessionModal({
   };
 
   const handleSave = () => {
-    if (!exercise || exercise.exerciseType === 'cardio') return;
-    if (!exercise.technique || !exercise.repRange || exercise.coefficient === undefined || exercise.targetRPE === undefined) return;
+    if (!exercise || !block) return;
+    // Per tecniche normali richiedi repRange, per tecniche speciali no
+    const isNormalTechnique = block.technique === 'Normale';
+    if (!block.technique || (isNormalTechnique && !block.repRange) || block.coefficient === undefined || block.targetRPE === undefined) return;
 
-    const targetReps = calculateTargetReps(exercise);
+    const targetReps = calculateBlockTargetReps(block);
     const metrics = calculateSessionMetrics(tempLogSets);
 
     const session: LoggedSession = {
@@ -139,24 +153,30 @@ export function LogSessionModal({
       date: new Date().toISOString().split('T')[0],
       weekNum: currentWeek,
       exercise: exercise.exerciseName,
-      technique: exercise.technique,
-      techniqueSchema: exercise.techniqueSchema || '',
-      repRange: exercise.repRange,
-      coefficient: exercise.coefficient,
-      targetLoads: exercise.targetLoads || [],
-      targetRPE: exercise.targetRPE,
+      blockIndex: currentBlockIndex !== null ? currentBlockIndex : 0,
+      technique: block.technique,
+      techniqueSchema: block.techniqueSchema || '',
+      repRange: isNormalTechnique ? (block.repRange || '8-12') : '8-12', // Solo per normali, altrimenti default (non usato)
+      coefficient: block.coefficient,
+      // Per tecniche speciali con targetLoadsByCluster, salva i carichi come stringhe separate da '/'
+      // Es: ["80/70/60", "70/60/50"] per set con carichi diversi per cluster
+      targetLoads: block.targetLoadsByCluster && block.targetLoadsByCluster.length > 0
+        ? block.targetLoadsByCluster.map(setLoads => setLoads.join('/'))
+        : (block.targetLoads || []),
+      targetRPE: block.targetRPE,
       sets: tempLogSets,
       totalReps: metrics.totalReps,
       targetReps,
       avgRPE: metrics.avgRPE,
       completion: targetReps > 0 ? (metrics.totalReps / targetReps) * 100 : 0,
+      blockRest: block.blockRest,
     };
 
     addLoggedSession(session);
     onOpenChange(false);
   };
 
-  if (!exercise) return null;
+  if (!exercise || !block) return null;
 
   const metrics = calculateSessionMetrics(tempLogSets);
 
@@ -173,8 +193,9 @@ export function LogSessionModal({
         <DialogHeader>
           <DialogTitle>Log Sessione</DialogTitle>
           <DialogDescription>
-            {exercise.exerciseName} - {exercise.technique}
-            {exercise.techniqueSchema && ` (${exercise.techniqueSchema})`}
+            {exercise.exerciseName} - Blocco {currentBlockIndex !== null ? currentBlockIndex + 1 : 1} - {block.technique}
+            {block.techniqueSchema && ` (${block.techniqueSchema})`}
+            {blocks.length > 1 && ` - ${blocks.length} blocchi totali`}
           </DialogDescription>
         </DialogHeader>
 
@@ -203,7 +224,7 @@ export function LogSessionModal({
 
                     return (
                       <div key={clusterIndex} className="flex gap-2 items-end">
-                        {exercise.technique !== 'Normale' && (
+                        {block.technique !== 'Normale' && (
                           <div className="text-sm font-medium text-muted-foreground w-20">
                             Cluster {set.clusterNum}
                           </div>

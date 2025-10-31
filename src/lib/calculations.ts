@@ -1,4 +1,4 @@
-import { ProgramExercise, Week, LoggedSession, VolumeData, Exercise } from '@/types';
+import { ProgramExercise, Week, LoggedSession, VolumeData, Exercise, ExerciseBlock } from '@/types';
 
 /**
  * Parse schema tecnica (es. "10+10+10" -> [10, 10, 10])
@@ -20,10 +20,35 @@ export function validateSchema(schema: string): boolean {
 }
 
 /**
- * Calcola target reps per un esercizio
+ * Calcola target reps per un blocco
+ */
+export function calculateBlockTargetReps(block: ExerciseBlock): number {
+  if (!block.sets || !block.repsBase) return 0;
+
+  if (block.technique !== 'Normale' && block.techniqueSchema) {
+    const clusters = parseSchema(block.techniqueSchema);
+    if (clusters.length > 0) {
+      const sumPerSet = clusters.reduce((a, b) => a + b, 0);
+      return sumPerSet * block.sets;
+    }
+  }
+
+  // Tecnica normale
+  const repsBase = parseInt(block.repsBase, 10);
+  if (isNaN(repsBase)) return 0;
+  return repsBase * block.sets;
+}
+
+/**
+ * Calcola target reps per un esercizio (legacy - usa il primo blocco)
  */
 export function calculateTargetReps(exercise: ProgramExercise): number {
   if (exercise.exerciseType === 'cardio') return 0;
+  const blocks = exercise.blocks || [];
+  if (blocks.length > 0) {
+    return calculateBlockTargetReps(blocks[0]);
+  }
+  // Fallback legacy
   if (!exercise.sets || !exercise.repsBase) return 0;
 
   if (exercise.technique !== 'Normale' && exercise.techniqueSchema) {
@@ -218,7 +243,9 @@ export function exportToCSV(data: {
   csv += '\n\nSESSIONI LOGGATE\n';
   csv += 'Data,Week,Esercizio,Tecnica,Rep Range,Reps,Target,Completamento,RPE\n';
   data.loggedSessions.forEach((s) => {
-    csv += `${s.date},${s.weekNum},"${s.exercise}","${s.technique}","${s.repRange}",${s.totalReps},${s.targetReps},${s.completion}%,${s.avgRPE}\n`;
+    // Rep Range solo per tecniche normali, altrimenti N/A
+    const repRange = s.technique === 'Normale' ? s.repRange : 'N/A';
+    csv += `${s.date},${s.weekNum},"${s.exercise}","${s.technique}","${repRange}",${s.totalReps},${s.targetReps},${s.completion}%,${s.avgRPE}\n`;
   });
 
   csv += '\n\nMACROS\n';

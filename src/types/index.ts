@@ -87,17 +87,15 @@ export interface Exercise {
   cardioEquipment?: CardioEquipment; // Solo per cardio
 }
 
-// Program (Scheda)
-export interface ProgramExercise {
-  exerciseName: string;
-  exerciseType: ExerciseType; // 'resistance' o 'cardio'
-
+// Blocco di metodologia all'interno di un esercizio
+export interface ExerciseBlock {
   // Per resistance
-  rest?: number;
+  rest?: number; // Rest intra-set (secondi)
   sets?: number;
   repsBase?: string;
   repRange?: RepRangeKey;
-  targetLoads?: string[]; // Array di carichi, uno per ogni set
+  targetLoads?: string[]; // Array di carichi, uno per ogni set (per tecniche normali o come fallback)
+  targetLoadsByCluster?: string[][]; // Array di array: per ogni set, array di carichi per ogni cluster/mini-set (per tecniche speciali)
   targetRPE?: number; // RPE pianificato a priori (5-10)
   technique?: Technique;
   techniqueSchema?: string;
@@ -107,7 +105,41 @@ export interface ProgramExercise {
   // Per cardio
   duration?: number; // Minuti
 
+  blockRest?: number; // Rest dopo questo blocco (secondi) - null se è l'ultimo blocco
+}
+
+// Program (Scheda)
+export interface ProgramExercise {
+  exerciseName: string;
+  exerciseType: ExerciseType; // 'resistance' o 'cardio'
+  
+  blocks: ExerciseBlock[]; // Array di blocchi di metodologie
+  
   notes: string;
+  
+  // Campi legacy per retrocompatibilità (deprecati)
+  /** @deprecated Usa blocks[0].rest */
+  rest?: number;
+  /** @deprecated Usa blocks[0].sets */
+  sets?: number;
+  /** @deprecated Usa blocks[0].repsBase */
+  repsBase?: string;
+  /** @deprecated Usa blocks[0].repRange */
+  repRange?: RepRangeKey;
+  /** @deprecated Usa blocks[0].targetLoads */
+  targetLoads?: string[];
+  /** @deprecated Usa blocks[0].targetRPE */
+  targetRPE?: number;
+  /** @deprecated Usa blocks[0].technique */
+  technique?: Technique;
+  /** @deprecated Usa blocks[0].techniqueSchema */
+  techniqueSchema?: string;
+  /** @deprecated Usa blocks[0].techniqueParams */
+  techniqueParams?: Record<string, any>;
+  /** @deprecated Usa blocks[0].coefficient */
+  coefficient?: number;
+  /** @deprecated Usa blocks[0].duration */
+  duration?: number;
 }
 
 export interface Day {
@@ -144,17 +176,23 @@ export interface LoggedSession {
   date: string;
   weekNum: number;
   exercise: string;
+  
+  // Dati del blocco loggato
+  blockIndex: number; // Indice del blocco nell'esercizio (0, 1, 2...)
   technique: Technique;
   techniqueSchema: string;
   repRange: RepRangeKey;
   coefficient: number;
   targetLoads: string[]; // Array di carichi pianificati dalla scheda
   targetRPE: number; // RPE pianificato dalla scheda
+  
   sets: LoggedSet[];
   totalReps: number;
   targetReps: number;
   avgRPE: number; // RPE effettivo (media dei set)
   completion: number;
+  
+  blockRest?: number; // Rest dopo questo blocco (null se è l'ultimo blocco)
 }
 
 // Macros

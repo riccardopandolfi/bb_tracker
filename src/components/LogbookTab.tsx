@@ -33,7 +33,8 @@ export function LogbookTab() {
     if (session.programId !== currentProgramId) return false;
     // Then apply user filters
     if (filters.exercise && session.exercise !== filters.exercise) return false;
-    if (filters.repRange && session.repRange !== filters.repRange) return false;
+    // Rep Range solo per tecniche normali
+    if (filters.repRange && session.technique === 'Normale' && session.repRange !== filters.repRange) return false;
     if (filters.technique && session.technique !== filters.technique) return false;
     if (filters.dateFrom && session.date < filters.dateFrom) return false;
     if (filters.dateTo && session.date > filters.dateTo) return false;
