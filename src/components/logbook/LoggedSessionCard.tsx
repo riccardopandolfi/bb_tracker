@@ -8,6 +8,7 @@ import { ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { getExerciseBlocks } from '@/lib/exerciseUtils';
+import { calculateBlockTargetReps } from '@/lib/calculations';
 
 interface LoggedSessionCardProps {
   session: LoggedSession;
@@ -34,7 +35,7 @@ export function LoggedSessionCard({
   // Funzione per ottenere il blocco originale dalla scheda di allenamento
   const getOriginalBlock = (blockSession: LoggedSession) => {
     if (!week) return null;
-    
+
     // Cerca l'esercizio nel programma
     for (const day of week.days) {
       const exercise = day.exercises.find(e => e.exerciseName === blockSession.exercise);
@@ -46,7 +47,24 @@ export function LoggedSessionCard({
     }
     return null;
   };
-  
+
+  // Funzione per ottenere il targetReps corretto (ricalcola se è 0)
+  const getTargetReps = (blockSession: LoggedSession): number => {
+    // Se targetReps è già impostato e > 0, usalo
+    if (blockSession.targetReps && blockSession.targetReps > 0) {
+      return blockSession.targetReps;
+    }
+
+    // Altrimenti, ricalcola dal blocco originale
+    const originalBlock = getOriginalBlock(blockSession);
+    if (originalBlock) {
+      return calculateBlockTargetReps(originalBlock);
+    }
+
+    // Fallback: usa il valore salvato anche se è 0
+    return blockSession.targetReps || 0;
+  };
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -248,11 +266,6 @@ export function LoggedSessionCard({
   // Group sets by setNum for techniques
   const uniqueSets = Array.from(new Set(session.sets.map(s => s.setNum)));
   const isSpecialTechnique = session.technique !== 'Normale';
-  
-  // Calcola RPE medio per tutti i blocchi se raggruppati
-  const avgRPE = hasMultipleBlocks
-    ? groupedSessions.reduce((sum, s) => sum + s.avgRPE, 0) / groupedSessions.length
-    : session.avgRPE;
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
@@ -285,10 +298,10 @@ export function LoggedSessionCard({
                     const blockUniqueSets = Array.from(new Set(blockSession.sets.map(s => s.setNum)));
                     const blockIsSpecial = blockSession.technique !== 'Normale';
                     const numSets = blockUniqueSets.length;
-                    
+
                     // Calcola reps target per set (per tecnica normale)
-                    const targetRepsPerSet = blockSession.technique === 'Normale' 
-                      ? blockSession.targetReps / numSets 
+                    const targetRepsPerSet = blockSession.technique === 'Normale'
+                      ? getTargetReps(blockSession) / numSets
                       : 0;
                     
                     // Carichi pianificati
@@ -425,7 +438,7 @@ export function LoggedSessionCard({
                               const actualRepsStr = setData.reps;
                               
                               return (
-                                <div key={setIdx} className="flex items-center gap-2 text-xs bg-gray-50 p-2 rounded-md">
+                                <div key={setIdx} className="flex items-center gap-2 text-xs p-2">
                                   <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 text-xs font-medium min-w-[3rem] text-center">
                                     S{setDisplay}
                                   </span>
@@ -482,7 +495,12 @@ export function LoggedSessionCard({
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 text-xs">
+                        <div className="flex items-center gap-2 text-xs p-2">
+                          {!blockIsSpecial && (
+                            <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 text-xs font-medium min-w-[3rem] text-center">
+                              S
+                            </span>
+                          )}
                           <div className="flex items-center gap-1">
                             <span className="text-gray-600">Programma:</span>
                             <span className="font-medium text-gray-900">
@@ -509,53 +527,102 @@ export function LoggedSessionCard({
                 </div>
               ) : (
                 <div className="space-y-2 mb-3">
-                  <div className="flex flex-wrap items-center gap-2 text-sm">
-                    <span className="text-muted-foreground font-medium">
-                      {session.technique}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 text-xs p-2 rounded-md bg-muted/30">
-                    <div className="flex items-center gap-1">
-                      <span className="text-muted-foreground">Programma:</span>
-                      <span className="font-medium">
-                        {uniqueSets.length}×{isSpecialTechnique ? session.techniqueSchema || '' : (session.targetReps / uniqueSets.length).toFixed(0)}
-                        {session.targetLoads && session.targetLoads.length > 0 && 
-                          ` @ ${session.targetLoads.join('-')}kg`
-                        }
-                      </span>
-                    </div>
-                    <span className="text-muted-foreground">→</span>
-                    <div className="flex items-center gap-1">
-                      <span className="text-muted-foreground">Eseguito:</span>
-                      <span className="font-medium">
-                        {uniqueSets.map((setNum, i) => {
+                  {isSpecialTechnique ? (
+                    // Tecnica speciale: mostra set individuali
+                    <div className="border border-gray-200 rounded-md p-3 bg-white">
+                      <div className="flex items-center gap-2 text-xs mb-2 pb-2 border-b border-gray-100">
+                        <span className={`px-2 py-0.5 ${getTechniqueColor(session.technique)} rounded text-xs font-medium`}>
+                          {session.technique}
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        {uniqueSets.map((setNum) => {
                           const setData = session.sets.filter(s => s.setNum === setNum);
-                          const repsDisplay = isSpecialTechnique
-                            ? setData.map(s => s.reps || '0').join('+')
-                            : setData[0]?.reps || '0';
+                          const repsDisplay = setData.map(s => s.reps || '0').join('+');
                           const loadValue = parseFloat(setData[0]?.load || '0').toFixed(0);
+                          const targetLoadStr = session.targetLoads && session.targetLoads[setNum - 1]
+                            ? session.targetLoads[setNum - 1]
+                            : '-';
+
                           return (
-                            <span key={setNum}>
-                              {repsDisplay}@{loadValue}kg
-                              {i < uniqueSets.length - 1 && ' • '}
-                            </span>
+                            <div key={setNum} className="flex items-center gap-2 text-xs p-2">
+                              <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 text-xs font-medium min-w-[3rem] text-center">
+                                S{setNum}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <span className="text-gray-600">Programma:</span>
+                                <span className="font-medium text-gray-900">
+                                  {session.techniqueSchema}
+                                  {targetLoadStr !== '-' && ` @ ${targetLoadStr}kg`}
+                                </span>
+                              </div>
+                              <span className="text-gray-400">→</span>
+                              <div className="flex items-center gap-1">
+                                <span className="text-gray-600">Eseguito:</span>
+                                <span className="font-semibold text-gray-900">
+                                  {repsDisplay} @ {loadValue}kg
+                                </span>
+                              </div>
+                            </div>
                           );
                         })}
+                      </div>
+                    </div>
+                  ) : (
+                    // Tecnica normale: visualizzazione compatta
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="text-muted-foreground font-medium">
+                        {session.technique}
                       </span>
                     </div>
-                  </div>
+                  )}
+
+                  {!isSpecialTechnique && (
+                    <div className="flex items-center gap-3 text-xs p-2">
+                      <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 text-xs font-medium min-w-[3rem] text-center">
+                        S
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-muted-foreground">Programma:</span>
+                        <span className="font-medium">
+                          {uniqueSets.length}×{(getTargetReps(session) / uniqueSets.length).toFixed(0)}
+                          {session.targetLoads && session.targetLoads.length > 0 &&
+                            ` @ ${session.targetLoads.join('-')}kg`
+                          }
+                        </span>
+                      </div>
+                      <span className="text-muted-foreground">→</span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-muted-foreground">Eseguito:</span>
+                        <span className="font-medium">
+                          {uniqueSets.map((setNum, i) => {
+                            const setData = session.sets.filter(s => s.setNum === setNum);
+                            const repsDisplay = setData[0]?.reps || '0';
+                            const loadValue = parseFloat(setData[0]?.load || '0').toFixed(0);
+                            return (
+                              <span key={setNum}>
+                                {repsDisplay}@{loadValue}kg
+                                {i < uniqueSets.length - 1 && ' • '}
+                              </span>
+                            );
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
-              <div className="flex items-center gap-3 text-sm">
-                <span className="text-muted-foreground">
-                  RPE {hasMultipleBlocks ? 'Medio' : 'Reale'}:{' '}
-                  <span className="font-semibold text-gray-900">
-                    {avgRPE?.toFixed(1)}
+              {!hasMultipleBlocks && (
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-muted-foreground">
+                    RPE Reale:{' '}
+                    <span className="font-semibold text-gray-900">
+                      {session.avgRPE?.toFixed(1)}
+                    </span>
                   </span>
-                </span>
-              </div>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-1">
@@ -611,7 +678,7 @@ export function LoggedSessionCard({
                         <div>
                           <div className="text-xs text-muted-foreground">Reps Totali</div>
                           <div className="font-medium">
-                            {blockSession.totalReps} / {blockSession.targetReps}
+                            {blockSession.totalReps} / {getTargetReps(blockSession)}
                           </div>
                         </div>
                         <div>
@@ -647,7 +714,7 @@ export function LoggedSessionCard({
                               {blockSession.sets.map((set, idx) => {
                                 const targetReps = blockIsSpecial
                                   ? parseFloat(set.reps || '0')
-                                  : blockSession.targetReps / blockUniqueSets.length;
+                                  : getTargetReps(blockSession) / blockUniqueSets.length;
                                 const actualReps = parseFloat(set.reps || '0');
                                 const rpeValue = parseFloat(set.rpe || '0');
                                 const isComplete = actualReps >= targetReps * 0.9;
@@ -655,11 +722,11 @@ export function LoggedSessionCard({
                                 return (
                                   <TableRow key={idx} className={isComplete ? '' : 'bg-red-50'}>
                                     <TableCell className="text-sm font-medium">
-                                      {set.setNum}
+                                      S{set.setNum}
                                     </TableCell>
                                     {blockIsSpecial && (
                                       <TableCell className="text-sm text-muted-foreground">
-                                        {set.clusterNum}
+                                        C{set.clusterNum}
                                       </TableCell>
                                     )}
                                     <TableCell className="text-sm">
@@ -707,7 +774,7 @@ export function LoggedSessionCard({
                     <div>
                       <div className="text-xs text-muted-foreground">Reps Totali</div>
                       <div className="font-medium">
-                        {session.totalReps} / {session.targetReps}
+                        {session.totalReps} / {getTargetReps(session)}
                       </div>
                     </div>
                     <div>
@@ -743,7 +810,7 @@ export function LoggedSessionCard({
                           {session.sets.map((set, idx) => {
                             const targetReps = isSpecialTechnique
                               ? parseFloat(set.reps || '0')
-                              : session.targetReps / uniqueSets.length;
+                              : getTargetReps(session) / uniqueSets.length;
                             const actualReps = parseFloat(set.reps || '0');
                             const rpeValue = parseFloat(set.rpe || '0');
                             const isComplete = actualReps >= targetReps * 0.9;
@@ -751,11 +818,11 @@ export function LoggedSessionCard({
                             return (
                               <TableRow key={idx} className={isComplete ? '' : 'bg-red-50'}>
                                 <TableCell className="text-sm font-medium">
-                                  {set.setNum}
+                                  S{set.setNum}
                                 </TableCell>
                                 {isSpecialTechnique && (
                                   <TableCell className="text-sm text-muted-foreground">
-                                    {set.clusterNum}
+                                    C{set.clusterNum}
                                   </TableCell>
                                 )}
                                 <TableCell className="text-sm">
@@ -807,8 +874,8 @@ export function LoggedSessionCard({
               {groupedSessions.map((blockSession, idx) => {
                 const blockUniqueSets = Array.from(new Set(blockSession.sets.map(s => s.setNum)));
                 const blockIsSpecial = blockSession.technique !== 'Normale';
-                const targetRepsPerSet = blockSession.technique === 'Normale' 
-                  ? blockSession.targetReps / blockUniqueSets.length 
+                const targetRepsPerSet = blockSession.technique === 'Normale'
+                  ? getTargetReps(blockSession) / blockUniqueSets.length
                   : 0;
                 const targetLoadsStr = blockSession.targetLoads && blockSession.targetLoads.length > 0
                   ? blockSession.targetLoads.join('-')

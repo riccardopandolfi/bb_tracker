@@ -519,8 +519,8 @@ export function ExerciseCard({
                                 const loadsDisplay = `${setLoads.join('-')}kg`;
                                 
                                 return (
-                                  <div key={setIdx} className="flex items-center gap-2 text-sm">
-                                    <span className="px-1.5 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded min-w-[2.5rem] text-center">
+                                  <div key={setIdx} className="flex items-center gap-2 text-sm p-2">
+                                    <span className="px-1.5 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded min-w-[3rem] text-center">
                                       S{setIdx + 1}
                                     </span>
                                     <span className="text-gray-600">
@@ -540,7 +540,10 @@ export function ExerciseCard({
                             </div>
                           ) : (
                             /* Blocco normale o tecnica speciale semplice */
-                            <div className="flex items-center gap-2 flex-wrap text-sm">
+                            <div className="flex items-center gap-2 flex-wrap text-sm p-2">
+                              <span className="px-1.5 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded min-w-[3rem] text-center">
+                                S
+                              </span>
                               <span className="font-medium text-gray-700">
                                 {isNormal ? (
                                   <>{sets}×{block.repsBase || 0}</>

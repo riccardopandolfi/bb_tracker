@@ -206,7 +206,11 @@ export function LogSessionModal({
             return (
               <Card key={setNum} className="p-4">
                 <div className="flex justify-between items-center mb-3">
-                  <h4 className="font-bold">Set {setNum}</h4>
+                  <h4 className="font-bold flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-sm font-medium">
+                      S{setNum}
+                    </span>
+                  </h4>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -223,10 +227,10 @@ export function LogSessionModal({
                     );
 
                     return (
-                      <div key={clusterIndex} className="flex gap-2 items-end">
+                      <div key={clusterIndex} className="flex gap-2 items-end bg-gray-50 p-2 rounded-md">
                         {block.technique !== 'Normale' && (
-                          <div className="text-sm font-medium text-muted-foreground w-20">
-                            Cluster {set.clusterNum}
+                          <div className="text-sm font-medium text-gray-600 w-16">
+                            C{set.clusterNum}
                           </div>
                         )}
                         <div className="flex-1 grid grid-cols-3 gap-2">

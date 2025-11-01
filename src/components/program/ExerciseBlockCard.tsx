@@ -405,7 +405,7 @@ export function ExerciseBlockCard({
         <CardContent className="space-y-4 pt-4">
           {/* Tecnica */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700">Tecnica di Allenamento</Label>
+            <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-block">Tecnica di Allenamento</Label>
             <Select
               key={`technique-select-${blockIndex}-${block.technique || 'Normale'}`}
               value={block.technique || 'Normale'}
@@ -439,7 +439,7 @@ export function ExerciseBlockCard({
 
           {/* Volume: Sets & Reps */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium text-gray-700">Volume</Label>
+            <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-block">Volume</Label>
             {isNormalTechnique ? (
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -504,9 +504,9 @@ export function ExerciseBlockCard({
 
           {/* Carichi */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+            <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-flex items-center gap-2">
               <Dumbbell className="w-3.5 h-3.5" />
-              Carichi per Set (kg)
+              Carichi per Set
             </Label>
             <div className="flex gap-2 items-center">
               <div className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm font-mono text-gray-700">
@@ -533,7 +533,7 @@ export function ExerciseBlockCard({
 
           {/* Intensità */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium text-gray-700">Intensità</Label>
+            <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-block">Intensità</Label>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs text-gray-600 mb-1.5 block">Coefficiente</Label>
@@ -562,7 +562,7 @@ export function ExerciseBlockCard({
 
           {/* Rest */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+            <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-flex items-center gap-2">
               <Clock className="w-3.5 h-3.5" />
               Tempi di Recupero
             </Label>
@@ -599,7 +599,7 @@ export function ExerciseBlockCard({
 
           {/* Note */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+            <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-flex items-center gap-2">
               <FileText className="w-3.5 h-3.5" />
               Note
             </Label>

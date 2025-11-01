@@ -7,7 +7,8 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card } from '../ui/card';
 import { Plus, Trash2, CheckCircle } from 'lucide-react';
-import { calculateSessionMetrics } from '@/lib/calculations';
+import { calculateSessionMetrics, calculateBlockTargetReps } from '@/lib/calculations';
+import { getExerciseBlocks } from '@/lib/exerciseUtils';
 
 interface EditSessionModalProps {
   open: boolean;
@@ -20,7 +21,7 @@ export function EditSessionModal({
   onOpenChange,
   session,
 }: EditSessionModalProps) {
-  const { updateLoggedSession } = useApp();
+  const { updateLoggedSession, getCurrentWeeks } = useApp();
   const [tempLogSets, setTempLogSets] = useState<LoggedSet[]>([]);
 
   useEffect(() => {
@@ -79,12 +80,33 @@ export function EditSessionModal({
   const handleSave = () => {
     const metrics = calculateSessionMetrics(tempLogSets);
 
+    // Ricalcola targetReps se è 0 (per sessioni vecchie)
+    let targetReps = session.targetReps;
+    if (!targetReps || targetReps === 0) {
+      const weeks = getCurrentWeeks();
+      const week = weeks[session.weekNum];
+      if (week) {
+        for (const day of week.days) {
+          const exercise = day.exercises.find(e => e.exerciseName === session.exercise);
+          if (exercise) {
+            const blocks = getExerciseBlocks(exercise);
+            const block = blocks[session.blockIndex];
+            if (block) {
+              targetReps = calculateBlockTargetReps(block);
+              break;
+            }
+          }
+        }
+      }
+    }
+
     const updatedSession: LoggedSession = {
       ...session,
       sets: tempLogSets,
       totalReps: metrics.totalReps,
       avgRPE: metrics.avgRPE,
-      completion: session.targetReps > 0 ? (metrics.totalReps / session.targetReps) * 100 : 0,
+      targetReps,
+      completion: targetReps > 0 ? (metrics.totalReps / targetReps) * 100 : 0,
     };
 
     updateLoggedSession(updatedSession);
@@ -118,7 +140,11 @@ export function EditSessionModal({
             return (
               <Card key={setNum} className="p-4">
                 <div className="flex justify-between items-center mb-3">
-                  <h4 className="font-bold">Set {setNum}</h4>
+                  <h4 className="font-bold flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-sm font-medium">
+                      S{setNum}
+                    </span>
+                  </h4>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -135,10 +161,10 @@ export function EditSessionModal({
                     );
 
                     return (
-                      <div key={clusterIndex} className="flex gap-2 items-end">
+                      <div key={clusterIndex} className="flex gap-2 items-end bg-gray-50 p-2 rounded-md">
                         {session.technique !== 'Normale' && (
-                          <div className="text-sm font-medium text-muted-foreground w-20">
-                            Cluster {set.clusterNum}
+                          <div className="text-sm font-medium text-gray-600 w-16">
+                            C{set.clusterNum}
                           </div>
                         )}
                         <div className="flex-1 grid grid-cols-3 gap-2">

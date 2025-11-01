@@ -1,4 +1,5 @@
 import { ProgramExercise, Week, LoggedSession, VolumeData, Exercise, ExerciseBlock } from '@/types';
+import { getExerciseBlocks } from './exerciseUtils';
 
 /**
  * Parse schema tecnica (es. "10+10+10" -> [10, 10, 10])
@@ -23,7 +24,7 @@ export function validateSchema(schema: string): boolean {
  * Calcola target reps per un blocco
  */
 export function calculateBlockTargetReps(block: ExerciseBlock): number {
-  if (!block.sets || !block.repsBase) return 0;
+  if (!block.sets) return 0;
 
   if (block.technique !== 'Normale' && block.techniqueSchema) {
     const clusters = parseSchema(block.techniqueSchema);
@@ -33,7 +34,8 @@ export function calculateBlockTargetReps(block: ExerciseBlock): number {
     }
   }
 
-  // Tecnica normale
+  // Tecnica normale - richiede repsBase
+  if (!block.repsBase) return 0;
   const repsBase = parseInt(block.repsBase, 10);
   if (isNaN(repsBase)) return 0;
   return repsBase * block.sets;
@@ -92,7 +94,7 @@ export function calculateVolume(
   }
 
   let totalVolume = 0;
-  const byMuscle: Record<string, { volume: number; estimatedRPE: number }> = {};
+  const byMuscleTemp: Record<string, { volume: number; rpeSum: number }> = {};
   let totalEstimatedRPE = 0;
   let exerciseCount = 0;
 
@@ -100,27 +102,48 @@ export function calculateVolume(
     day.exercises.forEach((ex) => {
       // Skip cardio exercises
       if (ex.exerciseType === 'cardio') return;
-      if (!ex.sets || ex.coefficient === undefined) return;
+      
+      // Ottieni i blocchi dell'esercizio (con migrazione automatica)
+      const blocks = getExerciseBlocks(ex);
+      
+      // Itera attraverso tutti i blocchi
+      blocks.forEach((block) => {
+        // Skip se il blocco non ha sets o coefficient
+        if (!block.sets || block.coefficient === undefined) return;
 
-      const volume = ex.sets * ex.coefficient;
-      totalVolume += volume;
-      totalEstimatedRPE += getEstimatedRPE(ex.coefficient);
-      exerciseCount++;
+        const volume = block.sets * block.coefficient;
+        const estimatedRPE = getEstimatedRPE(block.coefficient);
+        totalVolume += volume;
+        totalEstimatedRPE += estimatedRPE;
+        exerciseCount++;
 
-      // Trova l'esercizio nella libreria
-      const libraryExercise = exercises.find((e) => e.name === ex.exerciseName);
-      const coefficient = ex.coefficient; // Already checked above
-      if (libraryExercise && libraryExercise.muscles && coefficient !== undefined) {
-        libraryExercise.muscles.forEach((m) => {
-          const muscleVolume = (volume * m.percent) / 100;
-          if (!byMuscle[m.muscle]) {
-            byMuscle[m.muscle] = { volume: 0, estimatedRPE: 0 };
-          }
-          byMuscle[m.muscle].volume += muscleVolume;
-          byMuscle[m.muscle].estimatedRPE = getEstimatedRPE(coefficient);
-        });
-      }
+        // Trova l'esercizio nella libreria
+        const libraryExercise = exercises.find((e) => e.name === ex.exerciseName);
+        const coefficient = block.coefficient; // Already checked above
+        if (libraryExercise && libraryExercise.muscles && coefficient !== undefined) {
+          libraryExercise.muscles.forEach((m) => {
+            const muscleVolume = (volume * m.percent) / 100;
+            if (!byMuscleTemp[m.muscle]) {
+              byMuscleTemp[m.muscle] = { volume: 0, rpeSum: 0 };
+            }
+            byMuscleTemp[m.muscle].volume += muscleVolume;
+            // Accumula l'RPE pesato per calcolare la media pesata alla fine
+            byMuscleTemp[m.muscle].rpeSum += estimatedRPE * muscleVolume;
+          });
+        }
+      });
     });
+  });
+
+  // Calcola la media pesata dell'RPE per ogni muscolo e costruisci l'oggetto finale
+  const byMuscle: Record<string, { volume: number; estimatedRPE: number }> = {};
+  Object.keys(byMuscleTemp).forEach((muscle) => {
+    byMuscle[muscle] = {
+      volume: byMuscleTemp[muscle].volume,
+      estimatedRPE: byMuscleTemp[muscle].volume > 0 
+        ? byMuscleTemp[muscle].rpeSum / byMuscleTemp[muscle].volume 
+        : 0,
+    };
   });
 
   return {

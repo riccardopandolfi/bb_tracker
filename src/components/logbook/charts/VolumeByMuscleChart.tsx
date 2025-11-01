@@ -5,6 +5,7 @@ import { Label } from '../../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { calculateVolume } from '@/lib/calculations';
+import { MUSCLE_COLORS } from '@/lib/constants';
 
 export function VolumeByMuscleChart() {
   const { getCurrentWeeks, exercises, currentWeek } = useApp();
@@ -16,6 +17,7 @@ export function VolumeByMuscleChart() {
     .map(Number)
     .sort((a, b) => a - b);
 
+  // Calculate volume on every render to ensure updates
   const volumeData = calculateVolume(weeks[selectedWeek], exercises);
 
   const muscleData = Object.entries(volumeData.byMuscle)
@@ -28,13 +30,10 @@ export function VolumeByMuscleChart() {
 
   const uniqueMuscles = Object.keys(volumeData.byMuscle);
 
-  const COLORS = [
-    'hsl(262.1 83.3% 57.8%)',
-    'hsl(221.2 83.2% 53.3%)',
-    'hsl(142.1 76.2% 36.3%)',
-    'hsl(24.6 95% 53.1%)',
-    'hsl(346.8 77.2% 49.8%)',
-  ];
+  // Helper function to get muscle color
+  const getMuscleColor = (muscleName: string): string => {
+    return MUSCLE_COLORS[muscleName] || '#6b7280'; // gray-500 as fallback
+  };
 
   return (
     <Card>
@@ -84,8 +83,8 @@ export function VolumeByMuscleChart() {
               <YAxis dataKey="name" type="category" width={150} />
               <Tooltip />
               <Bar dataKey="volume" radius={[0, 8, 8, 0]}>
-                {muscleData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                {muscleData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={getMuscleColor(entry.name)} />
                 ))}
               </Bar>
             </BarChart>
