@@ -106,6 +106,7 @@ export interface ExerciseBlock {
   duration?: number; // Minuti
 
   blockRest?: number; // Rest dopo questo blocco (secondi) - null se è l'ultimo blocco
+  notes?: string; // Note personalizzate per il blocco
 }
 
 // Program (Scheda)

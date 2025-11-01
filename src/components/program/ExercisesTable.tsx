@@ -347,7 +347,7 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
       ) : (
         <div className="space-y-4">
           {/* Grid of Exercise Cards */}
-          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+          <div className="grid gap-4 grid-cols-1">
             {day.exercises.map((ex, exIndex) => (
               <ExerciseCard
                 key={exIndex}

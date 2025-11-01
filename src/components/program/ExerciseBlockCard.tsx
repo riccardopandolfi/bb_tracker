@@ -4,6 +4,7 @@ import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Trash2 } from 'lucide-react';
 import { TechniqueParamsForm } from './TechniqueParamsForm';
@@ -316,6 +317,18 @@ export function ExerciseBlockCard({
                 />
               </div>
             )}
+
+            {/* Note */}
+            <div>
+              <Label className="text-xs">Note</Label>
+              <Textarea
+                value={block.notes || ''}
+                onChange={(e) => onUpdate(blockIndex, 'notes', e.target.value)}
+                placeholder="Aggiungi note per questo blocco..."
+                className="min-h-[60px] text-sm"
+                rows={3}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -641,9 +654,16 @@ export function ExerciseBlockCard({
             </div>
           </div>
 
-          {/* Recupero intra-set */}
+          {/* Rest globale: sempre presente (riposo tra i set completi) */}
           <div>
-            <Label className="text-xs">Recupero intra-set (secondi)</Label>
+            <Label className="text-xs">
+              Rest globale (secondi) - riposo tra i set
+              {!isNormalTechnique && (
+                <span className="text-muted-foreground ml-1 text-xs">
+                  (tra i set completi, es. tra i 2 set da 10+10+10)
+                </span>
+              )}
+            </Label>
             <Input
               type="number"
               value={block.rest || 0}
@@ -665,6 +685,18 @@ export function ExerciseBlockCard({
               />
             </div>
           )}
+
+          {/* Note */}
+          <div>
+            <Label className="text-xs">Note</Label>
+            <Textarea
+              value={block.notes || ''}
+              onChange={(e) => onUpdate(blockIndex, 'notes', e.target.value)}
+              placeholder="Aggiungi note per questo blocco..."
+              className="min-h-[60px] text-sm"
+              rows={3}
+            />
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -129,6 +129,9 @@ export function ExerciseCard({
                       </span>
                       <span>{duration}min</span>
                       {restDisplay && <span className="text-xs italic">{restDisplay}</span>}
+                      {block.notes && (
+                        <span className="text-xs text-muted-foreground italic ml-1">• {block.notes}</span>
+                      )}
                       {idx < blocks.length - 1 && <span className="text-muted-foreground/50 ml-1">•</span>}
                     </span>
                   );
@@ -265,111 +268,149 @@ export function ExerciseCard({
                 )}
                 <span className="text-sm text-muted-foreground">#{exerciseIndex + 1}</span>
               </div>
-              <h3 className="text-lg font-semibold mb-1">{exercise.exerciseName}</h3>
-              <div className="flex flex-wrap items-start gap-x-3 gap-y-1 text-sm text-muted-foreground">
+              <h3 className="text-lg font-semibold mb-3">{exercise.exerciseName}</h3>
+              
+              {/* Blocchi organizzati verticalmente */}
+              <div className="space-y-2">
                 {blocks.map((block, idx) => {
                   const isNormal = block.technique === 'Normale';
                   const sets = block.sets || 0;
-                  const restIntraSet = block.rest ? `rest: ${block.rest}s` : '';
-                  const restBetweenBlocks = idx < blocks.length - 1 && block.blockRest ? `rest blocco: ${block.blockRest}s` : '';
+                  // Rest globale: sempre block.rest (riposo tra i set completi)
+                  // Rest intra-set: per tecniche speciali, da techniqueParams.pause (pausa tra mini-set/cluster)
+                  const restGlobal = block.rest ? `${block.rest}s` : null;
+                  const restIntraSet = !isNormal && block.techniqueParams?.pause 
+                    ? `${block.techniqueParams.pause}s` 
+                    : null;
+                  const restBetweenBlocks = idx < blocks.length - 1 && block.blockRest ? `${block.blockRest}s` : null;
                   
-                  // Controlla se ci sono carichi diversi per cluster che richiedono visualizzazione espansa
+                  // Controlla se ci sono carichi diversi per cluster
                   const hasDifferentLoadsByCluster = !isNormal && 
                     block.targetLoadsByCluster && 
                     block.targetLoadsByCluster.length > 0;
                   
-                  // Per tecniche speciali con targetLoadsByCluster, mostra sempre una riga per set
-                  // con tutti i carichi del set (es. @ 80-70-60 se diversi, @ 80 se tutti uguali)
-                  if (hasDifferentLoadsByCluster) {
-                    const numSets = block.sets || block.targetLoadsByCluster!.length;
-                    
-                    return (
-                      <div key={idx} className="flex flex-col gap-0.5 w-full">
-                        {block.targetLoadsByCluster!.map((setLoads, setIdx) => {
-                          const isLastSet = setIdx === block.targetLoadsByCluster!.length - 1;
-                          
-                          // Formato carichi: tutti i carichi del set separati da '-'
-                          const loadsDisplay = `${setLoads.join('-')}kg`;
-                          
-                          return (
-                            <div key={setIdx} className="inline-flex items-center gap-1">
-                              <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-xs font-medium">
-                                B{idx + 1}.{setIdx + 1}
+                  return (
+                    <div key={idx}>
+                      <div 
+                        className="border-l-2 border-blue-200 pl-3 py-1.5 bg-blue-50/30 rounded-r-sm"
+                      >
+                        {/* Header blocco */}
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="px-2 py-0.5 rounded bg-blue-600 text-white text-xs font-semibold">
+                            B{idx + 1}
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-medium">
+                            {block.technique || 'Normale'}
+                          </span>
+                        </div>
+                      
+                      {/* Contenuto blocco */}
+                      <div className="space-y-1">
+                        {/* Tecnica speciale con sottoblocchi */}
+                        {hasDifferentLoadsByCluster ? (
+                          <div className="space-y-1.5 ml-1">
+                            {block.targetLoadsByCluster!.map((setLoads, setIdx) => {
+                              const loadsDisplay = `${setLoads.join('-')}kg`;
+                              
+                              return (
+                                <div key={setIdx} className="flex items-center gap-2 text-sm">
+                                  <span className="px-1.5 py-0.5 rounded bg-blue-200 text-blue-800 text-xs font-semibold min-w-[2.5rem] text-center">
+                                    S{setIdx + 1}
+                                  </span>
+                                  <span className="text-sm text-muted-foreground font-medium">
+                                    {block.techniqueSchema || ''}
+                                  </span>
+                                  <span className="text-sm font-semibold text-foreground">
+                                    @ {loadsDisplay}
+                                  </span>
+                                  {restIntraSet && (
+                                    <span className="text-sm text-muted-foreground ml-2">
+                                      • rest intra: {restIntraSet}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          /* Blocco normale o tecnica speciale semplice */
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap text-sm">
+                              <span className="text-muted-foreground">
+                                {isNormal ? (
+                                  <>{sets}×{block.repsBase || 0}</>
+                                ) : (
+                                  <>{sets}×{block.techniqueSchema || '-'}</>
+                                )}
                               </span>
-                              <span>{numSets}×{block.techniqueSchema || ''}</span>
-                              <span className="font-medium">@ {loadsDisplay}</span>
-                              {isLastSet && restIntraSet && (
-                                <span className="text-xs italic">({restIntraSet})</span>
+                              <span className="font-semibold text-foreground">
+                                @ {(() => {
+                                  let loads = '0';
+                                  if (isNormal) {
+                                    const loadsArray = block.targetLoads || [];
+                                    loads = loadsArray.length > 0 ? loadsArray.join('-') : '0';
+                                  } else {
+                                    if (block.targetLoadsByCluster && block.targetLoadsByCluster.length > 0) {
+                                      const firstSetLoads = block.targetLoadsByCluster[0];
+                                      const allSetsSame = block.targetLoadsByCluster.every(setLoads => 
+                                        setLoads.length === firstSetLoads.length && 
+                                        setLoads.every((load, i) => load === firstSetLoads[i])
+                                      );
+                                      if (allSetsSame && firstSetLoads.length > 0) {
+                                        const allClustersSame = firstSetLoads.every(load => load === firstSetLoads[0]);
+                                        loads = allClustersSame ? firstSetLoads[0] : firstSetLoads.join('/');
+                                      } else {
+                                        loads = block.targetLoadsByCluster.map(setLoads => setLoads.join('/')).join('-');
+                                      }
+                                    } else {
+                                      const loadsArray = block.targetLoads || [];
+                                      loads = loadsArray.length > 0 ? loadsArray.join('-') : '0';
+                                    }
+                                  }
+                                  return `${loads}kg`;
+                                })()}
+                              </span>
+                              {isNormal && block.repRange && (
+                                <span className="text-sm text-muted-foreground">
+                                  ({block.repRange} - {REP_RANGES[block.repRange as keyof typeof REP_RANGES]?.focus || ''})
+                                </span>
                               )}
-                              {isLastSet && restBetweenBlocks && (
-                                <span className="text-xs italic">({restBetweenBlocks})</span>
+                              {restIntraSet && (
+                                <span className="text-sm text-muted-foreground">
+                                  • rest intra: {restIntraSet}
+                                </span>
                               )}
                             </div>
-                          );
-                        })}
+                          </div>
+                        )}
+                        
+                        {/* Rest globale: sempre sotto, uniforme per tutti i tipi */}
+                        {restGlobal && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1.5 pt-1.5 border-t border-blue-200/50">
+                            <span>rest globale: {restGlobal}</span>
+                          </div>
+                        )}
+                        
+                        {/* Note del blocco */}
+                        {block.notes && (
+                          <div className="flex items-start gap-1.5 mt-1.5 pt-1.5 border-t border-blue-200/50">
+                            <span className="text-sm text-muted-foreground mt-0.5">📝</span>
+                            <span className="text-sm text-muted-foreground italic">{block.notes}</span>
+                          </div>
+                        )}
                       </div>
-                    );
-                  }
-                  
-                  // Visualizzazione normale (orizzontale)
-                  let loads = '0';
-                  if (isNormal) {
-                    // Tecnica normale: mostra tutti i carichi separati da '-'
-                    const loadsArray = block.targetLoads || [];
-                    loads = loadsArray.length > 0 ? loadsArray.join('-') : '0';
-                  } else {
-                    // Tecnica speciale: mostra carichi per cluster se disponibili
-                    if (block.targetLoadsByCluster && block.targetLoadsByCluster.length > 0) {
-                      // Se tutti i carichi sono uguali per set, mostra solo il primo
-                      const firstSetLoads = block.targetLoadsByCluster[0];
-                      const allSetsSame = block.targetLoadsByCluster.every(setLoads => 
-                        setLoads.length === firstSetLoads.length && 
-                        setLoads.every((load, i) => load === firstSetLoads[i])
-                      );
-                      
-                      if (allSetsSame && firstSetLoads.length > 0) {
-                        const allClustersSame = firstSetLoads.every(load => load === firstSetLoads[0]);
-                        if (allClustersSame) {
-                          loads = firstSetLoads[0];
-                        } else {
-                          loads = firstSetLoads.join('/');
-                        }
-                      } else {
-                        // Per ogni set, mostra i carichi separati da '/' e i set separati da '-'
-                        loads = block.targetLoadsByCluster.map(setLoads => setLoads.join('/')).join('-');
-                      }
-                    } else {
-                      // Fallback a targetLoads
-                      const loadsArray = block.targetLoads || [];
-                      loads = loadsArray.length > 0 ? loadsArray.join('-') : '0';
-                    }
-                  }
-                  
-                  const restParts = [restIntraSet, restBetweenBlocks].filter(Boolean);
-                  const restDisplay = restParts.length > 0 ? ` (${restParts.join(', ')})` : '';
-                  
-                  return (
-                    <span key={idx} className="inline-flex items-center gap-1">
-                      <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-xs font-medium">
-                        B{idx + 1}
-                      </span>
-                      {isNormal ? (
-                        <span>{sets}×{block.repsBase || 0}</span>
-                      ) : (
-                        <span>{sets}×{block.techniqueSchema || '-'}</span>
-                      )}
-                      <span className="font-medium">@ {loads}kg</span>
-                      {restDisplay && <span className="text-xs italic">{restDisplay}</span>}
-                      {idx < blocks.length - 1 && <span className="text-muted-foreground/50 ml-1">•</span>}
-                    </span>
+                    </div>
+                    {/* Rest blocco: mostrato TRA i blocchi */}
+                    {restBetweenBlocks && (
+                      <div className="flex items-center justify-center py-1.5">
+                        <span className="text-xs text-muted-foreground italic">
+                          ↻ rest blocco: {restBetweenBlocks}
+                        </span>
+                      </div>
+                    )}
+                    </div>
                   );
                 })}
               </div>
-              {blocks.some(b => b.technique && b.technique !== 'Normale') && (
-                <div className="text-xs text-muted-foreground mt-1">
-                  {blocks.filter(b => b.technique && b.technique !== 'Normale').map(b => b.technique).join(', ')}
-                </div>
-              )}
             </div>
             <div className="flex gap-1">
               <Button 
