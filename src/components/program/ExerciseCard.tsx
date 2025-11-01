@@ -6,7 +6,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
-import { ChevronDown, ChevronUp, Trash2, ClipboardList, Plus } from 'lucide-react';
+import { ChevronDown, ChevronUp, Trash2, ClipboardList, Plus, Clock } from 'lucide-react';
 import { ExerciseBlockCard } from './ExerciseBlockCard';
 import { getExerciseBlocks } from '@/lib/exerciseUtils';
 import { REP_RANGES } from '@/types';
@@ -97,6 +97,149 @@ export function ExerciseCard({
   };
 
   const primaryMuscle = getPrimaryMuscle();
+
+  // Mappa completa dei colori per blocchi basati sul muscolo e indice
+  const getBlockColor = (blockIndex: number): string => {
+    const muscle = primaryMuscle?.muscle || null;
+    if (!muscle) return 'bg-gray-500 text-white';
+    
+    // Tonalità più chiare/sbiadite: 400, 500, 600 per blocchi diversi
+    const shadeIndex = blockIndex % 8;
+    const shades = ['400', '500', '600', '500', '400', '500', '600', '500'];
+    const shade = shades[shadeIndex];
+    
+    const colorMap: Record<string, Record<string, string>> = {
+      'Petto': {
+        '400': 'bg-red-400 text-white',
+        '500': 'bg-red-500 text-white',
+        '600': 'bg-red-600 text-white',
+      },
+      'Dorso - Lats': {
+        '400': 'bg-blue-400 text-white',
+        '500': 'bg-blue-500 text-white',
+        '600': 'bg-blue-600 text-white',
+      },
+      'Dorso - Upper Back': {
+        '400': 'bg-blue-400 text-white',
+        '500': 'bg-blue-500 text-white',
+        '600': 'bg-blue-600 text-white',
+      },
+      'Dorso - Trapezi': {
+        '400': 'bg-blue-400 text-white',
+        '500': 'bg-blue-500 text-white',
+        '600': 'bg-blue-600 text-white',
+      },
+      'Deltoidi - Anteriore': {
+        '400': 'bg-orange-400 text-white',
+        '500': 'bg-orange-500 text-white',
+        '600': 'bg-orange-600 text-white',
+      },
+      'Deltoidi - Laterale': {
+        '400': 'bg-orange-400 text-white',
+        '500': 'bg-orange-500 text-white',
+        '600': 'bg-orange-600 text-white',
+      },
+      'Deltoidi - Posteriore': {
+        '400': 'bg-orange-400 text-white',
+        '500': 'bg-orange-500 text-white',
+        '600': 'bg-orange-600 text-white',
+      },
+      'Bicipiti': {
+        '400': 'bg-purple-400 text-white',
+        '500': 'bg-purple-500 text-white',
+        '600': 'bg-purple-600 text-white',
+      },
+      'Tricipiti': {
+        '400': 'bg-pink-400 text-white',
+        '500': 'bg-pink-500 text-white',
+        '600': 'bg-pink-600 text-white',
+      },
+      'Avambracci': {
+        '400': 'bg-purple-400 text-white',
+        '500': 'bg-purple-500 text-white',
+        '600': 'bg-purple-600 text-white',
+      },
+      'Quadricipiti': {
+        '400': 'bg-green-400 text-white',
+        '500': 'bg-green-500 text-white',
+        '600': 'bg-green-600 text-white',
+      },
+      'Femorali': {
+        '400': 'bg-green-400 text-white',
+        '500': 'bg-green-500 text-white',
+        '600': 'bg-green-600 text-white',
+      },
+      'Glutei': {
+        '400': 'bg-green-400 text-white',
+        '500': 'bg-green-500 text-white',
+        '600': 'bg-green-600 text-white',
+      },
+      'Polpacci': {
+        '400': 'bg-green-400 text-white',
+        '500': 'bg-green-500 text-white',
+        '600': 'bg-green-600 text-white',
+      },
+      'Adduttori': {
+        '400': 'bg-teal-400 text-white',
+        '500': 'bg-teal-500 text-white',
+        '600': 'bg-teal-600 text-white',
+      },
+      'Abduttori': {
+        '400': 'bg-teal-400 text-white',
+        '500': 'bg-teal-500 text-white',
+        '600': 'bg-teal-600 text-white',
+      },
+      'Addome': {
+        '400': 'bg-yellow-400 text-white',
+        '500': 'bg-yellow-500 text-white',
+        '600': 'bg-yellow-600 text-white',
+      },
+      'Obliqui': {
+        '400': 'bg-yellow-400 text-white',
+        '500': 'bg-yellow-500 text-white',
+        '600': 'bg-yellow-600 text-white',
+      },
+      'Core': {
+        '400': 'bg-yellow-400 text-white',
+        '500': 'bg-yellow-500 text-white',
+        '600': 'bg-yellow-600 text-white',
+      },
+    };
+    
+    return colorMap[muscle]?.[shade] || 'bg-gray-500 text-white';
+  };
+
+  const getTechniqueColor = (technique: string): string => {
+    const muscle = primaryMuscle?.muscle || null;
+    if (!muscle) {
+      return technique === 'Normale' ? 'bg-gray-300 text-gray-900' : 'bg-gray-400 text-white';
+    }
+    
+    const colorMap: Record<string, { normal: string; special: string }> = {
+      'Petto': { normal: 'bg-red-300 text-red-900', special: 'bg-red-400 text-white' },
+      'Dorso - Lats': { normal: 'bg-blue-300 text-blue-900', special: 'bg-blue-400 text-white' },
+      'Dorso - Upper Back': { normal: 'bg-blue-300 text-blue-900', special: 'bg-blue-400 text-white' },
+      'Dorso - Trapezi': { normal: 'bg-blue-300 text-blue-900', special: 'bg-blue-400 text-white' },
+      'Deltoidi - Anteriore': { normal: 'bg-orange-300 text-orange-900', special: 'bg-orange-400 text-white' },
+      'Deltoidi - Laterale': { normal: 'bg-orange-300 text-orange-900', special: 'bg-orange-400 text-white' },
+      'Deltoidi - Posteriore': { normal: 'bg-orange-300 text-orange-900', special: 'bg-orange-400 text-white' },
+      'Bicipiti': { normal: 'bg-purple-300 text-purple-900', special: 'bg-purple-400 text-white' },
+      'Tricipiti': { normal: 'bg-pink-300 text-pink-900', special: 'bg-pink-400 text-white' },
+      'Avambracci': { normal: 'bg-purple-300 text-purple-900', special: 'bg-purple-400 text-white' },
+      'Quadricipiti': { normal: 'bg-green-300 text-green-900', special: 'bg-green-400 text-white' },
+      'Femorali': { normal: 'bg-green-300 text-green-900', special: 'bg-green-400 text-white' },
+      'Glutei': { normal: 'bg-green-300 text-green-900', special: 'bg-green-400 text-white' },
+      'Polpacci': { normal: 'bg-green-300 text-green-900', special: 'bg-green-400 text-white' },
+      'Adduttori': { normal: 'bg-teal-300 text-teal-900', special: 'bg-teal-400 text-white' },
+      'Abduttori': { normal: 'bg-teal-300 text-teal-900', special: 'bg-teal-400 text-white' },
+      'Addome': { normal: 'bg-yellow-300 text-yellow-900', special: 'bg-yellow-400 text-white' },
+      'Obliqui': { normal: 'bg-yellow-300 text-yellow-900', special: 'bg-yellow-400 text-white' },
+      'Core': { normal: 'bg-yellow-300 text-yellow-900', special: 'bg-yellow-400 text-white' },
+    };
+    
+    const colors = colorMap[muscle] || { normal: 'bg-gray-300 text-gray-900', special: 'bg-gray-400 text-white' };
+    return technique === 'Normale' ? colors.normal : colors.special;
+  };
   // blocks è già dichiarato sopra
 
   // Cardio view
@@ -108,32 +251,65 @@ export function ExerciseCard({
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="px-3 py-1 rounded-full bg-orange-100 text-orange-800 text-sm font-medium">
-                    🏃 Cardio
+                  <span className="px-2 py-0.5 bg-orange-700 text-white text-xs font-medium rounded">
+                    Cardio
                   </span>
                   <span className="text-sm text-muted-foreground">#{exerciseIndex + 1}</span>
                 </div>
-              <h3 className="text-lg font-semibold mb-1">{exercise.exerciseName}</h3>
-              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              <h3 className="text-lg font-semibold mb-3">{exercise.exerciseName}</h3>
+              <div className="space-y-3">
                 {blocks.map((block, idx) => {
                   const duration = block.duration || 0;
-                  const restIntraSet = block.rest ? `rest: ${block.rest}s` : '';
-                  const restBetweenBlocks = idx < blocks.length - 1 && block.blockRest ? `rest blocco: ${block.blockRest}s` : '';
-                  const restParts = [restIntraSet, restBetweenBlocks].filter(Boolean);
-                  const restDisplay = restParts.length > 0 ? ` (${restParts.join(', ')})` : '';
+                  const restGlobal = block.rest ? `${block.rest}s` : null;
+                  const restBetweenBlocks = idx < blocks.length - 1 && block.blockRest ? `${block.blockRest}s` : null;
                   
                   return (
-                    <span key={idx} className="inline-flex items-center gap-1">
-                      <span className="px-2 py-0.5 rounded bg-orange-50 text-orange-700 text-xs font-medium">
-                        B{idx + 1}
-                      </span>
-                      <span>{duration}min</span>
-                      {restDisplay && <span className="text-xs italic">{restDisplay}</span>}
-                      {block.notes && (
-                        <span className="text-xs text-muted-foreground italic ml-1">• {block.notes}</span>
+                    <div key={idx}>
+                      <div className="border border-gray-200 rounded-lg p-3 bg-white hover:border-gray-300 transition-colors">
+                        {/* Header blocco */}
+                        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
+                          <span className={`px-2 py-0.5 ${getBlockColor(idx)} text-xs font-medium rounded`}>
+                            B{idx + 1}
+                          </span>
+                          <span className="px-2 py-0.5 bg-orange-700 text-white text-xs font-medium rounded">
+                            Cardio
+                          </span>
+                        </div>
+                        
+                        {/* Contenuto blocco */}
+                        <div className="space-y-2">
+                          <div className="text-sm font-semibold text-gray-900">
+                            {duration} minuti
+                          </div>
+                          
+                          {/* Rest globale */}
+                          {restGlobal && (
+                            <div className="flex items-center gap-1.5 text-xs text-gray-600 pt-1.5 border-t border-gray-100">
+                              <Clock className="w-3 h-3" />
+                              <span>rest: {restGlobal}</span>
+                            </div>
+                          )}
+                          
+                          {/* Note del blocco */}
+                          {block.notes && (
+                            <div className="text-xs text-gray-600 pt-1.5 border-t border-gray-100 italic">
+                              {block.notes}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Rest blocco: mostrato TRA i blocchi */}
+                      {restBetweenBlocks && (
+                        <div className="flex items-center justify-center py-2">
+                          <div className="flex-1 border-t border-gray-200"></div>
+                          <span className="px-3 text-xs text-gray-500 bg-gray-50 mx-2">
+                            rest blocco: {restBetweenBlocks}
+                          </span>
+                          <div className="flex-1 border-t border-gray-200"></div>
+                        </div>
                       )}
-                      {idx < blocks.length - 1 && <span className="text-muted-foreground/50 ml-1">•</span>}
-                    </span>
+                    </div>
                   );
                 })}
               </div>
@@ -166,41 +342,77 @@ export function ExerciseCard({
             </div>
 
             <CollapsibleContent>
-              <div className="pt-4 border-t space-y-4">
+              <div className="pt-6 mt-4 border-t-2 border-orange-100 bg-gradient-to-b from-orange-50/30 to-transparent rounded-b-lg">
+                {/* Header sezione espansa */}
+                <div className="px-4 mb-4">
+                  <h4 className="text-sm font-bold text-orange-900 mb-1">⚙️ Configurazione Blocchi Cardio</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Imposta durata, riposi e note per ogni blocco cardio.
+                  </p>
+                </div>
+
                 {/* Blocks */}
-                <div className="space-y-3">
+                <div className="space-y-4 px-4">
                   {blocks.map((block, blockIndex) => (
-                    <ExerciseBlockCard
-                      key={blockIndex}
-                      block={block}
-                      blockIndex={blockIndex}
-                      exerciseType="cardio"
-                      allTechniques={allTechniques}
-                      customTechniques={customTechniques}
-                      onUpdate={onUpdateBlock}
-                      onUpdateBatch={onUpdateBlockBatch}
-                      onDelete={onDeleteBlock}
-                      isLast={blockIndex === blocks.length - 1}
-                      canDelete={blocks.length > 1}
-                    />
+                    <div key={blockIndex}>
+                      <ExerciseBlockCard
+                        block={block}
+                        blockIndex={blockIndex}
+                        exerciseType="cardio"
+                        exerciseLibrary={exerciseLibrary}
+                        exerciseName={exercise.exerciseName}
+                        allTechniques={allTechniques}
+                        customTechniques={customTechniques}
+                        onUpdate={onUpdateBlock}
+                        onUpdateBatch={onUpdateBlockBatch}
+                        onDelete={onDeleteBlock}
+                        isLast={blockIndex === blocks.length - 1}
+                        canDelete={blocks.length > 1}
+                      />
+                      
+                      {/* Separatore tra blocchi */}
+                      {blockIndex < blocks.length - 1 && (
+                        <div className="flex items-center justify-center py-4 my-4">
+                          <div className="flex-1 border-t-2 border-dashed border-gray-300"></div>
+                          {block.blockRest ? (
+                            <div className="px-4 py-1.5 bg-amber-100 border border-amber-300 rounded-full text-xs font-semibold text-amber-900 mx-3">
+                              ⏱️ Rest Blocco: {block.blockRest}s
+                            </div>
+                          ) : (
+                            <div className="px-4 py-1 bg-gray-100 border border-gray-300 rounded-full text-xs text-gray-600 mx-3">
+                              ⬇️ Blocco successivo
+                            </div>
+                          )}
+                          <div className="flex-1 border-t-2 border-dashed border-gray-300"></div>
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
 
                 {/* Add Block Button */}
-                <Button variant="outline" onClick={onAddBlock} className="w-full">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Aggiungi Blocco
-                </Button>
+                <div className="px-4 pt-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={onAddBlock} 
+                    className="w-full border-2 border-dashed border-orange-300 hover:bg-orange-50 hover:border-orange-400"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Aggiungi Blocco
+                  </Button>
+                </div>
 
-                {/* Note */}
-                <div>
-                  <Label className="text-xs">Note</Label>
-                  <Input
-                    value={exercise.notes || ''}
-                    onChange={(e) => onUpdate('notes', e.target.value)}
-                    placeholder="Aggiungi note..."
-                    className="h-9"
-                  />
+                {/* Note esercizio */}
+                <div className="px-4 pt-4 pb-6">
+                  <div className="bg-white rounded-lg border border-gray-200 p-4">
+                    <Label className="text-sm font-semibold mb-2 block">📝 Note Esercizio</Label>
+                    <Input
+                      value={exercise.notes || ''}
+                      onChange={(e) => onUpdate('notes', e.target.value)}
+                      placeholder="Aggiungi note generali per questo esercizio..."
+                      className="h-10"
+                    />
+                  </div>
                 </div>
               </div>
           </CollapsibleContent>
@@ -271,78 +483,72 @@ export function ExerciseCard({
               <h3 className="text-lg font-semibold mb-3">{exercise.exerciseName}</h3>
               
               {/* Blocchi organizzati verticalmente */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {blocks.map((block, idx) => {
                   const isNormal = block.technique === 'Normale';
                   const sets = block.sets || 0;
-                  // Rest globale: sempre block.rest (riposo tra i set completi)
-                  // Rest intra-set: per tecniche speciali, da techniqueParams.pause (pausa tra mini-set/cluster)
                   const restGlobal = block.rest ? `${block.rest}s` : null;
                   const restIntraSet = !isNormal && block.techniqueParams?.pause 
                     ? `${block.techniqueParams.pause}s` 
                     : null;
                   const restBetweenBlocks = idx < blocks.length - 1 && block.blockRest ? `${block.blockRest}s` : null;
                   
-                  // Controlla se ci sono carichi diversi per cluster
                   const hasDifferentLoadsByCluster = !isNormal && 
                     block.targetLoadsByCluster && 
                     block.targetLoadsByCluster.length > 0;
                   
                   return (
                     <div key={idx}>
-                      <div 
-                        className="border-l-2 border-blue-200 pl-3 py-1.5 bg-blue-50/30 rounded-r-sm"
-                      >
+                      <div className="border border-gray-200 rounded-lg p-3 bg-white hover:border-gray-300 transition-colors">
                         {/* Header blocco */}
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className="px-2 py-0.5 rounded bg-blue-600 text-white text-xs font-semibold">
+                        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
+                          <span className={`px-2 py-0.5 ${getBlockColor(idx)} text-xs font-medium rounded`}>
                             B{idx + 1}
                           </span>
-                          <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-medium">
+                          <span className={`px-2 py-0.5 ${getTechniqueColor(block.technique || 'Normale')} text-xs font-medium rounded`}>
                             {block.technique || 'Normale'}
                           </span>
                         </div>
                       
-                      {/* Contenuto blocco */}
-                      <div className="space-y-1">
-                        {/* Tecnica speciale con sottoblocchi */}
-                        {hasDifferentLoadsByCluster ? (
-                          <div className="space-y-1.5 ml-1">
-                            {block.targetLoadsByCluster!.map((setLoads, setIdx) => {
-                              const loadsDisplay = `${setLoads.join('-')}kg`;
-                              
-                              return (
-                                <div key={setIdx} className="flex items-center gap-2 text-sm">
-                                  <span className="px-1.5 py-0.5 rounded bg-blue-200 text-blue-800 text-xs font-semibold min-w-[2.5rem] text-center">
-                                    S{setIdx + 1}
-                                  </span>
-                                  <span className="text-sm text-muted-foreground font-medium">
-                                    {block.techniqueSchema || ''}
-                                  </span>
-                                  <span className="text-sm font-semibold text-foreground">
-                                    @ {loadsDisplay}
-                                  </span>
-                                  {restIntraSet && (
-                                    <span className="text-sm text-muted-foreground ml-2">
-                                      • rest intra: {restIntraSet}
+                        {/* Contenuto blocco */}
+                        <div className="space-y-2">
+                          {/* Tecnica speciale con sottoblocchi */}
+                          {hasDifferentLoadsByCluster ? (
+                            <div className="space-y-1.5">
+                              {block.targetLoadsByCluster!.map((setLoads, setIdx) => {
+                                const loadsDisplay = `${setLoads.join('-')}kg`;
+                                
+                                return (
+                                  <div key={setIdx} className="flex items-center gap-2 text-sm">
+                                    <span className="px-1.5 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded min-w-[2.5rem] text-center">
+                                      S{setIdx + 1}
                                     </span>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          /* Blocco normale o tecnica speciale semplice */
-                          <div>
+                                    <span className="text-gray-600">
+                                      {block.techniqueSchema || ''}
+                                    </span>
+                                    <span className="font-semibold text-gray-900">
+                                      @ {loadsDisplay}
+                                    </span>
+                                    {restIntraSet && setIdx === 0 && (
+                                      <span className="text-xs text-gray-500 ml-auto">
+                                        rest intra: {restIntraSet}
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            /* Blocco normale o tecnica speciale semplice */
                             <div className="flex items-center gap-2 flex-wrap text-sm">
-                              <span className="text-muted-foreground">
+                              <span className="font-medium text-gray-700">
                                 {isNormal ? (
                                   <>{sets}×{block.repsBase || 0}</>
                                 ) : (
                                   <>{sets}×{block.techniqueSchema || '-'}</>
                                 )}
                               </span>
-                              <span className="font-semibold text-foreground">
+                              <span className="font-semibold text-gray-900">
                                 @ {(() => {
                                   let loads = '0';
                                   if (isNormal) {
@@ -370,43 +576,45 @@ export function ExerciseCard({
                                 })()}
                               </span>
                               {isNormal && block.repRange && (
-                                <span className="text-sm text-muted-foreground">
+                                <span className="text-xs text-gray-500">
                                   ({block.repRange} - {REP_RANGES[block.repRange as keyof typeof REP_RANGES]?.focus || ''})
                                 </span>
                               )}
                               {restIntraSet && (
-                                <span className="text-sm text-muted-foreground">
-                                  • rest intra: {restIntraSet}
+                                <span className="text-xs text-gray-500 ml-auto">
+                                  rest intra: {restIntraSet}
                                 </span>
                               )}
                             </div>
-                          </div>
-                        )}
-                        
-                        {/* Rest globale: sempre sotto, uniforme per tutti i tipi */}
-                        {restGlobal && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1.5 pt-1.5 border-t border-blue-200/50">
-                            <span>rest globale: {restGlobal}</span>
-                          </div>
-                        )}
-                        
-                        {/* Note del blocco */}
-                        {block.notes && (
-                          <div className="flex items-start gap-1.5 mt-1.5 pt-1.5 border-t border-blue-200/50">
-                            <span className="text-sm text-muted-foreground mt-0.5">📝</span>
-                            <span className="text-sm text-muted-foreground italic">{block.notes}</span>
-                          </div>
-                        )}
+                          )}
+                          
+                          {/* Rest globale */}
+                          {restGlobal && (
+                            <div className="flex items-center gap-1.5 text-xs text-gray-600 pt-1.5 border-t border-gray-100">
+                              <Clock className="w-3 h-3" />
+                              <span>rest globale: {restGlobal}</span>
+                            </div>
+                          )}
+                          
+                          {/* Note del blocco */}
+                          {block.notes && (
+                            <div className="text-xs text-gray-600 pt-1.5 border-t border-gray-100 italic">
+                              {block.notes}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    {/* Rest blocco: mostrato TRA i blocchi */}
-                    {restBetweenBlocks && (
-                      <div className="flex items-center justify-center py-1.5">
-                        <span className="text-xs text-muted-foreground italic">
-                          ↻ rest blocco: {restBetweenBlocks}
-                        </span>
-                      </div>
-                    )}
+                      
+                      {/* Rest blocco: mostrato TRA i blocchi */}
+                      {restBetweenBlocks && (
+                        <div className="flex items-center justify-center py-2">
+                          <div className="flex-1 border-t border-gray-200"></div>
+                          <span className="px-3 text-xs text-gray-500 bg-gray-50 mx-2">
+                            rest blocco: {restBetweenBlocks}
+                          </span>
+                          <div className="flex-1 border-t border-gray-200"></div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -437,17 +645,25 @@ export function ExerciseCard({
           </div>
 
           <CollapsibleContent>
-            <div className="pt-4 border-t space-y-4">
+            <div className="pt-6 mt-4 border-t-2 border-blue-100 bg-gradient-to-b from-blue-50/30 to-transparent rounded-b-lg">
+              {/* Header sezione espansa */}
+              <div className="px-4 mb-4">
+                <h4 className="text-sm font-bold text-blue-900 mb-1">⚙️ Configurazione Blocchi</h4>
+                <p className="text-xs text-muted-foreground">
+                  Configura i dettagli di ogni blocco: carichi, ripetizioni, rest e tecniche avanzate.
+                </p>
+              </div>
 
               {/* Blocks */}
-              <div className="space-y-3">
+              <div className="space-y-4 px-4">
                 {blocks.map((block, blockIndex) => (
-                  <div key={blockIndex}>
+                  <div key={blockIndex} className="relative">
                     <ExerciseBlockCard
                       block={block}
                       blockIndex={blockIndex}
                       exerciseType="resistance"
                       exerciseLibrary={exerciseLibrary}
+                      exerciseName={exercise.exerciseName}
                       allTechniques={allTechniques}
                       customTechniques={customTechniques}
                       onUpdate={onUpdateBlock}
@@ -456,21 +672,36 @@ export function ExerciseCard({
                       isLast={blockIndex === blocks.length - 1}
                       canDelete={blocks.length > 1}
                     />
-                    {blockIndex < blocks.length - 1 && block.blockRest && (
-                      <div className="text-center py-2 text-xs text-muted-foreground">
-                        Rest: {block.blockRest}s
-                      </div>
-                    )}
+                    
+                    {/* Log singolo blocco (solo se ci sono più blocchi) */}
                     {blocks.length > 1 && (
-                      <div className="flex justify-center mt-2">
+                      <div className="flex justify-center mt-3">
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
                           onClick={() => onLog(blockIndex)}
+                          className="bg-white hover:bg-blue-50 border-blue-200"
                         >
                           <ClipboardList className="w-4 h-4 mr-2" />
                           Log Blocco {blockIndex + 1}
                         </Button>
+                      </div>
+                    )}
+                    
+                    {/* Separatore tra blocchi con rest */}
+                    {blockIndex < blocks.length - 1 && (
+                      <div className="flex items-center justify-center py-4 my-4">
+                        <div className="flex-1 border-t-2 border-dashed border-gray-300"></div>
+                        {block.blockRest ? (
+                          <div className="px-4 py-1.5 bg-amber-100 border border-amber-300 rounded-full text-xs font-semibold text-amber-900 mx-3">
+                            ⏱️ Rest Blocco: {block.blockRest}s
+                          </div>
+                        ) : (
+                          <div className="px-4 py-1 bg-gray-100 border border-gray-300 rounded-full text-xs text-gray-600 mx-3">
+                            ⬇️ Blocco successivo
+                          </div>
+                        )}
+                        <div className="flex-1 border-t-2 border-dashed border-gray-300"></div>
                       </div>
                     )}
                   </div>
@@ -478,20 +709,28 @@ export function ExerciseCard({
               </div>
 
               {/* Add Block Button */}
-              <Button variant="outline" onClick={onAddBlock} className="w-full">
-                <Plus className="w-4 h-4 mr-2" />
-                Aggiungi Blocco
-              </Button>
+              <div className="px-4 pt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={onAddBlock} 
+                  className="w-full border-2 border-dashed border-blue-300 hover:bg-blue-50 hover:border-blue-400"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Aggiungi Blocco
+                </Button>
+              </div>
 
-              {/* Note */}
-              <div>
-                <Label className="text-xs">Note</Label>
-                <Input
-                  value={exercise.notes || ''}
-                  onChange={(e) => onUpdate('notes', e.target.value)}
-                  placeholder="Aggiungi note..."
-                  className="h-9"
-                />
+              {/* Note esercizio */}
+              <div className="px-4 pt-4 pb-6">
+                <div className="bg-white rounded-lg border border-gray-200 p-4">
+                  <Label className="text-sm font-semibold mb-2 block">📝 Note Esercizio</Label>
+                  <Input
+                    value={exercise.notes || ''}
+                    onChange={(e) => onUpdate('notes', e.target.value)}
+                    placeholder="Aggiungi note generali per questo esercizio..."
+                    className="h-10"
+                  />
+                </div>
               </div>
             </div>
           </CollapsibleContent>

@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { ExerciseBlock, Exercise, REP_RANGES } from '@/types';
-import { Card, CardContent } from '../ui/card';
+import { Card, CardContent, CardHeader } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Trash2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Trash2, Dumbbell, Clock, FileText } from 'lucide-react';
 import { TechniqueParamsForm } from './TechniqueParamsForm';
 import { generateSchemaFromParams, TECHNIQUE_DEFINITIONS } from '@/lib/techniques';
 import { parseSchema } from '@/lib/calculations';
@@ -16,10 +18,11 @@ interface ExerciseBlockCardProps {
   blockIndex: number;
   exerciseType: 'resistance' | 'cardio';
   exerciseLibrary?: Exercise[];
+  exerciseName?: string; // Nome dell'esercizio per determinare il muscolo
   allTechniques: string[];
   customTechniques: any[];
   onUpdate: (blockIndex: number, field: keyof ExerciseBlock, value: any) => void;
-  onUpdateBatch?: (blockIndex: number, updates: Partial<ExerciseBlock>) => void; // Aggiornamento batch opzionale
+  onUpdateBatch?: (blockIndex: number, updates: Partial<ExerciseBlock>) => void;
   onDelete: (blockIndex: number) => void;
   isLast: boolean;
   canDelete: boolean;
@@ -29,6 +32,8 @@ export function ExerciseBlockCard({
   block,
   blockIndex,
   exerciseType,
+  exerciseLibrary,
+  exerciseName,
   allTechniques,
   customTechniques,
   onUpdate,
@@ -40,6 +45,45 @@ export function ExerciseBlockCard({
   const [showLoadModal, setShowLoadModal] = useState(false);
   const [localLoadsByCluster, setLocalLoadsByCluster] = useState<string[][]>([]);
   const isNormalTechnique = (block.technique || 'Normale') === 'Normale';
+
+  // Funzione per ottenere il muscolo primario
+  const getPrimaryMuscle = () => {
+    if (!exerciseName || !exerciseLibrary || exerciseLibrary.length === 0) return null;
+    const libraryEx = exerciseLibrary.find((e) => e.name === exerciseName);
+    if (!libraryEx || !libraryEx.muscles || libraryEx.muscles.length === 0) return null;
+    return libraryEx.muscles.reduce((prev, curr) =>
+      curr.percent > prev.percent ? curr : prev
+    );
+  };
+
+  // Estrae il colore base dal muscolo
+  const getMuscleColorBase = (muscle: string | null): string => {
+    if (!muscle) return 'gray';
+    const colorMap: Record<string, string> = {
+      'Petto': 'red',
+      'Dorso - Lats': 'blue',
+      'Dorso - Upper Back': 'blue',
+      'Dorso - Trapezi': 'blue',
+      'Deltoidi - Anteriore': 'orange',
+      'Deltoidi - Laterale': 'orange',
+      'Deltoidi - Posteriore': 'orange',
+      'Bicipiti': 'purple',
+      'Tricipiti': 'pink',
+      'Avambracci': 'purple',
+      'Quadricipiti': 'green',
+      'Femorali': 'green',
+      'Glutei': 'green',
+      'Polpacci': 'green',
+      'Adduttori': 'teal',
+      'Abduttori': 'teal',
+      'Addome': 'yellow',
+      'Obliqui': 'yellow',
+      'Core': 'yellow',
+    };
+    return colorMap[muscle] || 'gray';
+  };
+
+  const primaryMuscle = getPrimaryMuscle();
   
   // Inizializza localLoadsByCluster quando il modal si apre
   useEffect(() => {
@@ -81,39 +125,33 @@ export function ExerciseBlockCard({
         return setLoads;
       });
       
-      // Normalizza i valori (assicurati che siano stringhe)
       loadsByCluster = loadsByCluster.map(setLoads => 
         setLoads.map(load => String(load || '80'))
       );
       
       setLocalLoadsByCluster(loadsByCluster);
       
-      // Salva l'inizializzazione solo se non esisteva (non sovrascrivere modifiche in corso)
       if (!block.targetLoadsByCluster || block.targetLoadsByCluster.length === 0) {
         onUpdate(blockIndex, 'targetLoadsByCluster', loadsByCluster);
       }
     } else if (showLoadModal && isNormalTechnique) {
-      // Reset per tecniche normali
       setLocalLoadsByCluster([]);
     }
-  }, [showLoadModal]); // Dipendenze ridotte: solo quando il modal si apre/chiude
+  }, [showLoadModal]);
 
   const handleTechniqueChange = (newTechnique: string) => {
     if (newTechnique !== 'Normale') {
-      // Per tecniche speciali: prepara i parametri di default
       const customTech = customTechniques.find(t => t.name === newTechnique);
       let defaultParams: Record<string, any> = {};
       let schema = '';
       
       if (customTech) {
-        // Tecnica personalizzata: usa i default values
         customTech.parameters.forEach((param: any) => {
           defaultParams[param.name] = param.defaultValue;
         });
         const values = customTech.parameters.map((p: any) => p.defaultValue).filter((v: any) => v !== undefined && v !== '');
         schema = values.join('+');
       } else {
-        // Tecnica standard: genera schema con parametri di default
         const techniqueDef = TECHNIQUE_DEFINITIONS.find(t => t.name === newTechnique);
         if (techniqueDef) {
           techniqueDef.parameters.forEach(param => {
@@ -123,33 +161,29 @@ export function ExerciseBlockCard({
         }
       }
       
-      // Inizializza targetLoadsByCluster se necessario
       const clusters = parseSchema(schema);
       const numClusters = clusters.length || 1;
       const numSets = block.sets || 1;
       const initialLoadsByCluster = block.targetLoads?.map(load => Array(numClusters).fill(load)) || 
         Array(numSets).fill(Array(numClusters).fill('80'));
       
-      // Se disponibile, usa aggiornamento batch per evitare race conditions
       if (onUpdateBatch) {
         const updates: Partial<ExerciseBlock> = {
           technique: newTechnique,
           repsBase: '',
           techniqueParams: defaultParams,
           techniqueSchema: schema,
-          repRange: undefined, // Rimuovi repRange per tecniche speciali
-          targetLoadsByCluster: initialLoadsByCluster, // Inizializza con carichi per cluster
+          repRange: undefined,
+          targetLoadsByCluster: initialLoadsByCluster,
         };
         onUpdateBatch(blockIndex, updates);
       } else {
-        // Fallback: aggiorna sequenzialmente
         onUpdate(blockIndex, 'technique', newTechnique);
         onUpdate(blockIndex, 'repsBase', '');
         onUpdate(blockIndex, 'techniqueParams', defaultParams);
-        onUpdate(blockIndex, 'repRange', undefined); // Rimuovi repRange per tecniche speciali
+        onUpdate(blockIndex, 'repRange', undefined);
         if (schema) {
           onUpdate(blockIndex, 'techniqueSchema', schema);
-          // Inizializza targetLoadsByCluster
           const clusters = parseSchema(schema);
           const numClusters = clusters.length || 1;
           const numSets = block.sets || 1;
@@ -159,23 +193,21 @@ export function ExerciseBlockCard({
         }
       }
     } else {
-      // Per tecnica normale: aggiorna tutto
       if (onUpdateBatch) {
         const updates: Partial<ExerciseBlock> = {
           technique: 'Normale',
           techniqueSchema: '',
           techniqueParams: {},
           repsBase: '10',
-          repRange: '8-12', // Imposta repRange di default per tecnica normale
+          repRange: '8-12',
         };
         onUpdateBatch(blockIndex, updates);
       } else {
-        // Fallback: aggiorna sequenzialmente
         onUpdate(blockIndex, 'technique', 'Normale');
         onUpdate(blockIndex, 'techniqueSchema', '');
         onUpdate(blockIndex, 'techniqueParams', {});
         onUpdate(blockIndex, 'repsBase', '10');
-        onUpdate(blockIndex, 'repRange', '8-12'); // Imposta repRange di default per tecnica normale
+        onUpdate(blockIndex, 'repRange', '8-12');
       }
     }
   };
@@ -199,27 +231,23 @@ export function ExerciseBlockCard({
       
       onUpdate(blockIndex, 'techniqueSchema', schema);
       
-      // Aggiorna targetLoadsByCluster se la struttura dei cluster cambia
       if (!isNormalTechnique) {
         const clusters = parseSchema(schema);
         const numClusters = clusters.length || 1;
         const currentLoadsByCluster = block.targetLoadsByCluster || 
           (block.targetLoads?.map(load => Array(numClusters).fill(load)) || []);
         
-        // Ricalcola targetLoadsByCluster con la nuova struttura
         const updatedLoadsByCluster = currentLoadsByCluster.map(setLoads => {
           if (setLoads.length === numClusters) {
-            return setLoads; // Già corretto
+            return setLoads;
           } else if (setLoads.length > numClusters) {
-            return setLoads.slice(0, numClusters); // Riduci
+            return setLoads.slice(0, numClusters);
           } else {
-            // Espandi con l'ultimo valore
             const lastLoad = setLoads[setLoads.length - 1] || '80';
             return [...setLoads, ...Array(numClusters - setLoads.length).fill(lastLoad)];
           }
         });
         
-        // Aggiungi set mancanti se necessario
         const numSets = block.sets || 1;
         while (updatedLoadsByCluster.length < numSets) {
           const lastSetLoads = updatedLoadsByCluster[updatedLoadsByCluster.length - 1] || Array(numClusters).fill('80');
@@ -235,7 +263,6 @@ export function ExerciseBlockCard({
     onUpdate(blockIndex, 'sets', newSets);
     
     if (isNormalTechnique) {
-      // Tecnica normale: aggiorna targetLoads
       const currentLoads = block.targetLoads || [];
       if (newSets > currentLoads.length) {
         const lastLoad = currentLoads[currentLoads.length - 1] || '80';
@@ -247,7 +274,6 @@ export function ExerciseBlockCard({
         onUpdate(blockIndex, 'targetLoads', currentLoads.slice(0, newSets));
       }
     } else {
-      // Tecnica speciale: aggiorna targetLoadsByCluster
       const clusters = parseSchema(block.techniqueSchema || '');
       const numClusters = clusters.length || 1;
       const currentLoadsByCluster = block.targetLoadsByCluster || 
@@ -260,75 +286,95 @@ export function ExerciseBlockCard({
           ...Array(newSets - currentLoadsByCluster.length).fill([...lastSetLoads]),
         ];
         onUpdate(blockIndex, 'targetLoadsByCluster', newLoadsByCluster);
-        // Aggiorna anche targetLoads come fallback (primo carico di ogni set)
         onUpdate(blockIndex, 'targetLoads', newLoadsByCluster.map(sl => sl[0] || '80'));
       } else if (newSets < currentLoadsByCluster.length) {
         const newLoadsByCluster = currentLoadsByCluster.slice(0, newSets);
         onUpdate(blockIndex, 'targetLoadsByCluster', newLoadsByCluster);
-        // Aggiorna anche targetLoads come fallback (primo carico di ogni set)
         onUpdate(blockIndex, 'targetLoads', newLoadsByCluster.map(sl => sl[0] || '80'));
       }
     }
   };
 
+  const getBlockColor = (blockIndex: number): string => {
+    const muscleBase = getMuscleColorBase(primaryMuscle?.muscle || null);
+    // Tonalità più chiare/sbiadite: 400, 500, 600 per blocchi diversi
+    const shades = ['400', '500', '600', '500', '400', '500', '600', '500'];
+    const shade = shades[blockIndex % shades.length];
+    return `bg-${muscleBase}-${shade} text-white`;
+  };
+
+  const getTechniqueColor = (technique: string): string => {
+    const muscleBase = getMuscleColorBase(primaryMuscle?.muscle || null);
+    
+    if (technique === 'Normale') {
+      // Per "Normale" usa una tonalità molto chiara/neutra
+      return `bg-${muscleBase}-300 text-${muscleBase}-900`;
+    }
+    
+    // Per tecniche speciali usa una tonalità media/chiara
+    return `bg-${muscleBase}-400 text-white`;
+  };
+
   if (exerciseType === 'cardio') {
     return (
-      <Card className="border-l-4 border-l-orange-500">
-        <CardContent className="pt-4">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="px-2 py-1 rounded bg-orange-100 text-orange-800 text-xs font-medium">
-                  Blocco {blockIndex + 1}
-                </span>
-                {!isLast && block.blockRest && (
-                  <span className="text-xs text-muted-foreground">
-                    Rest: {block.blockRest}s
-                  </span>
-                )}
-              </div>
+      <Card className="border border-gray-200 shadow-sm">
+        <CardHeader className="pb-3 border-b border-gray-100">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2">
+              <span className={`px-2 py-0.5 ${getBlockColor(blockIndex)} text-xs font-medium rounded`}>
+                Blocco {blockIndex + 1}
+              </span>
+              <span className="px-2 py-0.5 bg-orange-700 text-white text-xs font-medium rounded">
+                Cardio
+              </span>
             </div>
             {canDelete && (
               <Button variant="ghost" size="icon" onClick={() => onDelete(blockIndex)}>
-                <Trash2 className="w-4 h-4 text-red-500" />
+                <Trash2 className="w-4 h-4 text-gray-500 hover:text-red-600" />
               </Button>
             )}
           </div>
-
-          <div className="space-y-3">
-            <div>
-              <Label className="text-xs">Durata (minuti)</Label>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-4">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <Clock className="w-3.5 h-3.5" />
+              Durata (minuti)
+            </Label>
+            <Input
+              type="number"
+              value={block.duration || 0}
+              onChange={(e) => onUpdate(blockIndex, 'duration', parseInt(e.target.value) || 0)}
+              className="h-10"
+            />
+          </div>
+          {!isLast && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                <Clock className="w-3.5 h-3.5" />
+                Rest dopo blocco (secondi)
+              </Label>
               <Input
                 type="number"
-                value={block.duration || 0}
-                onChange={(e) => onUpdate(blockIndex, 'duration', parseInt(e.target.value) || 0)}
-                className="h-9"
+                value={block.blockRest || 0}
+                onChange={(e) => onUpdate(blockIndex, 'blockRest', parseInt(e.target.value) || 0)}
+                className="h-10"
+                placeholder="0"
               />
             </div>
-            {!isLast && (
-              <div>
-                <Label className="text-xs">Rest dopo blocco (secondi)</Label>
-                <Input
-                  type="number"
-                  value={block.blockRest || 0}
-                  onChange={(e) => onUpdate(blockIndex, 'blockRest', parseInt(e.target.value) || 0)}
-                  className="h-9"
-                  placeholder="0"
-                />
-              </div>
-            )}
-
-            {/* Note */}
-            <div>
-              <Label className="text-xs">Note</Label>
-              <Textarea
-                value={block.notes || ''}
-                onChange={(e) => onUpdate(blockIndex, 'notes', e.target.value)}
-                placeholder="Aggiungi note per questo blocco..."
-                className="min-h-[60px] text-sm"
-                rows={3}
-              />
-            </div>
+          )}
+          <div>
+            <Label className="text-sm font-semibold mb-2 flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Note
+            </Label>
+            <Textarea
+              value={block.notes || ''}
+              onChange={(e) => onUpdate(blockIndex, 'notes', e.target.value)}
+              placeholder="Aggiungi note per questo blocco..."
+              className="min-h-[80px]"
+              rows={3}
+            />
           </div>
         </CardContent>
       </Card>
@@ -336,44 +382,36 @@ export function ExerciseBlockCard({
   }
 
   return (
-    <Card className="border-l-4 border-l-blue-500">
-      <CardContent className="pt-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="px-2 py-1 rounded bg-blue-100 text-blue-800 text-xs font-medium">
+    <>
+      <Card className="border border-gray-200 shadow-sm">
+        <CardHeader className="pb-3 border-b border-gray-100">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2">
+              <span className={`px-2 py-0.5 ${getBlockColor(blockIndex)} text-xs font-medium rounded`}>
                 Blocco {blockIndex + 1}
               </span>
-              {block.technique && block.technique !== 'Normale' && (
-                <span className="text-xs text-muted-foreground">{block.technique}</span>
-              )}
-              {!isLast && block.blockRest && (
-                <span className="text-xs text-muted-foreground">
-                  Rest: {block.blockRest}s
-                </span>
-              )}
+              <span className={`px-2 py-0.5 ${getTechniqueColor(block.technique || 'Normale')} text-xs font-medium rounded`}>
+                {block.technique || 'Normale'}
+              </span>
             </div>
+            {canDelete && (
+              <Button variant="ghost" size="icon" onClick={() => onDelete(blockIndex)}>
+                <Trash2 className="w-4 h-4 text-gray-500 hover:text-red-600" />
+              </Button>
+            )}
           </div>
-          {canDelete && (
-            <Button variant="ghost" size="icon" onClick={() => onDelete(blockIndex)}>
-              <Trash2 className="w-4 h-4 text-red-500" />
-            </Button>
-          )}
-        </div>
+        </CardHeader>
 
-        <div className="space-y-3">
+        <CardContent className="space-y-4 pt-4">
           {/* Tecnica */}
-          <div>
-            <Label className="text-xs">Tecnica</Label>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700">Tecnica di Allenamento</Label>
             <Select
               key={`technique-select-${blockIndex}-${block.technique || 'Normale'}`}
               value={block.technique || 'Normale'}
-              onValueChange={(value) => {
-                console.log('Select changed to:', value);
-                handleTechniqueChange(value);
-              }}
+              onValueChange={handleTechniqueChange}
             >
-              <SelectTrigger className="h-9">
+              <SelectTrigger className="h-10">
                 <SelectValue placeholder="Seleziona tecnica">
                   {block.technique || 'Normale'}
                 </SelectValue>
@@ -386,95 +424,100 @@ export function ExerciseBlockCard({
                 ))}
               </SelectContent>
             </Select>
+
+            {/* Technique Params Form */}
+            {block.technique && block.technique !== 'Normale' && (
+              <div className="mt-3 pt-3 border-t border-gray-200">
+                <TechniqueParamsForm
+                  technique={block.technique}
+                  params={block.techniqueParams || {}}
+                  onChange={handleTechniqueParamsChange}
+                />
+              </div>
+            )}
           </div>
 
-          {/* Technique Params Form */}
-          {block.technique && block.technique !== 'Normale' && (
-            <TechniqueParamsForm
-              technique={block.technique}
-              params={block.techniqueParams || {}}
-              onChange={handleTechniqueParamsChange}
-            />
-          )}
-
-          {/* Sets & Reps */}
-          {((block.technique || 'Normale') === 'Normale') ? (
-            <div className="grid grid-cols-2 gap-3">
+          {/* Volume: Sets & Reps */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium text-gray-700">Volume</Label>
+            {isNormalTechnique ? (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-gray-600 mb-1.5 block">Sets</Label>
+                  <Input
+                    type="number"
+                    value={block.sets || 0}
+                    onChange={(e) => handleSetsChange(parseInt(e.target.value) || 0)}
+                    min="1"
+                    max="10"
+                    className="h-10"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-600 mb-1.5 block">Reps Base</Label>
+                  <Input
+                    type="number"
+                    value={block.repsBase || ''}
+                    onChange={(e) => onUpdate(blockIndex, 'repsBase', e.target.value)}
+                    className="h-10"
+                  />
+                </div>
+              </div>
+            ) : (
               <div>
-                <Label className="text-xs">Sets</Label>
+                <Label className="text-xs text-gray-600 mb-1.5 block">Sets (numero di serie complete)</Label>
                 <Input
                   type="number"
                   value={block.sets || 0}
                   onChange={(e) => handleSetsChange(parseInt(e.target.value) || 0)}
                   min="1"
                   max="10"
-                  className="h-9"
+                  className="h-10"
                 />
               </div>
-              <div>
-                <Label className="text-xs">Reps Base</Label>
-                <Input
-                  type="number"
-                  value={block.repsBase || ''}
-                  onChange={(e) => onUpdate(blockIndex, 'repsBase', e.target.value)}
-                  className="h-9"
-                />
-              </div>
-            </div>
-          ) : (
-            <div>
-              <Label className="text-xs">Sets (numero di serie complete)</Label>
-              <Input
-                type="number"
-                value={block.sets || 0}
-                onChange={(e) => handleSetsChange(parseInt(e.target.value) || 0)}
-                min="1"
-                max="10"
-                className="h-9"
-              />
-            </div>
-          )}
+            )}
 
-          {/* Rep Range */}
-          {((block.technique || 'Normale') === 'Normale') && (
-            <div>
-              <Label className="text-xs">Rep Range</Label>
-              <Select
-                value={block.repRange || '8-12'}
-                onValueChange={(v) => onUpdate(blockIndex, 'repRange', v)}
-              >
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Seleziona range">
-                    {block.repRange && `${block.repRange} - ${REP_RANGES[block.repRange as keyof typeof REP_RANGES]?.focus || ''}`}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.keys(REP_RANGES).map((range) => (
-                    <SelectItem key={range} value={range}>
-                      {range} - {REP_RANGES[range as keyof typeof REP_RANGES].focus}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+            {/* Rep Range */}
+            {isNormalTechnique && (
+              <div className="mt-3">
+                <Label className="text-xs text-gray-600 mb-1.5 block">Rep Range</Label>
+                <Select
+                  value={block.repRange || '8-12'}
+                  onValueChange={(v) => onUpdate(blockIndex, 'repRange', v)}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Seleziona range">
+                      {block.repRange && `${block.repRange} - ${REP_RANGES[block.repRange as keyof typeof REP_RANGES]?.focus || ''}`}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(REP_RANGES).map((range) => (
+                      <SelectItem key={range} value={range}>
+                        {range} - {REP_RANGES[range as keyof typeof REP_RANGES].focus}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
 
           {/* Carichi */}
-          <div>
-            <Label className="text-xs">Carichi per Set (kg)</Label>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <Dumbbell className="w-3.5 h-3.5" />
+              Carichi per Set (kg)
+            </Label>
             <div className="flex gap-2 items-center">
-              <div className="flex-1 px-3 py-2 border rounded-md bg-muted text-sm">
+              <div className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm font-mono text-gray-700">
                 {(() => {
                   if (isNormalTechnique) {
-                    // Tecnica normale: mostra tutti i carichi separati da '-'
-                    return block.targetLoads?.join('-') || '-';
+                    return block.targetLoads?.join(' - ') || '-';
                   } else {
-                    // Tecnica speciale: mostra carichi per cluster se disponibili
                     if (block.targetLoadsByCluster && block.targetLoadsByCluster.length > 0) {
                       return block.targetLoadsByCluster.map(setLoads => setLoads.join('/')).join(' • ');
                     }
-                    // Fallback a targetLoads
-                    return block.targetLoads?.join('-') || '-';
+                    return block.targetLoads?.join(' - ') || '-';
                   }
                 })()}
               </div>
@@ -483,58 +526,157 @@ export function ExerciseBlockCard({
                 size="sm"
                 onClick={() => setShowLoadModal(true)}
               >
-                ✏️ Modifica
+                Modifica
               </Button>
             </div>
           </div>
 
-          {/* Load Modal */}
-          {showLoadModal && (
-            <div 
-              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-              onClick={(e) => {
-                // Chiudi il modal se si clicca sull'overlay
-                if (e.target === e.currentTarget) {
-                  setShowLoadModal(false);
-                }
-              }}
-            >
-              <Card 
-                className="w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <CardContent className="pt-6 space-y-3">
-                  <h3 className="text-lg font-semibold mb-4">Modifica Carichi</h3>
-                  {isNormalTechnique ? (
-                    // Tecnica normale: un carico per set
-                    block.targetLoads?.map((load, i) => (
-                      <div key={i}>
-                        <Label className="text-xs">Set {i + 1}</Label>
-                        <Input
-                          type="number"
-                          value={load}
-                          onChange={(e) => {
-                            const newLoads = [...(block.targetLoads || [])];
-                            newLoads[i] = e.target.value;
-                            onUpdate(blockIndex, 'targetLoads', newLoads);
-                          }}
-                          className="h-9"
-                        />
-                      </div>
-                    ))
-                  ) : (
-                    // Tecnica speciale: carichi per cluster/mini-set
-                    localLoadsByCluster.length > 0 ? (
-                      <>
-                        {localLoadsByCluster.map((setLoads, setIdx) => {
-                          const clusters = parseSchema(block.techniqueSchema || '');
-                          return (
-                            <div key={setIdx} className="border rounded-lg p-3 space-y-2 mb-3">
-                              <Label className="text-xs font-semibold">Set {setIdx + 1}</Label>
-                              <div className="grid grid-cols-2 gap-2">
-                                {setLoads.map((load: string, clusterIdx: number) => (
-                                  <div key={clusterIdx} onClick={(e) => e.stopPropagation()}>
-                                    <Label className="text-xs">Cluster {clusterIdx + 1} ({clusters[clusterIdx] || 0} reps)</Label>
+          {/* Intensità */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium text-gray-700">Intensità</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-gray-600 mb-1.5 block">Coefficiente</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={block.coefficient || 0}
+                  onChange={(e) => onUpdate(blockIndex, 'coefficient', parseFloat(e.target.value) || 0)}
+                  className="h-10"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-gray-600 mb-1.5 block">RPE Target</Label>
+                <Input
+                  type="number"
+                  step="0.5"
+                  min="5"
+                  max="10"
+                  value={block.targetRPE || 0}
+                  onChange={(e) => onUpdate(blockIndex, 'targetRPE', parseFloat(e.target.value) || 0)}
+                  className="h-10"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Rest */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <Clock className="w-3.5 h-3.5" />
+              Tempi di Recupero
+            </Label>
+            <div>
+              <Label className="text-xs text-gray-600 mb-1.5 block">
+                Rest globale (secondi)
+                {!isNormalTechnique && (
+                  <span className="text-muted-foreground ml-1 text-xs">
+                    - tra i set completi
+                  </span>
+                )}
+              </Label>
+              <Input
+                type="number"
+                value={block.rest || 0}
+                onChange={(e) => onUpdate(blockIndex, 'rest', parseInt(e.target.value) || 0)}
+                className="h-10"
+              />
+            </div>
+
+            {!isLast && (
+              <div>
+                <Label className="text-xs text-gray-600 mb-1.5 block">Rest dopo blocco (secondi)</Label>
+                <Input
+                  type="number"
+                  value={block.blockRest || 0}
+                  onChange={(e) => onUpdate(blockIndex, 'blockRest', parseInt(e.target.value) || 0)}
+                  className="h-10"
+                  placeholder="0"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Note */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <FileText className="w-3.5 h-3.5" />
+              Note
+            </Label>
+            <Textarea
+              value={block.notes || ''}
+              onChange={(e) => onUpdate(blockIndex, 'notes', e.target.value)}
+              placeholder="Aggiungi note per questo blocco..."
+              className="min-h-[80px]"
+              rows={3}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Load Modal con Tabs */}
+      <Dialog open={showLoadModal} onOpenChange={setShowLoadModal}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Dumbbell className="w-5 h-5" />
+              Modifica Carichi - Blocco {blockIndex + 1}
+            </DialogTitle>
+          </DialogHeader>
+
+          <Tabs defaultValue="loads" className="flex-1 overflow-hidden flex flex-col">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="loads">💪 Carichi</TabsTrigger>
+              <TabsTrigger value="rest">⏱️ Rest</TabsTrigger>
+              <TabsTrigger value="notes">📝 Note</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="loads" className="flex-1 overflow-y-auto p-4 space-y-4">
+              {isNormalTechnique ? (
+                // Tecnica normale: un carico per set
+                <div className="space-y-3">
+                  {block.targetLoads?.map((load, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <span className="px-3 py-1.5 rounded bg-blue-600 text-white text-sm font-bold min-w-[4rem] text-center">
+                        Set {i + 1}
+                      </span>
+                      <Input
+                        type="number"
+                        value={load}
+                        onChange={(e) => {
+                          const newLoads = [...(block.targetLoads || [])];
+                          newLoads[i] = e.target.value;
+                          onUpdate(blockIndex, 'targetLoads', newLoads);
+                        }}
+                        className="h-10 flex-1"
+                        placeholder="80"
+                      />
+                      <span className="text-sm font-medium text-muted-foreground">kg</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                // Tecnica speciale: carichi per cluster/mini-set
+                localLoadsByCluster.length > 0 ? (
+                  <div className="space-y-4">
+                    {localLoadsByCluster.map((setLoads, setIdx) => {
+                      const clusters = parseSchema(block.techniqueSchema || '');
+                      return (
+                        <Card key={setIdx} className="border-2 border-purple-200 shadow-sm">
+                          <CardHeader className="pb-3 bg-gradient-to-r from-purple-50 to-blue-50">
+                            <h4 className="text-sm font-bold flex items-center gap-2">
+                              <span className="px-2.5 py-1 rounded bg-purple-600 text-white">Set {setIdx + 1}</span>
+                              <span className="text-muted-foreground text-xs">({block.techniqueSchema})</span>
+                            </h4>
+                          </CardHeader>
+                          <CardContent className="pt-4">
+                            <div className="grid grid-cols-2 gap-3">
+                              {setLoads.map((load: string, clusterIdx: number) => (
+                                <div key={clusterIdx}>
+                                  <Label className="text-xs mb-1.5 block">
+                                    Cluster {clusterIdx + 1} <span className="text-muted-foreground">({clusters[clusterIdx] || 0} reps)</span>
+                                  </Label>
+                                  <div className="flex items-center gap-2">
                                     <Input
                                       type="number"
                                       step="0.5"
@@ -546,13 +688,10 @@ export function ExerciseBlockCard({
                                           const newLoadsByCluster = prev.map((sl: string[], si: number) => 
                                             si === setIdx ? sl.map((l: string, ci: number) => ci === clusterIdx ? newValue : l) : sl
                                           );
-                                          
-                                          // Aggiorna solo lo stato locale, il salvataggio finale avverrà con il pulsante "Salva"
                                           return newLoadsByCluster;
                                         });
                                       }}
                                       onBlur={(e) => {
-                                        // Assicurati che il valore non sia vuoto quando si perde il focus
                                         if (!e.target.value || e.target.value === '') {
                                           const newValue = '80';
                                           setLocalLoadsByCluster(prev => {
@@ -566,140 +705,100 @@ export function ExerciseBlockCard({
                                         }
                                       }}
                                       className="h-9"
-                                      placeholder="0"
-                                      onClick={(e) => e.stopPropagation()}
-                                      onKeyDown={(e) => e.stopPropagation()}
-                                      onFocus={(e) => e.stopPropagation()}
+                                      placeholder="80"
                                     />
+                                    <span className="text-xs text-muted-foreground">kg</span>
                                   </div>
-                                ))}
-                              </div>
+                                </div>
+                              ))}
                             </div>
-                          );
-                        })}
-                      </>
-                    ) : (
-                      <div className="text-sm text-muted-foreground">Caricamento...</div>
-                    )
-                  )}
-                  <div className="flex gap-2 pt-4">
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => {
-                        // Annulla: ripristina i valori originali
-                        setShowLoadModal(false);
-                      }}
-                    >
-                      Annulla
-                    </Button>
-                    <Button
-                      className="flex-1"
-                      onClick={() => {
-                        // Salva i valori dal localLoadsByCluster al blocco
-                        if (!isNormalTechnique && localLoadsByCluster.length > 0) {
-                          // Assicurati che tutti i valori siano validi (non vuoti)
-                          const validLoadsByCluster = localLoadsByCluster.map(setLoads =>
-                            setLoads.map(load => {
-                              const numLoad = parseFloat(String(load || '0'));
-                              return isNaN(numLoad) || numLoad <= 0 ? '80' : String(numLoad);
-                            })
-                          );
-                          // Usa onUpdateBatch se disponibile per aggiornare tutto in una volta
-                          if (onUpdateBatch) {
-                            onUpdateBatch(blockIndex, {
-                              targetLoadsByCluster: validLoadsByCluster,
-                              targetLoads: validLoadsByCluster.map((sl: string[]) => sl[0] || '80')
-                            });
-                          } else {
-                            onUpdate(blockIndex, 'targetLoadsByCluster', validLoadsByCluster);
-                            const newTargetLoads = validLoadsByCluster.map((sl: string[]) => sl[0] || '80');
-                            onUpdate(blockIndex, 'targetLoads', newTargetLoads);
-                          }
-                        }
-                        setShowLoadModal(false);
-                      }}
-                    >
-                      Salva
-                    </Button>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* Intensità */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs">Coefficiente</Label>
-              <Input
-                type="number"
-                step="0.1"
-                value={block.coefficient || 0}
-                onChange={(e) => onUpdate(blockIndex, 'coefficient', parseFloat(e.target.value) || 0)}
-                className="h-9"
-              />
-            </div>
-            <div>
-              <Label className="text-xs">RPE Target</Label>
-              <Input
-                type="number"
-                step="0.5"
-                min="5"
-                max="10"
-                value={block.targetRPE || 0}
-                onChange={(e) => onUpdate(blockIndex, 'targetRPE', parseFloat(e.target.value) || 0)}
-                className="h-9"
-              />
-            </div>
-          </div>
-
-          {/* Rest globale: sempre presente (riposo tra i set completi) */}
-          <div>
-            <Label className="text-xs">
-              Rest globale (secondi) - riposo tra i set
-              {!isNormalTechnique && (
-                <span className="text-muted-foreground ml-1 text-xs">
-                  (tra i set completi, es. tra i 2 set da 10+10+10)
-                </span>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">Caricamento...</div>
+                )
               )}
-            </Label>
-            <Input
-              type="number"
-              value={block.rest || 0}
-              onChange={(e) => onUpdate(blockIndex, 'rest', parseInt(e.target.value) || 0)}
-              className="h-9"
-            />
-          </div>
+            </TabsContent>
 
-          {/* Rest tra blocchi (solo se non è l'ultimo) */}
-          {!isLast && (
-            <div>
-              <Label className="text-xs">Rest dopo blocco (secondi)</Label>
-              <Input
-                type="number"
-                value={block.blockRest || 0}
-                onChange={(e) => onUpdate(blockIndex, 'blockRest', parseInt(e.target.value) || 0)}
-                className="h-9"
-                placeholder="0"
-              />
-            </div>
-          )}
+            <TabsContent value="rest" className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="space-y-3">
+                <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="w-4 h-4 text-gray-600" />
+                    <span className="font-medium text-gray-700">Rest globale:</span>
+                    <span className="font-semibold text-gray-900">{block.rest || 0}s</span>
+                  </div>
+                </div>
+                {!isNormalTechnique && block.techniqueParams?.pause && (
+                  <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="w-4 h-4 text-gray-600" />
+                      <span className="font-medium text-gray-700">Rest intra-set:</span>
+                      <span className="font-semibold text-gray-900">{block.techniqueParams.pause}s</span>
+                    </div>
+                  </div>
+                )}
+                {!isLast && block.blockRest && (
+                  <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="w-4 h-4 text-gray-600" />
+                      <span className="font-medium text-gray-700">Rest dopo blocco:</span>
+                      <span className="font-semibold text-gray-900">{block.blockRest}s</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
 
-          {/* Note */}
-          <div>
-            <Label className="text-xs">Note</Label>
-            <Textarea
-              value={block.notes || ''}
-              onChange={(e) => onUpdate(blockIndex, 'notes', e.target.value)}
-              placeholder="Aggiungi note per questo blocco..."
-              className="min-h-[60px] text-sm"
-              rows={3}
-            />
+            <TabsContent value="notes" className="flex-1 overflow-y-auto p-4">
+              <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                <p className="text-sm text-gray-700">
+                  {block.notes || 'Nessuna nota per questo blocco.'}
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <div className="flex gap-2 pt-4 border-t">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setShowLoadModal(false)}
+            >
+              Annulla
+            </Button>
+            <Button
+              className="flex-1 bg-blue-600 hover:bg-blue-700"
+              onClick={() => {
+                if (!isNormalTechnique && localLoadsByCluster.length > 0) {
+                  const validLoadsByCluster = localLoadsByCluster.map(setLoads =>
+                    setLoads.map(load => {
+                      const numLoad = parseFloat(String(load || '0'));
+                      return isNaN(numLoad) || numLoad <= 0 ? '80' : String(numLoad);
+                    })
+                  );
+                  if (onUpdateBatch) {
+                    onUpdateBatch(blockIndex, {
+                      targetLoadsByCluster: validLoadsByCluster,
+                      targetLoads: validLoadsByCluster.map((sl: string[]) => sl[0] || '80')
+                    });
+                  } else {
+                    onUpdate(blockIndex, 'targetLoadsByCluster', validLoadsByCluster);
+                    const newTargetLoads = validLoadsByCluster.map((sl: string[]) => sl[0] || '80');
+                    onUpdate(blockIndex, 'targetLoads', newTargetLoads);
+                  }
+                }
+                setShowLoadModal(false);
+              }}
+            >
+              💾 Salva Modifiche
+            </Button>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
-

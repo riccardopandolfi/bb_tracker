@@ -1,12 +1,10 @@
 import { LoggedSession } from '@/types';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-react';
-import { getRPEColor } from '@/lib/calculations';
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { getExerciseBlocks } from '@/lib/exerciseUtils';
@@ -29,7 +27,7 @@ export function LoggedSessionCard({
   onDelete,
 }: LoggedSessionCardProps) {
   const [showBlockSelector, setShowBlockSelector] = useState(false);
-  const { getCurrentWeeks } = useApp();
+  const { getCurrentWeeks, exercises } = useApp();
   const weeks = getCurrentWeeks();
   const week = weeks[session.weekNum];
   
@@ -52,6 +50,180 @@ export function LoggedSessionCard({
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  // Funzione per ottenere il muscolo primario dall'esercizio
+  const getPrimaryMuscleForExercise = (exerciseName: string) => {
+    const libraryEx = exercises.find((e) => e.name === exerciseName);
+    if (!libraryEx || !libraryEx.muscles || libraryEx.muscles.length === 0) return null;
+    return libraryEx.muscles.reduce((prev, curr) =>
+      curr.percent > prev.percent ? curr : prev
+    );
+  };
+
+  // Per sessioni multiple, ogni blocco può avere muscolo diverso (ma di solito è lo stesso)
+  const primaryMuscle = getPrimaryMuscleForExercise(session.exercise);
+
+  const getWeekColor = (weekNum: number): string => {
+    const colors = [
+      'bg-emerald-700 text-white',  // W1 - Emerald
+      'bg-teal-700 text-white',     // W2 - Teal
+      'bg-cyan-700 text-white',     // W3 - Cyan
+      'bg-sky-700 text-white',      // W4 - Sky
+      'bg-blue-700 text-white',     // W5 - Blue
+      'bg-indigo-700 text-white',   // W6 - Indigo
+      'bg-violet-700 text-white',   // W7 - Violet
+      'bg-purple-700 text-white',   // W8 - Purple
+    ];
+    return colors[(weekNum - 1) % colors.length];
+  };
+
+  // Funzioni helper per ottenere colori basati sul muscolo
+  const getBlockColorForMuscle = (muscle: string | null, blockIndex: number): string => {
+    if (!muscle) return 'bg-gray-500 text-white';
+    
+    const shadeIndex = blockIndex % 8;
+    const shades = ['400', '500', '600', '500', '400', '500', '600', '500'];
+    const shade = shades[shadeIndex];
+    
+    const colorMap: Record<string, Record<string, string>> = {
+      'Petto': {
+        '400': 'bg-red-400 text-white',
+        '500': 'bg-red-500 text-white',
+        '600': 'bg-red-600 text-white',
+      },
+      'Dorso - Lats': {
+        '400': 'bg-blue-400 text-white',
+        '500': 'bg-blue-500 text-white',
+        '600': 'bg-blue-600 text-white',
+      },
+      'Dorso - Upper Back': {
+        '400': 'bg-blue-400 text-white',
+        '500': 'bg-blue-500 text-white',
+        '600': 'bg-blue-600 text-white',
+      },
+      'Dorso - Trapezi': {
+        '400': 'bg-blue-400 text-white',
+        '500': 'bg-blue-500 text-white',
+        '600': 'bg-blue-600 text-white',
+      },
+      'Deltoidi - Anteriore': {
+        '400': 'bg-orange-400 text-white',
+        '500': 'bg-orange-500 text-white',
+        '600': 'bg-orange-600 text-white',
+      },
+      'Deltoidi - Laterale': {
+        '400': 'bg-orange-400 text-white',
+        '500': 'bg-orange-500 text-white',
+        '600': 'bg-orange-600 text-white',
+      },
+      'Deltoidi - Posteriore': {
+        '400': 'bg-orange-400 text-white',
+        '500': 'bg-orange-500 text-white',
+        '600': 'bg-orange-600 text-white',
+      },
+      'Bicipiti': {
+        '400': 'bg-purple-400 text-white',
+        '500': 'bg-purple-500 text-white',
+        '600': 'bg-purple-600 text-white',
+      },
+      'Tricipiti': {
+        '400': 'bg-pink-400 text-white',
+        '500': 'bg-pink-500 text-white',
+        '600': 'bg-pink-600 text-white',
+      },
+      'Avambracci': {
+        '400': 'bg-purple-400 text-white',
+        '500': 'bg-purple-500 text-white',
+        '600': 'bg-purple-600 text-white',
+      },
+      'Quadricipiti': {
+        '400': 'bg-green-400 text-white',
+        '500': 'bg-green-500 text-white',
+        '600': 'bg-green-600 text-white',
+      },
+      'Femorali': {
+        '400': 'bg-green-400 text-white',
+        '500': 'bg-green-500 text-white',
+        '600': 'bg-green-600 text-white',
+      },
+      'Glutei': {
+        '400': 'bg-green-400 text-white',
+        '500': 'bg-green-500 text-white',
+        '600': 'bg-green-600 text-white',
+      },
+      'Polpacci': {
+        '400': 'bg-green-400 text-white',
+        '500': 'bg-green-500 text-white',
+        '600': 'bg-green-600 text-white',
+      },
+      'Adduttori': {
+        '400': 'bg-teal-400 text-white',
+        '500': 'bg-teal-500 text-white',
+        '600': 'bg-teal-600 text-white',
+      },
+      'Abduttori': {
+        '400': 'bg-teal-400 text-white',
+        '500': 'bg-teal-500 text-white',
+        '600': 'bg-teal-600 text-white',
+      },
+      'Addome': {
+        '400': 'bg-yellow-400 text-white',
+        '500': 'bg-yellow-500 text-white',
+        '600': 'bg-yellow-600 text-white',
+      },
+      'Obliqui': {
+        '400': 'bg-yellow-400 text-white',
+        '500': 'bg-yellow-500 text-white',
+        '600': 'bg-yellow-600 text-white',
+      },
+      'Core': {
+        '400': 'bg-yellow-400 text-white',
+        '500': 'bg-yellow-500 text-white',
+        '600': 'bg-yellow-600 text-white',
+      },
+    };
+    
+    return colorMap[muscle]?.[shade] || 'bg-gray-500 text-white';
+  };
+
+  const getTechniqueColorForMuscle = (muscle: string | null, technique: string): string => {
+    if (!muscle) {
+      return technique === 'Normale' ? 'bg-gray-300 text-gray-900' : 'bg-gray-400 text-white';
+    }
+    
+    const colorMap: Record<string, { normal: string; special: string }> = {
+      'Petto': { normal: 'bg-red-300 text-red-900', special: 'bg-red-400 text-white' },
+      'Dorso - Lats': { normal: 'bg-blue-300 text-blue-900', special: 'bg-blue-400 text-white' },
+      'Dorso - Upper Back': { normal: 'bg-blue-300 text-blue-900', special: 'bg-blue-400 text-white' },
+      'Dorso - Trapezi': { normal: 'bg-blue-300 text-blue-900', special: 'bg-blue-400 text-white' },
+      'Deltoidi - Anteriore': { normal: 'bg-orange-300 text-orange-900', special: 'bg-orange-400 text-white' },
+      'Deltoidi - Laterale': { normal: 'bg-orange-300 text-orange-900', special: 'bg-orange-400 text-white' },
+      'Deltoidi - Posteriore': { normal: 'bg-orange-300 text-orange-900', special: 'bg-orange-400 text-white' },
+      'Bicipiti': { normal: 'bg-purple-300 text-purple-900', special: 'bg-purple-400 text-white' },
+      'Tricipiti': { normal: 'bg-pink-300 text-pink-900', special: 'bg-pink-400 text-white' },
+      'Avambracci': { normal: 'bg-purple-300 text-purple-900', special: 'bg-purple-400 text-white' },
+      'Quadricipiti': { normal: 'bg-green-300 text-green-900', special: 'bg-green-400 text-white' },
+      'Femorali': { normal: 'bg-green-300 text-green-900', special: 'bg-green-400 text-white' },
+      'Glutei': { normal: 'bg-green-300 text-green-900', special: 'bg-green-400 text-white' },
+      'Polpacci': { normal: 'bg-green-300 text-green-900', special: 'bg-green-400 text-white' },
+      'Adduttori': { normal: 'bg-teal-300 text-teal-900', special: 'bg-teal-400 text-white' },
+      'Abduttori': { normal: 'bg-teal-300 text-teal-900', special: 'bg-teal-400 text-white' },
+      'Addome': { normal: 'bg-yellow-300 text-yellow-900', special: 'bg-yellow-400 text-white' },
+      'Obliqui': { normal: 'bg-yellow-300 text-yellow-900', special: 'bg-yellow-400 text-white' },
+      'Core': { normal: 'bg-yellow-300 text-yellow-900', special: 'bg-yellow-400 text-white' },
+    };
+    
+    const colors = colorMap[muscle] || { normal: 'bg-gray-300 text-gray-900', special: 'bg-gray-400 text-white' };
+    return technique === 'Normale' ? colors.normal : colors.special;
+  };
+
+  const getBlockColor = (blockIndex: number): string => {
+    return getBlockColorForMuscle(primaryMuscle?.muscle || null, blockIndex);
+  };
+
+  const getTechniqueColor = (technique: string): string => {
+    return getTechniqueColorForMuscle(primaryMuscle?.muscle || null, technique);
   };
 
   const hasMultipleBlocks = groupedSessions && groupedSessions.length > 1;
@@ -84,18 +256,18 @@ export function LoggedSessionCard({
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
-      <Card className="hover:shadow-md transition-shadow">
+      <Card className="border border-gray-200 hover:border-gray-300 transition-colors">
         <CardContent className="pt-6">
           {/* Header - Always Visible */}
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm font-medium text-muted-foreground">
-                  🗓️ {formatDate(session.date)}
+              <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
+                <span className="text-sm font-medium text-gray-600">
+                  {formatDate(session.date)}
                 </span>
-                <Badge variant="outline" className="text-xs">
+                <span className={`px-2 py-0.5 ${getWeekColor(session.weekNum)} text-xs font-medium rounded`}>
                   W{session.weekNum}
-                </Badge>
+                </span>
               </div>
 
               <h3 className="text-lg font-semibold mb-2">
@@ -195,20 +367,22 @@ export function LoggedSessionCard({
                     // Se ci sono carichi diversi, mostra ogni set separatamente
                     if (hasDifferentLoads || hasDifferentBetweenSets) {
                       return (
-                        <div key={idx} className="flex flex-col gap-1 p-2 rounded-md bg-muted/30">
-                          <div className="flex items-center gap-2 text-xs mb-1">
-                            <span className="font-medium text-muted-foreground">
-                              Blocco {blockSession.blockIndex !== undefined ? blockSession.blockIndex + 1 : idx + 1}: {blockSession.technique}
+                        <div key={idx} className="border border-gray-200 rounded-md p-3 bg-white">
+                          <div className="flex items-center gap-2 text-xs mb-2 pb-2 border-b border-gray-100">
+                            <span className={`px-2 py-0.5 ${getBlockColor(blockSession.blockIndex !== undefined ? blockSession.blockIndex : idx)} rounded text-xs font-medium`}>
+                              B{blockSession.blockIndex !== undefined ? blockSession.blockIndex + 1 : idx + 1}
+                            </span>
+                            <span className={`px-2 py-0.5 ${getTechniqueColor(blockSession.technique)} rounded text-xs font-medium`}>
+                              {blockSession.technique}
                             </span>
                             {blockSession.blockRest && idx < groupedSessions.length - 1 && (
-                              <span className="text-xs text-muted-foreground">
-                                (rest: {blockSession.blockRest}s)
+                              <span className="text-xs text-gray-500 ml-auto">
+                                rest: {blockSession.blockRest}s
                               </span>
                             )}
                           </div>
-                          <div className="flex flex-col gap-1">
+                          <div className="flex flex-col gap-1.5">
                             {actualDataBySet.map((setData, setIdx) => {
-                              const blockNum = blockSession.blockIndex !== undefined ? blockSession.blockIndex + 1 : idx + 1;
                               const setDisplay = setIdx + 1;
                               
                               // Target: carichi e reps dal programma originale
@@ -251,21 +425,21 @@ export function LoggedSessionCard({
                               const actualRepsStr = setData.reps;
                               
                               return (
-                                <div key={setIdx} className="flex items-center gap-3 text-xs pl-2">
-                                  <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 text-xs font-medium">
-                                    B{blockNum}.{setDisplay}
+                                <div key={setIdx} className="flex items-center gap-2 text-xs bg-gray-50 p-2 rounded-md">
+                                  <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 text-xs font-medium min-w-[3rem] text-center">
+                                    S{setDisplay}
                                   </span>
                                   <div className="flex items-center gap-1">
-                                    <span className="text-muted-foreground">Programma:</span>
-                                    <span className="font-medium">
+                                    <span className="text-gray-600">Programma:</span>
+                                    <span className="font-medium text-gray-900">
                                       {targetRepsStr}
                                       {targetLoadsStr !== '-' && ` @ ${targetLoadsStr}kg`}
                                     </span>
                                   </div>
-                                  <span className="text-muted-foreground">→</span>
+                                  <span className="text-gray-400">→</span>
                                   <div className="flex items-center gap-1">
-                                    <span className="text-muted-foreground">Eseguito:</span>
-                                    <span className="font-medium">
+                                    <span className="text-gray-600">Eseguito:</span>
+                                    <span className="font-semibold text-gray-900">
                                       {actualRepsStr} @ {actualLoadsStr}kg
                                     </span>
                                   </div>
@@ -281,30 +455,45 @@ export function LoggedSessionCard({
                     const actualLoadsBySet = actualDataBySet.map(set => set.loads[0]);
                     const actualRepsBySet = actualDataBySet.map(set => set.reps);
                     
+                    // Ottieni il muscolo per questo specifico blocco
+                    const blockMuscle = getPrimaryMuscleForExercise(blockSession.exercise);
+                    
+                    // Funzioni colore specifiche per questo blocco
+                    const getBlockColorForThis = (blockIdx: number) => {
+                      return getBlockColorForMuscle(blockMuscle?.muscle || null, blockIdx);
+                    };
+                    
+                    const getTechniqueColorForThis = (technique: string) => {
+                      return getTechniqueColorForMuscle(blockMuscle?.muscle || null, technique);
+                    };
+                    
                     return (
-                      <div key={idx} className="flex flex-col gap-1 p-2 rounded-md bg-muted/30">
-                        <div className="flex items-center gap-2 text-xs">
-                          <span className="font-medium text-muted-foreground">
-                            Blocco {blockSession.blockIndex !== undefined ? blockSession.blockIndex + 1 : idx + 1}: {blockSession.technique}
+                      <div key={idx} className="border border-gray-200 rounded-md p-3 bg-white">
+                        <div className="flex items-center gap-2 text-xs mb-2 pb-2 border-b border-gray-100">
+                          <span className={`px-2 py-0.5 ${getBlockColorForThis(blockSession.blockIndex !== undefined ? blockSession.blockIndex : idx)} rounded text-xs font-medium`}>
+                            B{blockSession.blockIndex !== undefined ? blockSession.blockIndex + 1 : idx + 1}
+                          </span>
+                          <span className={`px-2 py-0.5 ${getTechniqueColorForThis(blockSession.technique)} rounded text-xs font-medium`}>
+                            {blockSession.technique}
                           </span>
                           {blockSession.blockRest && idx < groupedSessions.length - 1 && (
-                            <span className="text-xs text-muted-foreground">
-                              (rest: {blockSession.blockRest}s)
+                            <span className="text-xs text-gray-500 ml-auto">
+                              rest: {blockSession.blockRest}s
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-3 text-xs">
+                        <div className="flex items-center gap-2 text-xs">
                           <div className="flex items-center gap-1">
-                            <span className="text-muted-foreground">Programma:</span>
-                            <span className="font-medium">
+                            <span className="text-gray-600">Programma:</span>
+                            <span className="font-medium text-gray-900">
                               {numSets}×{blockIsSpecial ? blockSession.techniqueSchema || '' : targetRepsPerSet.toFixed(0)}
                               {targetLoadsStr !== '-' && ` @ ${targetLoadsStr}kg`}
                             </span>
                           </div>
-                          <span className="text-muted-foreground">→</span>
+                          <span className="text-gray-400">→</span>
                           <div className="flex items-center gap-1">
-                            <span className="text-muted-foreground">Eseguito:</span>
-                            <span className="font-medium">
+                            <span className="text-gray-600">Eseguito:</span>
+                            <span className="font-semibold text-gray-900">
                               {actualRepsBySet.map((reps, i) => (
                                 <span key={i}>
                                   {reps}@{actualLoadsBySet[i]}kg
@@ -362,7 +551,7 @@ export function LoggedSessionCard({
               <div className="flex items-center gap-3 text-sm">
                 <span className="text-muted-foreground">
                   RPE {hasMultipleBlocks ? 'Medio' : 'Reale'}:{' '}
-                  <span className={getRPEColor(avgRPE)}>
+                  <span className="font-semibold text-gray-900">
                     {avgRPE?.toFixed(1)}
                   </span>
                 </span>
@@ -431,7 +620,7 @@ export function LoggedSessionCard({
                         </div>
                         <div>
                           <div className="text-xs text-muted-foreground">RPE Medio</div>
-                          <div className={`font-medium ${getRPEColor(blockSession.avgRPE)}`}>
+                          <div className="font-semibold text-gray-900">
                             {blockSession.avgRPE?.toFixed(1)}
                           </div>
                         </div>
@@ -483,7 +672,7 @@ export function LoggedSessionCard({
                                     <TableCell className="text-sm">
                                       {parseFloat(set.load || '0').toFixed(1)}
                                     </TableCell>
-                                    <TableCell className={`text-sm font-medium ${getRPEColor(rpeValue)}`}>
+                                    <TableCell className="text-sm font-semibold text-gray-900">
                                       {rpeValue.toFixed(1)}
                                     </TableCell>
                                   </TableRow>
@@ -527,7 +716,7 @@ export function LoggedSessionCard({
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground">RPE Medio</div>
-                      <div className={`font-medium ${getRPEColor(session.avgRPE)}`}>
+                      <div className="font-semibold text-gray-900">
                         {session.avgRPE?.toFixed(1)}
                       </div>
                     </div>
@@ -579,7 +768,7 @@ export function LoggedSessionCard({
                                 <TableCell className="text-sm">
                                   {parseFloat(set.load || '0').toFixed(1)}
                                 </TableCell>
-                                <TableCell className={`text-sm font-medium ${getRPEColor(rpeValue)}`}>
+                                <TableCell className="text-sm font-semibold text-gray-900">
                                   {rpeValue.toFixed(1)}
                                 </TableCell>
                               </TableRow>
