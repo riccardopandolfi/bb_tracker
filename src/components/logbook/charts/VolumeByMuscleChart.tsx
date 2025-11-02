@@ -3,7 +3,8 @@ import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 import { Label } from '../../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis } from 'recharts';
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '../../ui/chart';
 import { calculateVolume } from '@/lib/calculations';
 import { MUSCLE_COLORS } from '@/lib/constants';
 
@@ -26,13 +27,16 @@ export function VolumeByMuscleChart() {
     .map(([muscle, data]) => ({
       name: muscle,
       volume: parseFloat(data.volume.toFixed(1)),
+      fill: MUSCLE_COLORS[muscle] || '#6b7280',
     }));
 
   const uniqueMuscles = Object.keys(volumeData.byMuscle);
 
-  // Helper function to get muscle color
-  const getMuscleColor = (muscleName: string): string => {
-    return MUSCLE_COLORS[muscleName] || '#6b7280'; // gray-500 as fallback
+  // Create chart config dynamically
+  const chartConfig: ChartConfig = {
+    volume: {
+      label: "Volume",
+    },
   };
 
   return (
@@ -75,21 +79,37 @@ export function VolumeByMuscleChart() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[400px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={muscleData} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis dataKey="name" type="category" width={150} />
-              <Tooltip />
-              <Bar dataKey="volume" radius={[0, 8, 8, 0]}>
-                {muscleData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={getMuscleColor(entry.name)} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <ChartContainer config={chartConfig} className="h-[400px] w-full">
+          <BarChart
+            accessibilityLayer
+            data={muscleData}
+            layout="vertical"
+            margin={{
+              left: 10,
+              right: 20,
+            }}
+          >
+            <XAxis
+              type="number"
+              dataKey="volume"
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              dataKey="name"
+              type="category"
+              tickLine={false}
+              tickMargin={10}
+              axisLine={false}
+              width={150}
+            />
+            <ChartTooltip
+              cursor={false}
+              content={<ChartTooltipContent hideLabel />}
+            />
+            <Bar dataKey="volume" radius={5} />
+          </BarChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

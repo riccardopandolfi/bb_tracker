@@ -153,6 +153,8 @@ export function LogSessionModal({
       date: new Date().toISOString().split('T')[0],
       weekNum: currentWeek,
       exercise: exercise.exerciseName,
+      dayIndex: dayIndex,
+      dayName: day?.name,
       blockIndex: currentBlockIndex !== null ? currentBlockIndex : 0,
       technique: block.technique,
       techniqueSchema: block.techniqueSchema || '',

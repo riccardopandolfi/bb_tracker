@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { getExerciseBlocks } from '@/lib/exerciseUtils';
 import { calculateBlockTargetReps } from '@/lib/calculations';
+import { MUSCLE_COLORS } from '@/lib/constants';
 
 interface LoggedSessionCardProps {
   session: LoggedSession;
@@ -281,7 +282,23 @@ export function LoggedSessionCard({
                 <span className={`px-2 py-0.5 ${getWeekColor(session.weekNum)} text-xs font-medium rounded`}>
                   W{session.weekNum}
                 </span>
+                {session.dayName && (
+                  <span className="text-xs text-gray-500">
+                    • {session.dayName}
+                  </span>
+                )}
               </div>
+
+              {primaryMuscle && (
+                <div className="mb-1">
+                  <span
+                    className="inline-block px-2 py-0.5 text-xs font-medium rounded text-white"
+                    style={{ backgroundColor: MUSCLE_COLORS[primaryMuscle.muscle] || '#6b7280' }}
+                  >
+                    {primaryMuscle.muscle}
+                  </span>
+                </div>
+              )}
 
               <h3 className="text-lg font-semibold mb-2">
                 {session.exercise}
@@ -364,11 +381,11 @@ export function LoggedSessionCard({
                     // Verifica se ci sono carichi diversi tra i set o all'interno degli stessi set
                     const hasDifferentLoads = actualDataBySet.some((set, i) => {
                       const uniqueLoads = [...new Set(set.loads)];
-                      return uniqueLoads.length > 1 || 
-                        (targetLoadsBySet[i] && targetLoadsBySet[i].length > 0 && 
+                      return uniqueLoads.length > 1 ||
+                        (targetLoadsBySet[i] && targetLoadsBySet[i].length > 0 &&
                          set.loads.some((load, idx) => load !== (targetLoadsBySet[i][idx] || targetLoadsBySet[i][0] || '0')));
                     });
-                    
+
                     const hasDifferentBetweenSets = actualDataBySet.length > 1 && (
                       actualDataBySet.some((set) => {
                         const firstSet = actualDataBySet[0];
@@ -376,9 +393,10 @@ export function LoggedSessionCard({
                           set.loads.some((load, idx) => load !== firstSet.loads[idx]);
                       })
                     );
-                    
-                    // Se ci sono carichi diversi, mostra ogni set separatamente
-                    if (hasDifferentLoads || hasDifferentBetweenSets) {
+
+                    // Se ci sono carichi diversi E la tecnica NON è Normale, mostra ogni set separatamente
+                    // Per le tecniche Normali, usa sempre la visualizzazione compatta
+                    if (blockIsSpecial && (hasDifferentLoads || hasDifferentBetweenSets)) {
                       return (
                         <div key={idx} className="border border-gray-200 rounded-md p-3 bg-white">
                           <div className="flex items-center gap-2 text-xs mb-2 pb-2 border-b border-gray-100">

@@ -22,22 +22,7 @@ export function ProgramsTab() {
   const [editProgramName, setEditProgramName] = useState('');
   const [editProgramDescription, setEditProgramDescription] = useState('');
 
-  // Safety checks
-  if (!programs || Object.keys(programs).length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold">Gestione Programmi</h2>
-            <p className="text-muted-foreground">Caricamento programmi...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const programList = Object.values(programs).sort((a, b) => b.id - a.id); // Newest first
-
+  // Define handlers first
   const handleCreateProgram = () => {
     if (!newProgramName.trim()) {
       alert('Inserisci un nome per il programma');
@@ -58,6 +43,7 @@ export function ProgramsTab() {
   };
 
   const handleDeleteProgram = (programId: number) => {
+    const programList = Object.values(programs).sort((a, b) => b.id - a.id);
     if (programList.length === 1) {
       alert('Non puoi eliminare l\'ultimo programma!');
       return;
@@ -98,6 +84,84 @@ export function ProgramsTab() {
       setEditProgramDescription('');
     }
   };
+
+  // Check if no programs exist
+  const hasProgramms = programs && Object.keys(programs).length > 0;
+
+  if (!hasProgramms) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold">Gestione Programmi</h2>
+            <p className="text-muted-foreground">Crea, gestisci e seleziona i tuoi programmi di allenamento</p>
+          </div>
+        </div>
+
+        {/* Empty State - Large */}
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-20 px-4">
+            <div className="rounded-full bg-primary/10 p-6 mb-6">
+              <Layers className="h-16 w-16 text-primary" />
+            </div>
+            <h3 className="text-3xl font-bold mb-3">Crea il Tuo Primo Programma</h3>
+            <p className="text-muted-foreground text-center mb-8 max-w-lg text-lg">
+              Inizia il tuo percorso di allenamento creando un programma personalizzato con settimane, giorni ed esercizi.
+            </p>
+            <Button onClick={() => setShowNewProgramModal(true)} size="lg" className="text-lg px-8 py-6">
+              <Plus className="w-5 h-5 mr-2" />
+              Crea Nuovo Programma
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* New Program Modal */}
+        <Dialog open={showNewProgramModal} onOpenChange={setShowNewProgramModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Crea Nuovo Programma</DialogTitle>
+              <DialogDescription>
+                Crea un nuovo programma di allenamento con settimane, giorni ed esercizi personalizzati.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label htmlFor="program-name">Nome Programma *</Label>
+                <Input
+                  id="program-name"
+                  value={newProgramName}
+                  onChange={(e) => setNewProgramName(e.target.value)}
+                  placeholder="es. Mesociclo Forza Q1 2025"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="program-description">Descrizione (opzionale)</Label>
+                <Input
+                  id="program-description"
+                  value={newProgramDescription}
+                  onChange={(e) => setNewProgramDescription(e.target.value)}
+                  placeholder="es. Focus su incremento forza massimale"
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowNewProgramModal(false)}>
+                Annulla
+              </Button>
+              <Button onClick={handleCreateProgram}>
+                Crea Programma
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  const programList = Object.values(programs).sort((a, b) => b.id - a.id); // Newest first
 
   return (
     <>

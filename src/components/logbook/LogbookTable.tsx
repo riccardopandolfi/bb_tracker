@@ -4,6 +4,9 @@ import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { EditSessionModal } from './EditSessionModal';
 import { LoggedSessionCard } from './LoggedSessionCard';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
+import { ChevronDown } from 'lucide-react';
+import { Button } from '../ui/button';
 
 interface LogbookTableProps {
   sessions: LoggedSession[];
@@ -14,6 +17,7 @@ export function LogbookTable({ sessions }: LogbookTableProps) {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<LoggedSession | null>(null);
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
+  const [isHistoryOpen, setIsHistoryOpen] = useState(true);
 
   // Raggruppa sessioni per esercizio, data e settimana
   const groupedSessions = sessions.reduce((acc, session) => {
@@ -61,58 +65,86 @@ export function LogbookTable({ sessions }: LogbookTableProps) {
 
   if (sessions.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Storico Sessioni</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-center py-8 text-muted-foreground">
-            Nessuna sessione trovata con questi filtri
-          </p>
-        </CardContent>
-      </Card>
+      <Collapsible open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <CardTitle>Storico Sessioni</CardTitle>
+              </div>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="w-9 p-0">
+                  <ChevronDown className={`h-4 w-4 transition-transform ${isHistoryOpen ? '' : '-rotate-90'}`} />
+                  <span className="sr-only">Espandi/Comprimi storico</span>
+                </Button>
+              </CollapsibleTrigger>
+            </div>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent>
+              <p className="text-center py-8 text-muted-foreground">
+                Nessuna sessione trovata con questi filtri
+              </p>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
     );
   }
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Storico Sessioni</CardTitle>
-          <CardDescription>
-            {sortedGroups.length} esercizio/i trovato/i ({sessions.length} blocchi totali)
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {sortedGroups.map(([groupId, groupSessions]) => {
-              // Ordina i blocchi per blockIndex
-              const sortedGroupSessions = [...groupSessions].sort((a, b) => 
-                (a.blockIndex ?? 0) - (b.blockIndex ?? 0)
-              );
-              const mainSession = sortedGroupSessions[0];
-              const hasMultipleBlocks = sortedGroupSessions.length > 1;
-              
-              return (
-                <LoggedSessionCard
-                  key={groupId}
-                  session={mainSession}
-                  groupedSessions={hasMultipleBlocks ? sortedGroupSessions : undefined}
-                  isExpanded={expandedSessions.has(groupId)}
-                  onToggleExpand={() => toggleExpanded(groupId)}
-                  onEdit={(selectedSession) => {
-                    handleEdit(selectedSession || mainSession);
-                  }}
-                  onDelete={() => {
-                    // Elimina tutte le sessioni del gruppo
-                    sortedGroupSessions.forEach(s => deleteLoggedSession(s.id));
-                  }}
-                />
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+      <Collapsible open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <CardTitle>Storico Sessioni</CardTitle>
+                <CardDescription>
+                  {sortedGroups.length} esercizio/i trovato/i ({sessions.length} blocchi totali)
+                </CardDescription>
+              </div>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="w-9 p-0">
+                  <ChevronDown className={`h-4 w-4 transition-transform ${isHistoryOpen ? '' : '-rotate-90'}`} />
+                  <span className="sr-only">Espandi/Comprimi storico</span>
+                </Button>
+              </CollapsibleTrigger>
+            </div>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent>
+              <div className="space-y-3">
+                {sortedGroups.map(([groupId, groupSessions]) => {
+                  // Ordina i blocchi per blockIndex
+                  const sortedGroupSessions = [...groupSessions].sort((a, b) =>
+                    (a.blockIndex ?? 0) - (b.blockIndex ?? 0)
+                  );
+                  const mainSession = sortedGroupSessions[0];
+                  const hasMultipleBlocks = sortedGroupSessions.length > 1;
+
+                  return (
+                    <LoggedSessionCard
+                      key={groupId}
+                      session={mainSession}
+                      groupedSessions={hasMultipleBlocks ? sortedGroupSessions : undefined}
+                      isExpanded={expandedSessions.has(groupId)}
+                      onToggleExpand={() => toggleExpanded(groupId)}
+                      onEdit={(selectedSession) => {
+                        handleEdit(selectedSession || mainSession);
+                      }}
+                      onDelete={() => {
+                        // Elimina tutte le sessioni del gruppo
+                        sortedGroupSessions.forEach(s => deleteLoggedSession(s.id));
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {selectedSession && (
         <EditSessionModal

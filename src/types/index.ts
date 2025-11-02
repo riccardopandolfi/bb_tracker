@@ -178,6 +178,10 @@ export interface LoggedSession {
   weekNum: number;
   exercise: string;
   
+  // Informazioni sul giorno
+  dayIndex?: number; // Indice del giorno nella settimana (0-based)
+  dayName?: string; // Nome del giorno (es. "Push", "Pull", "Legs")
+  
   // Dati del blocco loggato
   blockIndex: number; // Indice del blocco nell'esercizio (0, 1, 2...)
   technique: Technique;
@@ -207,7 +211,7 @@ export interface WeekMacros {
 
 // Global State
 export interface AppState {
-  currentTab: 'library' | 'programs' | 'program' | 'logbook' | 'macros';
+  currentTab: 'home' | 'library' | 'programs' | 'program' | 'logbook' | 'macros';
   currentProgramId: number;
   currentWeek: number;
   exercises: Exercise[];

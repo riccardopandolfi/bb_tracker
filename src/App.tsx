@@ -1,78 +1,103 @@
 import { useApp } from './contexts/AppContext';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
+import { HomeTab } from './components/HomeTab';
 import { ExerciseLibrary } from './components/ExerciseLibrary';
 import { ProgramsTab } from './components/ProgramsTab';
 import { ProgramTab } from './components/ProgramTab';
 import { LogbookTab } from './components/LogbookTab';
 import { MacrosTab } from './components/MacrosTab';
-import { BookOpen, Dumbbell, TrendingUp, Folder, Apple } from 'lucide-react';
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  navigationMenuTriggerStyle,
+} from './components/ui/navigation-menu';
+import { Home, BookOpen, Dumbbell, TrendingUp, Folder, Apple } from 'lucide-react';
+import { cn } from './lib/utils';
 
 function App() {
-  const { currentTab, setCurrentTab } = useApp();
+  const { currentTab, setCurrentTab, programs } = useApp();
+
+  // Check if there are any programs
+  const hasPrograms = Object.keys(programs).length > 0;
+
+  const navItems = [
+    { value: 'home', label: 'Home', icon: Home, requiresProgram: false },
+    { value: 'library', label: 'Libreria', icon: BookOpen, requiresProgram: false },
+    { value: 'programs', label: 'Programmi', icon: Folder, requiresProgram: false },
+    { value: 'program', label: 'Scheda', icon: Dumbbell, requiresProgram: true },
+    { value: 'logbook', label: 'Logbook', icon: TrendingUp, requiresProgram: true },
+    { value: 'macros', label: 'Macros', icon: Apple, requiresProgram: true },
+  ] as const;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-            Bodybuilding Tracker Pro
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Traccia i tuoi allenamenti, analizza le progressioni e raggiungi i tuoi obiettivi
-          </p>
+      {/* Header */}
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto px-4 max-w-7xl">
+          <div className="flex h-16 items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Dumbbell className="h-6 w-6 text-purple-600" />
+              <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                BB Tracker Pro
+              </h1>
+            </div>
+            <p className="hidden md:block text-sm text-muted-foreground">
+              Il tuo tracker di allenamento professionale
+            </p>
+          </div>
         </div>
+      </header>
 
-        {/* Main Tabs */}
-        <Tabs value={currentTab} onValueChange={(v) => setCurrentTab(v as any)} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-[1000px]">
-            <TabsTrigger value="library" className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
-              <span className="hidden sm:inline">Libreria Esercizi</span>
-              <span className="sm:hidden">Libreria</span>
-            </TabsTrigger>
-            <TabsTrigger value="programs" className="flex items-center gap-2">
-              <Folder className="w-4 h-4" />
-              <span className="hidden sm:inline">Programmi</span>
-              <span className="sm:hidden">Programmi</span>
-            </TabsTrigger>
-            <TabsTrigger value="program" className="flex items-center gap-2">
-              <Dumbbell className="w-4 h-4" />
-              <span className="hidden sm:inline">Scheda Allenamento</span>
-              <span className="sm:hidden">Scheda</span>
-            </TabsTrigger>
-            <TabsTrigger value="logbook" className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              <span>Logbook</span>
-            </TabsTrigger>
-            <TabsTrigger value="macros" className="flex items-center gap-2">
-              <Apple className="w-4 h-4" />
-              <span className="hidden sm:inline">Macronutrienti</span>
-              <span className="sm:hidden">Macros</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="library" className="space-y-4">
-            <ExerciseLibrary />
-          </TabsContent>
-
-          <TabsContent value="programs" className="space-y-4">
-            <ProgramsTab />
-          </TabsContent>
-
-          <TabsContent value="program" className="space-y-4">
-            <ProgramTab />
-          </TabsContent>
-
-          <TabsContent value="logbook" className="space-y-4">
-            <LogbookTab />
-          </TabsContent>
-
-          <TabsContent value="macros" className="space-y-4">
-            <MacrosTab />
-          </TabsContent>
-        </Tabs>
+      {/* Navigation */}
+      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto px-4 max-w-7xl">
+          <NavigationMenu className="max-w-full justify-start py-2">
+            <NavigationMenuList className="flex-wrap gap-1">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isDisabled = item.requiresProgram && !hasPrograms;
+                return (
+                  <NavigationMenuItem key={item.value}>
+                    <NavigationMenuLink
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        'cursor-pointer',
+                        currentTab === item.value &&
+                          'bg-accent text-accent-foreground',
+                        isDisabled && 'opacity-50 cursor-not-allowed'
+                      )}
+                      onClick={() => {
+                        if (!isDisabled) {
+                          setCurrentTab(item.value as any);
+                        }
+                      }}
+                    >
+                      <Icon className="mr-2 h-4 w-4" />
+                      <span className="hidden sm:inline">{item.label}</span>
+                      <span className="sm:hidden">
+                        {item.label === 'Libreria' ? 'Lib' : item.label}
+                      </span>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                );
+              })}
+            </NavigationMenuList>
+          </NavigationMenu>
+        </div>
       </div>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-6 max-w-7xl">
+        <div className="animate-in fade-in duration-500">
+          {currentTab === 'home' && <HomeTab />}
+          {currentTab === 'library' && <ExerciseLibrary />}
+          {currentTab === 'programs' && <ProgramsTab />}
+          {currentTab === 'program' && <ProgramTab />}
+          {currentTab === 'logbook' && <LogbookTab />}
+          {currentTab === 'macros' && <MacrosTab />}
+        </div>
+      </main>
     </div>
   );
 }

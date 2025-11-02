@@ -25,6 +25,7 @@ export const MUSCLE_COLORS: Record<string, string> = {
 
 // Default exercises
 export const DEFAULT_EXERCISES: Exercise[] = [
+  // Push
   {
     name: 'Panca Piana Bilanciere',
     type: 'resistance',
@@ -33,6 +34,40 @@ export const DEFAULT_EXERCISES: Exercise[] = [
       { muscle: 'Tricipiti', percent: 20 },
     ],
   },
+  {
+    name: 'Military Press',
+    type: 'resistance',
+    muscles: [
+      { muscle: 'Deltoidi - Anteriore', percent: 60 },
+      { muscle: 'Deltoidi - Laterale', percent: 30 },
+      { muscle: 'Tricipiti', percent: 10 },
+    ],
+  },
+  {
+    name: 'Dips',
+    type: 'resistance',
+    muscles: [
+      { muscle: 'Petto', percent: 50 },
+      { muscle: 'Tricipiti', percent: 40 },
+      { muscle: 'Deltoidi - Anteriore', percent: 10 },
+    ],
+  },
+  {
+    name: 'Alzate Laterali',
+    type: 'resistance',
+    muscles: [
+      { muscle: 'Deltoidi - Laterale', percent: 90 },
+      { muscle: 'Deltoidi - Anteriore', percent: 10 },
+    ],
+  },
+  {
+    name: 'French Press',
+    type: 'resistance',
+    muscles: [
+      { muscle: 'Tricipiti', percent: 100 },
+    ],
+  },
+  // Pull
   {
     name: 'Rematore Bilanciere',
     type: 'resistance',
@@ -43,6 +78,32 @@ export const DEFAULT_EXERCISES: Exercise[] = [
     ],
   },
   {
+    name: 'Trazioni',
+    type: 'resistance',
+    muscles: [
+      { muscle: 'Dorso - Lats', percent: 70 },
+      { muscle: 'Dorso - Upper Back', percent: 20 },
+      { muscle: 'Bicipiti', percent: 10 },
+    ],
+  },
+  {
+    name: 'Pulley',
+    type: 'resistance',
+    muscles: [
+      { muscle: 'Dorso - Lats', percent: 80 },
+      { muscle: 'Bicipiti', percent: 20 },
+    ],
+  },
+  {
+    name: 'Curl Bilanciere',
+    type: 'resistance',
+    muscles: [
+      { muscle: 'Bicipiti', percent: 90 },
+      { muscle: 'Avambracci', percent: 10 },
+    ],
+  },
+  // Legs
+  {
     name: 'Squat',
     type: 'resistance',
     muscles: [
@@ -52,12 +113,25 @@ export const DEFAULT_EXERCISES: Exercise[] = [
     ],
   },
   {
-    name: 'Military Press',
+    name: 'Leg Press',
     type: 'resistance',
     muscles: [
-      { muscle: 'Deltoidi - Anteriore', percent: 60 },
-      { muscle: 'Deltoidi - Laterale', percent: 30 },
-      { muscle: 'Tricipiti', percent: 10 },
+      { muscle: 'Quadricipiti', percent: 70 },
+      { muscle: 'Glutei', percent: 30 },
+    ],
+  },
+  {
+    name: 'Leg Curl',
+    type: 'resistance',
+    muscles: [
+      { muscle: 'Femorali', percent: 100 },
+    ],
+  },
+  {
+    name: 'Calf Raise',
+    type: 'resistance',
+    muscles: [
+      { muscle: 'Polpacci', percent: 100 },
     ],
   },
 ];

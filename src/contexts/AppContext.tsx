@@ -2,9 +2,10 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { AppState, Exercise, Week, LoggedSession, WeekMacros, CustomTechnique, Program } from '@/types';
 import { DEFAULT_EXERCISES } from '@/lib/constants';
 import { DEFAULT_MUSCLE_GROUPS } from '@/types';
+import { generateDemoPrograms, generateDemoLoggedSessions } from '@/lib/demoData';
 
 interface AppContextType extends AppState {
-  setCurrentTab: (tab: 'library' | 'program' | 'logbook') => void;
+  setCurrentTab: (tab: 'home' | 'library' | 'programs' | 'program' | 'logbook' | 'macros') => void;
   setCurrentProgram: (programId: number) => void;
   setCurrentWeek: (week: number) => void;
   setExercises: (exercises: Exercise[]) => void;
@@ -27,6 +28,9 @@ interface AppContextType extends AppState {
   addCustomTechnique: (technique: CustomTechnique) => void;
   deleteCustomTechnique: (techniqueName: string) => void;
   resetAllData: () => void;
+  loadDemoData: () => void;
+  clearDemoData: () => void;
+  hasDemoData: () => boolean;
 
   // Helper getters
   getCurrentProgram: () => Program | undefined;
@@ -39,7 +43,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 const STORAGE_KEY = 'bodybuilding-data';
 
 const defaultState: AppState = {
-  currentTab: 'library',
+  currentTab: 'home',
   currentProgramId: 1,
   currentWeek: 1,
   exercises: DEFAULT_EXERCISES,
@@ -172,6 +176,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
             delete migrated.totalTonnage;
           }
 
+          // Add dayIndex and dayName if missing - try to find from program structure
+          if (!migrated.hasOwnProperty('dayIndex') || !migrated.hasOwnProperty('dayName')) {
+            const sessionProgramId = migrated.programId || 1;
+            const sessionWeekNum = migrated.weekNum || 1;
+            const program = migratedPrograms[sessionProgramId];
+            
+            if (program && program.weeks && program.weeks[sessionWeekNum]) {
+              const week = program.weeks[sessionWeekNum];
+              const day = week.days?.find((d: any) =>
+                d.exercises?.some((ex: any) => ex.exerciseName === migrated.exercise)
+              );
+              
+              if (day) {
+                migrated.dayIndex = week.days.indexOf(day);
+                migrated.dayName = day.name;
+              }
+            }
+          }
+
           return migrated;
         });
 
@@ -225,7 +248,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return program?.macros || {};
   };
 
-  const setCurrentTab = (tab: 'library' | 'program' | 'logbook') => {
+  const setCurrentTab = (tab: 'home' | 'library' | 'programs' | 'program' | 'logbook' | 'macros') => {
     setState((prev) => ({ ...prev, currentTab: tab }));
   };
 
@@ -498,6 +521,67 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const hasDemoData = () => {
+    return state.programs[999] !== undefined || state.programs[998] !== undefined;
+  };
+
+  const loadDemoData = () => {
+    if (hasDemoData()) {
+      alert('I dati demo sono già caricati!');
+      return;
+    }
+
+    const demoPrograms = generateDemoPrograms();
+    const demoSessions = generateDemoLoggedSessions();
+
+    setState((prev) => ({
+      ...prev,
+      programs: {
+        ...prev.programs,
+        [999]: demoPrograms[0], // Program 1: PPL
+        [998]: demoPrograms[1], // Program 2: Upper/Lower
+      },
+      loggedSessions: [...prev.loggedSessions, ...demoSessions],
+      currentProgramId: 999,
+      currentWeek: 1,
+    }));
+
+    alert('Dati demo caricati con successo! 🎉\n\n2 Programmi:\n- PPL (8 settimane)\n- Upper/Lower (8 settimane)\n\nSessioni logged: ' + demoSessions.length);
+  };
+
+  const clearDemoData = () => {
+    if (!hasDemoData()) {
+      alert('Nessun dato demo da cancellare.');
+      return;
+    }
+
+    if (confirm('Eliminare i programmi demo e tutte le sessioni associate?')) {
+      setState((prev) => {
+        const newPrograms = { ...prev.programs };
+        delete newPrograms[999];
+        delete newPrograms[998];
+
+        // Rimuovi tutte le sessioni dei programmi demo
+        const filteredSessions = prev.loggedSessions.filter(s => s.programId !== 999 && s.programId !== 998);
+
+        // Se il programma corrente era uno dei demo, passa al primo disponibile
+        const newCurrentId = (prev.currentProgramId === 999 || prev.currentProgramId === 998)
+          ? Number(Object.keys(newPrograms)[0] || 1)
+          : prev.currentProgramId;
+
+        return {
+          ...prev,
+          programs: newPrograms,
+          loggedSessions: filteredSessions,
+          currentProgramId: newCurrentId,
+          currentWeek: 1,
+        };
+      });
+
+      alert('Dati demo eliminati con successo!');
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -525,6 +609,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addCustomTechnique,
         deleteCustomTechnique,
         resetAllData,
+        loadDemoData,
+        clearDemoData,
+        hasDemoData,
         getCurrentProgram,
         getCurrentWeeks,
         getCurrentMacros,

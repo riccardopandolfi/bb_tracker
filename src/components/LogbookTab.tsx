@@ -11,33 +11,44 @@ import { ChartsSection } from './logbook/ChartsSection';
 export function LogbookTab() {
   const { exercises, getCurrentWeeks, getCurrentMacros, getCurrentProgram, loggedSessions, currentProgramId } = useApp();
 
+  const weeks = getCurrentWeeks();
+  const macros = getCurrentMacros();
+  const currentProgram = getCurrentProgram();
+
+  // Get sessions for current program first
+  const currentProgramSessions = loggedSessions.filter(s => s.programId === currentProgramId);
+
+  // Extract available weeks and days from current program sessions
+  const availableWeeks = Array.from(new Set(currentProgramSessions.map(s => s.weekNum))).sort((a, b) => a - b);
+  const availableDays = Array.from(new Set(currentProgramSessions.map(s => s.dayName).filter(Boolean))).sort() as string[];
+
+  // Calculate default filters: last week and last day of that week
+  const lastWeek = availableWeeks.length > 0 ? availableWeeks[availableWeeks.length - 1] : null;
+  const lastWeekSessions = lastWeek ? currentProgramSessions.filter(s => s.weekNum === lastWeek) : [];
+  const lastWeekDays = Array.from(new Set(lastWeekSessions.map(s => s.dayName).filter(Boolean))) as string[];
+  const lastDay = lastWeekDays.length > 0 ? lastWeekDays[lastWeekDays.length - 1] : null;
+
   const [filters, setFilters] = useState({
     exercise: '',
     repRange: '',
     technique: '',
-    dateFrom: '',
-    dateTo: '',
+    weekNum: lastWeek ? lastWeek.toString() : '',
+    dayName: lastDay || '',
   });
-
-  const weeks = getCurrentWeeks();
-  const macros = getCurrentMacros();
-  const currentProgram = getCurrentProgram();
 
   const handleExport = () => {
     exportToCSV({ exercises, weeks, loggedSessions, macros });
   };
 
   // Filter sessions by current program
-  const filteredSessions = loggedSessions.filter((session) => {
-    // First filter by program
-    if (session.programId !== currentProgramId) return false;
-    // Then apply user filters
+  const filteredSessions = currentProgramSessions.filter((session) => {
+    // Apply user filters
     if (filters.exercise && session.exercise !== filters.exercise) return false;
     // Rep Range solo per tecniche normali
     if (filters.repRange && session.technique === 'Normale' && session.repRange !== filters.repRange) return false;
     if (filters.technique && session.technique !== filters.technique) return false;
-    if (filters.dateFrom && session.date < filters.dateFrom) return false;
-    if (filters.dateTo && session.date > filters.dateTo) return false;
+    if (filters.weekNum && session.weekNum !== parseInt(filters.weekNum)) return false;
+    if (filters.dayName && session.dayName !== filters.dayName) return false;
     return true;
   });
 
@@ -68,6 +79,8 @@ export function LogbookTab() {
           filters={filters}
           setFilters={setFilters}
           totalSessions={filteredSessions.length}
+          availableWeeks={availableWeeks}
+          availableDays={availableDays}
         />
 
         {/* Table */}
