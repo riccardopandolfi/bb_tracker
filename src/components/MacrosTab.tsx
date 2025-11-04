@@ -5,7 +5,8 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, CartesianGrid } from 'recharts';
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from './ui/chart';
 import { Folder, TrendingUp } from 'lucide-react';
 
 export function MacrosTab() {
@@ -69,6 +70,22 @@ export function MacrosTab() {
       Grassi: weekMacros?.fat ? parseFloat(weekMacros.fat) : 0,
     };
   });
+
+  // Configurazione del grafico
+  const chartConfig = {
+    Proteine: {
+      label: 'Proteine',
+      color: 'hsl(221.2 83.2% 53.3%)',
+    },
+    Carboidrati: {
+      label: 'Carboidrati',
+      color: 'hsl(142.1 76.2% 36.3%)',
+    },
+    Grassi: {
+      label: 'Grassi',
+      color: 'hsl(24.6 95% 53.1%)',
+    },
+  } satisfies ChartConfig;
 
   const handleChange = (field: string, value: string) => {
     setMacros(selectedWeek, {
@@ -227,34 +244,25 @@ export function MacrosTab() {
               </p>
             </div>
           ) : (
-            <div className="h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="week" />
-                  <YAxis label={{ value: 'Grammi (g)', angle: -90, position: 'insideLeft' }} />
-                  <Tooltip
-                    content={({ payload, label }) => {
-                      if (!payload || payload.length === 0) return null;
-                      return (
-                        <div className="bg-background border rounded p-3 shadow-lg">
-                          <p className="font-bold mb-2">{label}</p>
-                          {payload.map((entry: any, index: number) => (
-                            <p key={index} className="text-sm" style={{ color: entry.color }}>
-                              {entry.name}: {entry.value}g
-                            </p>
-                          ))}
-                        </div>
-                      );
-                    }}
-                  />
-                  <Legend />
-                  <Bar dataKey="Proteine" fill="hsl(221.2 83.2% 53.3%)" radius={[8, 8, 0, 0]} />
-                  <Bar dataKey="Carboidrati" fill="hsl(142.1 76.2% 36.3%)" radius={[8, 8, 0, 0]} />
-                  <Bar dataKey="Grassi" fill="hsl(24.6 95% 53.1%)" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <ChartContainer config={chartConfig} className="h-[400px] w-full">
+              <BarChart accessibilityLayer data={chartData}>
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="week"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                  tickFormatter={(value) => value}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent indicator="dashed" />}
+                />
+                <Bar dataKey="Proteine" fill="var(--color-Proteine)" radius={4} />
+                <Bar dataKey="Carboidrati" fill="var(--color-Carboidrati)" radius={4} />
+                <Bar dataKey="Grassi" fill="var(--color-Grassi)" radius={4} />
+              </BarChart>
+            </ChartContainer>
           )}
         </CardContent>
       </Card>

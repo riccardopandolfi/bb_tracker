@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AppState, Exercise, Week, LoggedSession, WeekMacros, CustomTechnique, Program } from '@/types';
-import { DEFAULT_EXERCISES } from '@/lib/constants';
+import { DEFAULT_EXERCISES, MUSCLE_COLORS } from '@/lib/constants';
 import { DEFAULT_MUSCLE_GROUPS } from '@/types';
 import { generateDemoPrograms, generateDemoLoggedSessions } from '@/lib/demoData';
 
@@ -24,7 +24,8 @@ interface AppContextType extends AppState {
   updateLoggedSession: (session: LoggedSession) => void;
   deleteLoggedSession: (sessionId: number) => void;
   setMacros: (weekNum: number, macros: WeekMacros, programId?: number) => void;
-  addMuscleGroup: (muscleGroup: string) => void;
+  addMuscleGroup: (muscleGroup: string, color?: string) => void;
+  getMuscleColor: (muscleName: string) => string;
   addCustomTechnique: (technique: CustomTechnique) => void;
   deleteCustomTechnique: (techniqueName: string) => void;
   resetAllData: () => void;
@@ -63,6 +64,7 @@ const defaultState: AppState = {
   },
   loggedSessions: [],
   muscleGroups: [...DEFAULT_MUSCLE_GROUPS],
+  muscleGroupColors: {}, // I colori vengono aggiunti solo per i gruppi custom
   customTechniques: [],
 };
 
@@ -218,6 +220,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           programs: migratedPrograms,
           loggedSessions: migratedSessions,
           muscleGroups: data.muscleGroups || [...DEFAULT_MUSCLE_GROUPS],
+          muscleGroupColors: data.muscleGroupColors || {},
           customTechniques: data.customTechniques || [],
         });
       } catch (error) {
@@ -491,11 +494,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const addMuscleGroup = (muscleGroup: string) => {
+  const addMuscleGroup = (muscleGroup: string, color?: string) => {
     setState((prev) => ({
       ...prev,
       muscleGroups: [...prev.muscleGroups, muscleGroup],
+      muscleGroupColors: color
+        ? { ...prev.muscleGroupColors, [muscleGroup]: color }
+        : prev.muscleGroupColors,
     }));
+  };
+
+  const getMuscleColor = (muscleName: string): string => {
+    // Prima controlla se c'è un colore personalizzato
+    if (state.muscleGroupColors[muscleName]) {
+      return state.muscleGroupColors[muscleName];
+    }
+    // Altrimenti usa i colori di default
+    return MUSCLE_COLORS[muscleName] || '#6b7280'; // gray-500 come fallback
   };
 
   const addCustomTechnique = (technique: CustomTechnique) => {
@@ -606,6 +621,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         deleteLoggedSession,
         setMacros,
         addMuscleGroup,
+        getMuscleColor,
         addCustomTechnique,
         deleteCustomTechnique,
         resetAllData,

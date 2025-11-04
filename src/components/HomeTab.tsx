@@ -293,70 +293,74 @@ export function HomeTab() {
       </div>
 
       {/* Top Grid */}
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-3 w-full">
-        {/* Programma Attivo */}
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 w-full">
+        {/* Programma Attivo e Sessioni Recenti Completate */}
         <Card className="min-w-0 w-full">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <CardTitle className="text-sm font-medium">Programma Attivo</CardTitle>
             <Dumbbell className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{currentProgram?.name || 'Nessuno'}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {totalPrograms} {totalPrograms === 1 ? 'programma totale' : 'programmi totali'}
-            </p>
+          <CardContent className="space-y-4">
+            {/* Programma Attivo */}
+            <div>
+              <div className="text-2xl font-bold">{currentProgram?.name || 'Nessuno'}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {totalPrograms} {totalPrograms === 1 ? 'programma totale' : 'programmi totali'}
+              </p>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t pt-4">
+              <div className="mb-3">
+                <h4 className="text-sm font-medium mb-1">Sessioni Completate - Week {lastWeekNum}</h4>
+                <p className="text-xs text-muted-foreground">Giorni completati della settimana corrente</p>
+              </div>
+              {dayStatus.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nessun giorno configurato</p>
+              ) : (
+                <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
+                  {dayStatus
+                    .filter((day) => day.isComplete)
+                    .map((day) => (
+                      <div
+                        key={day.dayIndex}
+                        className="flex items-center justify-between p-2 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{day.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {day.date
+                                ? new Date(day.date).toLocaleDateString('it-IT', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                  })
+                                : 'Completato'} • Day {day.dayIndex}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-xs font-medium">
+                            {day.loggedCount}/{day.exercisesCount}
+                          </p>
+                          <p className="text-xs text-muted-foreground">esercizi</p>
+                        </div>
+                      </div>
+                    ))}
+                  {dayStatus.filter((day) => day.isComplete).length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Nessuna sessione completata questa settimana
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
         {/* Macros Pie Chart */}
         <MacrosPieChart />
-
-        {/* Sessioni Week Corrente */}
-        <Card className="min-w-0 w-full">
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Sessioni Week {lastWeekNum}</CardTitle>
-            <CardDescription>Stato dei giorni della settimana corrente</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {dayStatus.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nessun giorno configurato</p>
-            ) : (
-              <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
-                {dayStatus.map((day) => (
-                  <div
-                    key={day.dayIndex}
-                    className="flex items-center justify-between p-2 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      {day.isComplete ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                      ) : (
-                        <Clock className="h-5 w-5 text-orange-500 flex-shrink-0" />
-                      )}
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{day.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {day.date
-                            ? new Date(day.date).toLocaleDateString('it-IT', {
-                                day: 'numeric',
-                                month: 'short',
-                              })
-                            : 'Da fare'} • Day {day.dayIndex}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-xs font-medium">
-                        {day.loggedCount}/{day.exercisesCount}
-                      </p>
-                      <p className="text-xs text-muted-foreground">esercizi</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
 
       {/* Volume Chart */}

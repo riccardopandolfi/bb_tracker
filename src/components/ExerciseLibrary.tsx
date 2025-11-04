@@ -14,6 +14,7 @@ import { Textarea } from './ui/textarea';
 export function ExerciseLibrary() {
   const { exercises, addExercise, updateExercise, deleteExercise, muscleGroups, addMuscleGroup, customTechniques, addCustomTechnique, deleteCustomTechnique } = useApp();
   const [newMuscleGroup, setNewMuscleGroup] = useState('');
+  const [newMuscleColor, setNewMuscleColor] = useState('#6b7280'); // Default gray
   const [showMuscleDialog, setShowMuscleDialog] = useState(false);
   const [showTechniqueDialog, setShowTechniqueDialog] = useState(false);
   const [newTechnique, setNewTechnique] = useState<CustomTechnique>({
@@ -42,8 +43,9 @@ export function ExerciseLibrary() {
 
   const handleAddMuscleGroup = () => {
     if (newMuscleGroup.trim()) {
-      addMuscleGroup(newMuscleGroup.trim());
+      addMuscleGroup(newMuscleGroup.trim(), newMuscleColor);
       setNewMuscleGroup('');
+      setNewMuscleColor('#6b7280'); // Reset to default
       setShowMuscleDialog(false);
     }
   };
@@ -125,6 +127,24 @@ export function ExerciseLibrary() {
                     placeholder="es: Deltoidi - Mediale"
                     onKeyDown={(e) => e.key === 'Enter' && handleAddMuscleGroup()}
                   />
+                </div>
+                <div>
+                  <Label>Colore</Label>
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      type="color"
+                      value={newMuscleColor}
+                      onChange={(e) => setNewMuscleColor(e.target.value)}
+                      className="w-20 h-10 cursor-pointer"
+                    />
+                    <Input
+                      type="text"
+                      value={newMuscleColor}
+                      onChange={(e) => setNewMuscleColor(e.target.value)}
+                      placeholder="#6b7280"
+                      className="flex-1 font-mono"
+                    />
+                  </div>
                 </div>
                 <Button onClick={handleAddMuscleGroup} className="w-full">
                   Aggiungi

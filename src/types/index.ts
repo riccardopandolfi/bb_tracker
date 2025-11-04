@@ -23,6 +23,11 @@ export const DEFAULT_MUSCLE_GROUPS = [
 
 export type MuscleGroup = string; // Ora dinamico
 
+export interface MuscleGroupWithColor {
+  name: string;
+  color: string;
+}
+
 // Rep Ranges
 export const REP_RANGES = {
   '1-5': { label: '1-5', focus: 'Forza' },
@@ -218,6 +223,7 @@ export interface AppState {
   programs: Record<number, Program>;
   loggedSessions: LoggedSession[];
   muscleGroups: string[]; // Gruppi muscolari personalizzati
+  muscleGroupColors: Record<string, string>; // Colori per gruppi muscolari personalizzati
   customTechniques: CustomTechnique[]; // Tecniche personalizzate
 }
 

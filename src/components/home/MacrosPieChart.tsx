@@ -88,8 +88,29 @@ export function MacrosPieChart() {
                   nameKey="name"
                 />
                 <ChartLegend
-                  content={<ChartLegendContent nameKey="name" />}
-                  className="-translate-y-2 flex-wrap gap-1 sm:gap-2 [&>*]:basis-1/3 [&>*]:justify-center text-xs"
+                  content={
+                    <div className="flex items-center justify-center gap-4 pt-3">
+                      {chartData.map((item) => {
+                        const itemConfig = chartConfig[item.macro as keyof typeof chartConfig];
+                        return (
+                          <div
+                            key={item.macro}
+                            className="flex flex-col items-center gap-1"
+                          >
+                            <div
+                              className="h-3 w-3 shrink-0 rounded-sm"
+                              style={{
+                                backgroundColor: itemConfig?.color || item.fill,
+                              }}
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              {itemConfig?.label || item.name}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  }
                 />
               </PieChart>
             </ChartContainer>
