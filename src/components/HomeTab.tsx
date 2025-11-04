@@ -1,6 +1,6 @@
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Dumbbell, CheckCircle2, Clock, Filter } from 'lucide-react';
+import { Dumbbell, CheckCircle2, Filter } from 'lucide-react';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from './ui/chart';
 import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
 import { MUSCLE_COLORS } from '@/lib/constants';
@@ -486,7 +486,11 @@ export function HomeTab() {
                     stackId="a"
                   />
                 ))}
-                <ChartLegend content={<ChartLegendContent />} />
+                <ChartLegend
+                  content={
+                    <ChartLegendContent className="hidden sm:flex sm:flex-wrap sm:gap-3" />
+                  }
+                />
               </AreaChart>
             </ChartContainer>
           )}

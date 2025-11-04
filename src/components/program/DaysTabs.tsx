@@ -3,6 +3,7 @@ import { useApp } from '@/contexts/AppContext';
 import { Day } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Button } from '../ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Plus, Trash2, Pencil } from 'lucide-react';
 import { ExercisesTable } from './ExercisesTable';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
@@ -97,9 +98,35 @@ export function DaysTabs() {
         value={currentDayIndex.toString()}
         onValueChange={(v) => setCurrentDayIndex(parseInt(v, 10))}
       >
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-2 flex-wrap">
-            <TabsList className="flex-wrap">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2 sm:flex-wrap">
+            <div className="flex items-center gap-2 sm:hidden">
+              <Select
+                value={currentDayIndex.toString()}
+                onValueChange={(value) => setCurrentDayIndex(parseInt(value, 10))}
+              >
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Seleziona giorno" />
+                </SelectTrigger>
+                <SelectContent>
+                  {week.days.map((day, index) => (
+                    <SelectItem key={index} value={index.toString()}>
+                      {day.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handleEditDayName(currentDayIndex)}
+                aria-label="Rinomina giorno"
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <TabsList className="hidden sm:flex flex-wrap">
               {week.days.map((day, index) => (
                 <TabsTrigger key={index} value={index.toString()} className="flex items-center gap-1.5 pr-1.5">
                   <span>{day.name}</span>
@@ -118,10 +145,21 @@ export function DaysTabs() {
               ))}
             </TabsList>
           </div>
-          <Button variant="outline" size="sm" onClick={handleAddDay}>
-            <Plus className="w-4 h-4 mr-2" />
-            Aggiungi Giorno
-          </Button>
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 sm:hidden"
+              onClick={handleAddDay}
+              aria-label="Aggiungi giorno"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleAddDay} className="hidden sm:inline-flex">
+              <Plus className="w-4 h-4 mr-2" />
+              Aggiungi Giorno
+            </Button>
+          </div>
         </div>
 
         {week.days.map((_, dayIndex) => (

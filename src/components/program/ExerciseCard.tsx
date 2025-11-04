@@ -248,15 +248,15 @@ export function ExerciseCard({
       <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
         <Card className="hover:shadow-md transition-shadow">
           <CardContent className="pt-6">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex-1">
+            <div className="flex flex-col gap-4 mb-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="px-2 py-0.5 bg-orange-700 text-white text-xs font-medium rounded">
                     Cardio
                   </span>
                   <span className="text-sm text-muted-foreground">#{exerciseIndex + 1}</span>
                 </div>
-              <h3 className="text-lg font-semibold mb-3">{exercise.exerciseName}</h3>
+                <h3 className="text-lg font-semibold mb-3">{exercise.exerciseName}</h3>
               <div className="space-y-3">
                 {blocks.map((block, idx) => {
                   const duration = block.duration || 0;
@@ -265,7 +265,7 @@ export function ExerciseCard({
                   
                   return (
                     <div key={idx}>
-                      <div className="border border-gray-200 rounded-lg p-3 bg-white hover:border-gray-300 transition-colors">
+                      <div className="w-full border border-gray-200 rounded-lg p-3 bg-white hover:border-gray-300 transition-colors">
                         {/* Header blocco */}
                         <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
                           <span className={`px-2 py-0.5 ${getBlockColor(idx)} text-xs font-medium rounded`}>
@@ -314,7 +314,7 @@ export function ExerciseCard({
                 })}
               </div>
               </div>
-              <div className="flex gap-1">
+              <div className="flex gap-1 self-end sm:self-start">
                 <Button 
                   variant="ghost" 
                   size="icon" 
@@ -470,8 +470,8 @@ export function ExerciseCard({
     <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
       <Card className="hover:shadow-md transition-shadow">
         <CardContent className="pt-6">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex-1">
+          <div className="flex flex-col gap-4 mb-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2">
                 {primaryMuscle && (
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${getMuscleColor(primaryMuscle.muscle)}`}>
@@ -499,7 +499,7 @@ export function ExerciseCard({
                   
                   return (
                     <div key={idx}>
-                      <div className="border border-gray-200 rounded-lg p-3 bg-white hover:border-gray-300 transition-colors">
+                      <div className="w-full border border-gray-200 rounded-lg p-3 bg-white hover:border-gray-300 transition-colors">
                         {/* Header blocco */}
                         <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
                           <span className={`px-2 py-0.5 ${getBlockColor(idx)} text-xs font-medium rounded`}>
@@ -519,7 +519,7 @@ export function ExerciseCard({
                                 const loadsDisplay = `${setLoads.join('-')}kg`;
                                 
                                 return (
-                                  <div key={setIdx} className="flex items-center gap-2 text-sm p-2">
+                                  <div key={setIdx} className="flex w-full flex-wrap items-center gap-2 text-sm p-2">
                                     <span className="px-1.5 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded min-w-[3rem] text-center">
                                       S{setIdx + 1}
                                     </span>
@@ -540,7 +540,7 @@ export function ExerciseCard({
                             </div>
                           ) : (
                             /* Blocco normale o tecnica speciale semplice */
-                            <div className="flex items-center gap-2 flex-wrap text-sm p-2">
+                            <div className="flex w-full flex-wrap items-center gap-2 text-sm p-2">
                               <span className="px-1.5 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded min-w-[3rem] text-center">
                                 S
                               </span>
@@ -623,7 +623,7 @@ export function ExerciseCard({
                 })}
               </div>
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-1 self-end sm:self-start">
               <Button 
                 variant="ghost" 
                 size="icon" 

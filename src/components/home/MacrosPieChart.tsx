@@ -1,6 +1,6 @@
 import { Pie, PieChart } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { ChartConfig, ChartContainer, ChartLegend, ChartLegendContent } from '../ui/chart';
+import { ChartConfig, ChartContainer, ChartLegend } from '../ui/chart';
 import { useApp } from '@/contexts/AppContext';
 
 export function MacrosPieChart() {
@@ -92,6 +92,8 @@ export function MacrosPieChart() {
                     <div className="flex items-center justify-center gap-4 pt-3">
                       {chartData.map((item) => {
                         const itemConfig = chartConfig[item.macro as keyof typeof chartConfig];
+                        const configColor =
+                          itemConfig && 'color' in itemConfig ? itemConfig.color : undefined;
                         return (
                           <div
                             key={item.macro}
@@ -100,7 +102,7 @@ export function MacrosPieChart() {
                             <div
                               className="h-3 w-3 shrink-0 rounded-sm"
                               style={{
-                                backgroundColor: itemConfig?.color || item.fill,
+                                backgroundColor: configColor || item.fill,
                               }}
                             />
                             <span className="text-xs text-muted-foreground">

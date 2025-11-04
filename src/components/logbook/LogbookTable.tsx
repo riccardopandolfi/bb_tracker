@@ -68,8 +68,8 @@ export function LogbookTable({ sessions }: LogbookTableProps) {
       <Collapsible open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
         <Card>
           <CardHeader className="pb-3 sm:pb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex-1 min-w-0">
                 <CardTitle className="text-base sm:text-lg">Storico Sessioni</CardTitle>
               </div>
               <CollapsibleTrigger asChild>
@@ -97,8 +97,8 @@ export function LogbookTable({ sessions }: LogbookTableProps) {
       <Collapsible open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
         <Card>
           <CardHeader className="pb-3 sm:pb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex-1 min-w-0">
                 <CardTitle className="text-base sm:text-lg">Storico Sessioni</CardTitle>
                 <CardDescription className="text-xs sm:text-sm">
                   {sortedGroups.length} esercizio/i trovato/i ({sessions.length} blocchi totali)

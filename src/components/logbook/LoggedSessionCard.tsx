@@ -270,10 +270,10 @@ export function LoggedSessionCard({
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
-      <Card className="border border-gray-200 hover:border-gray-300 transition-colors">
+      <Card className="w-full border border-gray-200 hover:border-gray-300 transition-colors">
         <CardContent className="pt-3 sm:pt-6 px-3 sm:px-6">
           {/* Header - Always Visible */}
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 pb-1.5 sm:pb-2 border-b border-gray-100">
                 <span className="text-xs sm:text-sm font-medium text-gray-600">
@@ -398,7 +398,7 @@ export function LoggedSessionCard({
                     // Per le tecniche Normali, usa sempre la visualizzazione compatta
                     if (blockIsSpecial && (hasDifferentLoads || hasDifferentBetweenSets)) {
                       return (
-                        <div key={idx} className="border border-gray-200 rounded-md p-3 bg-white">
+                        <div key={idx} className="w-full border border-gray-200 rounded-md p-3 bg-white">
                           <div className="flex items-center gap-2 text-xs mb-2 pb-2 border-b border-gray-100">
                             <span className={`px-2 py-0.5 ${getBlockColor(blockSession.blockIndex !== undefined ? blockSession.blockIndex : idx)} rounded text-xs font-medium`}>
                               B{blockSession.blockIndex !== undefined ? blockSession.blockIndex + 1 : idx + 1}
@@ -456,23 +456,30 @@ export function LoggedSessionCard({
                               const actualRepsStr = setData.reps;
                               
                               return (
-                                <div key={setIdx} className="flex items-center gap-2 text-xs p-2">
+                                <div
+                                  key={setIdx}
+                                  className="flex w-full flex-col gap-2 text-xs p-2 sm:flex-row sm:items-center sm:gap-2"
+                                >
                                   <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 text-xs font-medium min-w-[3rem] text-center">
                                     S{setDisplay}
                                   </span>
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-gray-600">Programma:</span>
-                                    <span className="font-medium text-gray-900">
-                                      {targetRepsStr}
-                                      {targetLoadsStr !== '-' && ` @ ${targetLoadsStr}kg`}
-                                    </span>
-                                  </div>
-                                  <span className="text-gray-400">→</span>
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-gray-600">Eseguito:</span>
-                                    <span className="font-semibold text-gray-900">
-                                      {actualRepsStr} @ {actualLoadsStr}kg
-                                    </span>
+                                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-1.5">
+                                    <div className="flex items-baseline gap-1">
+                                      <span className="sm:hidden font-semibold text-gray-900">P:</span>
+                                      <span className="hidden sm:inline text-gray-600">Programma:</span>
+                                      <span className="font-medium text-gray-900">
+                                        {targetRepsStr}
+                                        {targetLoadsStr !== '-' && ` @ ${targetLoadsStr}kg`}
+                                      </span>
+                                    </div>
+                                    <span className="hidden sm:inline text-gray-400">→</span>
+                                    <div className="flex items-baseline gap-1">
+                                      <span className="sm:hidden font-semibold text-gray-900">E:</span>
+                                      <span className="hidden sm:inline text-gray-600">Eseguito:</span>
+                                      <span className="font-semibold text-gray-900">
+                                        {actualRepsStr} @ {actualLoadsStr}kg
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
                               );
@@ -499,7 +506,7 @@ export function LoggedSessionCard({
                     };
                     
                     return (
-                      <div key={idx} className="border border-gray-200 rounded-md p-3 bg-white">
+                      <div key={idx} className="w-full border border-gray-200 rounded-md p-3 bg-white">
                         <div className="flex items-center gap-2 text-xs mb-2 pb-2 border-b border-gray-100">
                           <span className={`px-2 py-0.5 ${getBlockColorForThis(blockSession.blockIndex !== undefined ? blockSession.blockIndex : idx)} rounded text-xs font-medium`}>
                             B{blockSession.blockIndex !== undefined ? blockSession.blockIndex + 1 : idx + 1}
@@ -513,30 +520,34 @@ export function LoggedSessionCard({
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 text-xs p-2">
+                        <div className="flex w-full flex-col gap-2 text-xs p-2 sm:flex-row sm:items-center sm:gap-2">
                           {!blockIsSpecial && (
                             <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 text-xs font-medium min-w-[3rem] text-center">
                               S
                             </span>
                           )}
-                          <div className="flex items-center gap-1">
-                            <span className="text-gray-600">Programma:</span>
-                            <span className="font-medium text-gray-900">
-                              {numSets}×{blockIsSpecial ? blockSession.techniqueSchema || '' : targetRepsPerSet.toFixed(0)}
-                              {targetLoadsStr !== '-' && ` @ ${targetLoadsStr}kg`}
-                            </span>
-                          </div>
-                          <span className="text-gray-400">→</span>
-                          <div className="flex items-center gap-1">
-                            <span className="text-gray-600">Eseguito:</span>
-                            <span className="font-semibold text-gray-900">
-                              {actualRepsBySet.map((reps, i) => (
-                                <span key={i}>
-                                  {reps}@{actualLoadsBySet[i]}kg
-                                  {i < actualRepsBySet.length - 1 && ' • '}
-                                </span>
-                              ))}
-                            </span>
+                          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-1.5">
+                            <div className="flex items-baseline gap-1">
+                              <span className="sm:hidden font-semibold text-gray-900">P:</span>
+                              <span className="hidden sm:inline text-gray-600">Programma:</span>
+                              <span className="font-medium text-gray-900">
+                                {numSets}×{blockIsSpecial ? blockSession.techniqueSchema || '' : targetRepsPerSet.toFixed(0)}
+                                {targetLoadsStr !== '-' && ` @ ${targetLoadsStr}kg`}
+                              </span>
+                            </div>
+                            <span className="hidden sm:inline text-gray-400">→</span>
+                            <div className="flex items-baseline gap-1">
+                              <span className="sm:hidden font-semibold text-gray-900">E:</span>
+                              <span className="hidden sm:inline text-gray-600">Eseguito:</span>
+                              <span className="font-semibold text-gray-900">
+                                {actualRepsBySet.map((reps, i) => (
+                                  <span key={i}>
+                                    {reps}@{actualLoadsBySet[i]}kg
+                                    {i < actualRepsBySet.length - 1 && ' • '}
+                                  </span>
+                                ))}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -547,7 +558,7 @@ export function LoggedSessionCard({
                 <div className="space-y-2 mb-3">
                   {isSpecialTechnique ? (
                     // Tecnica speciale: mostra set individuali
-                    <div className="border border-gray-200 rounded-md p-3 bg-white">
+                    <div className="w-full border border-gray-200 rounded-md p-3 bg-white">
                       <div className="flex items-center gap-2 text-xs mb-2 pb-2 border-b border-gray-100">
                         <span className={`px-2 py-0.5 ${getTechniqueColor(session.technique)} rounded text-xs font-medium`}>
                           {session.technique}
@@ -563,23 +574,30 @@ export function LoggedSessionCard({
                             : '-';
 
                           return (
-                            <div key={setNum} className="flex items-center gap-2 text-xs p-2">
+                            <div
+                              key={setNum}
+                              className="flex w-full flex-col gap-2 text-xs p-2 sm:flex-row sm:items-center sm:gap-2"
+                            >
                               <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 text-xs font-medium min-w-[3rem] text-center">
                                 S{setNum}
                               </span>
-                              <div className="flex items-center gap-1">
-                                <span className="text-gray-600">Programma:</span>
-                                <span className="font-medium text-gray-900">
-                                  {session.techniqueSchema}
-                                  {targetLoadStr !== '-' && ` @ ${targetLoadStr}kg`}
-                                </span>
-                              </div>
-                              <span className="text-gray-400">→</span>
-                              <div className="flex items-center gap-1">
-                                <span className="text-gray-600">Eseguito:</span>
-                                <span className="font-semibold text-gray-900">
-                                  {repsDisplay} @ {loadValue}kg
-                                </span>
+                              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-1.5">
+                                <div className="flex items-baseline gap-1">
+                                  <span className="sm:hidden font-semibold text-gray-900">P:</span>
+                                  <span className="hidden sm:inline text-gray-600">Programma:</span>
+                                  <span className="font-medium text-gray-900">
+                                    {session.techniqueSchema}
+                                    {targetLoadStr !== '-' && ` @ ${targetLoadStr}kg`}
+                                  </span>
+                                </div>
+                                <span className="hidden sm:inline text-gray-400">→</span>
+                                <div className="flex items-baseline gap-1">
+                                  <span className="sm:hidden font-semibold text-gray-900">E:</span>
+                                  <span className="hidden sm:inline text-gray-600">Eseguito:</span>
+                                  <span className="font-semibold text-gray-900">
+                                    {repsDisplay} @ {loadValue}kg
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           );
@@ -596,35 +614,39 @@ export function LoggedSessionCard({
                   )}
 
                   {!isSpecialTechnique && (
-                    <div className="flex items-center gap-3 text-xs p-2">
+                    <div className="flex w-full flex-col gap-2 text-xs p-2 sm:flex-row sm:items-center sm:gap-3">
                       <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 text-xs font-medium min-w-[3rem] text-center">
                         S
                       </span>
-                      <div className="flex items-center gap-1">
-                        <span className="text-muted-foreground">Programma:</span>
-                        <span className="font-medium">
-                          {uniqueSets.length}×{(getTargetReps(session) / uniqueSets.length).toFixed(0)}
-                          {session.targetLoads && session.targetLoads.length > 0 &&
-                            ` @ ${session.targetLoads.join('-')}kg`
-                          }
-                        </span>
-                      </div>
-                      <span className="text-muted-foreground">→</span>
-                      <div className="flex items-center gap-1">
-                        <span className="text-muted-foreground">Eseguito:</span>
-                        <span className="font-medium">
-                          {uniqueSets.map((setNum, i) => {
-                            const setData = session.sets.filter(s => s.setNum === setNum);
-                            const repsDisplay = setData[0]?.reps || '0';
-                            const loadValue = parseFloat(setData[0]?.load || '0').toFixed(0);
-                            return (
-                              <span key={setNum}>
-                                {repsDisplay}@{loadValue}kg
-                                {i < uniqueSets.length - 1 && ' • '}
-                              </span>
-                            );
-                          })}
-                        </span>
+                      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-1.5">
+                        <div className="flex items-baseline gap-1">
+                          <span className="sm:hidden font-semibold text-gray-900">P:</span>
+                          <span className="hidden sm:inline text-muted-foreground">Programma:</span>
+                          <span className="font-medium text-gray-900 sm:text-current">
+                            {uniqueSets.length}×{(getTargetReps(session) / uniqueSets.length).toFixed(0)}
+                            {session.targetLoads && session.targetLoads.length > 0 &&
+                              ` @ ${session.targetLoads.join('-')}kg`
+                            }
+                          </span>
+                        </div>
+                        <span className="hidden sm:inline text-muted-foreground">→</span>
+                        <div className="flex items-baseline gap-1">
+                          <span className="sm:hidden font-semibold text-gray-900">E:</span>
+                          <span className="hidden sm:inline text-muted-foreground">Eseguito:</span>
+                          <span className="font-medium text-gray-900 sm:text-current">
+                            {uniqueSets.map((setNum, i) => {
+                              const setData = session.sets.filter(s => s.setNum === setNum);
+                              const repsDisplay = setData[0]?.reps || '0';
+                              const loadValue = parseFloat(setData[0]?.load || '0').toFixed(0);
+                              return (
+                                <span key={setNum}>
+                                  {repsDisplay}@{loadValue}kg
+                                  {i < uniqueSets.length - 1 && ' • '}
+                                </span>
+                              );
+                            })}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -643,7 +665,7 @@ export function LoggedSessionCard({
               )}
             </div>
 
-            <div className="flex gap-0.5 sm:gap-1 flex-shrink-0">
+            <div className="flex gap-0.5 sm:gap-1 flex-shrink-0 self-end sm:self-start">
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-10 sm:w-10">
                   {isExpanded ? (
