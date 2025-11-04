@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Checkbox } from './ui/checkbox';
 import { Button } from './ui/button';
 import { useState } from 'react';
+import { MacrosPieChart } from './home/MacrosPieChart';
 
 export function HomeTab() {
   const { programs, currentProgramId, loggedSessions, loadDemoData, clearDemoData, hasDemoData, exercises, setCurrentTab } = useApp();
@@ -125,9 +126,29 @@ export function HomeTab() {
       ? dates.sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0]
       : null;
 
-    // Check if all exercises have been logged
-    const loggedExercises = new Set(loggedExercisesForDay.map(s => s.exercise));
-    const isComplete = dayExercises.every(ex => loggedExercises.has(ex));
+    // Count occurrences of each exercise in the program
+    const exerciseOccurrences = new Map<string, number>();
+    dayExercises.forEach(ex => {
+      exerciseOccurrences.set(ex, (exerciseOccurrences.get(ex) || 0) + 1);
+    });
+
+    // Count occurrences of each logged exercise
+    const loggedOccurrences = new Map<string, number>();
+    loggedExercisesForDay.forEach(session => {
+      loggedOccurrences.set(session.exercise, (loggedOccurrences.get(session.exercise) || 0) + 1);
+    });
+
+    // Count how many exercises are fully logged (all occurrences)
+    let loggedCount = 0;
+    exerciseOccurrences.forEach((requiredCount, exerciseName) => {
+      const actualCount = loggedOccurrences.get(exerciseName) || 0;
+      loggedCount += Math.min(actualCount, requiredCount);
+    });
+
+    // Check if all exercises have been logged (all occurrences)
+    const isComplete = Array.from(exerciseOccurrences.entries()).every(
+      ([exerciseName, requiredCount]) => (loggedOccurrences.get(exerciseName) || 0) >= requiredCount
+    );
 
     return {
       dayIndex: dayIndex + 1,
@@ -135,7 +156,7 @@ export function HomeTab() {
       isComplete,
       date: latestDate,
       exercisesCount: dayExercises.length,
-      loggedCount: loggedExercises.size,
+      loggedCount: loggedCount,
     };
   });
 
@@ -246,12 +267,12 @@ export function HomeTab() {
   }, {} as ChartConfig);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Welcome Section */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-          <p className="text-muted-foreground mt-2">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h2>
+          <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-base">
             Benvenuto nel tuo tracker di allenamento
           </p>
         </div>
@@ -267,14 +288,14 @@ export function HomeTab() {
               }
             }}
           />
-          <Label htmlFor="demo-mode">Dati Demo</Label>
+          <Label htmlFor="demo-mode" className="text-sm">Dati Demo</Label>
         </div>
       </div>
 
       {/* Top Grid */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-3 w-full">
         {/* Programma Attivo */}
-        <Card>
+        <Card className="min-w-0 w-full">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Programma Attivo</CardTitle>
             <Dumbbell className="h-4 w-4 text-muted-foreground" />
@@ -287,8 +308,11 @@ export function HomeTab() {
           </CardContent>
         </Card>
 
+        {/* Macros Pie Chart */}
+        <MacrosPieChart />
+
         {/* Sessioni Week Corrente */}
-        <Card>
+        <Card className="min-w-0 w-full">
           <CardHeader>
             <CardTitle className="text-sm font-medium">Sessioni Week {lastWeekNum}</CardTitle>
             <CardDescription>Stato dei giorni della settimana corrente</CardDescription>
@@ -336,15 +360,15 @@ export function HomeTab() {
       </div>
 
       {/* Volume Chart */}
-      <Card>
-        <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
-          <div className="grid flex-1 gap-1">
-            <CardTitle>Volume per Gruppo Muscolare</CardTitle>
-            <CardDescription>
+      <Card className="min-w-0 w-full">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-2 space-y-0 border-b py-4 sm:py-5">
+          <div className="grid flex-1 gap-1 w-full sm:w-auto">
+            <CardTitle className="text-base sm:text-lg">Volume per Gruppo Muscolare</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
               Progressione del volume nelle settimane (tutti i programmi)
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="h-9 gap-1 rounded-lg">

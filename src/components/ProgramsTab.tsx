@@ -101,16 +101,16 @@ export function ProgramsTab() {
 
         {/* Empty State - Large */}
         <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-20 px-4">
-            <div className="rounded-full bg-primary/10 p-6 mb-6">
-              <Layers className="h-16 w-16 text-primary" />
+          <CardContent className="flex flex-col items-center justify-center py-12 sm:py-20 px-4">
+            <div className="rounded-full bg-primary/10 p-4 sm:p-6 mb-4 sm:mb-6">
+              <Layers className="h-12 w-12 sm:h-16 sm:w-16 text-primary" />
             </div>
-            <h3 className="text-3xl font-bold mb-3">Crea il Tuo Primo Programma</h3>
-            <p className="text-muted-foreground text-center mb-8 max-w-lg text-lg">
+            <h3 className="text-2xl sm:text-3xl font-bold mb-2 sm:mb-3 text-center">Crea il Tuo Primo Programma</h3>
+            <p className="text-muted-foreground text-center mb-6 sm:mb-8 max-w-lg text-base sm:text-lg px-2">
               Inizia il tuo percorso di allenamento creando un programma personalizzato con settimane, giorni ed esercizi.
             </p>
-            <Button onClick={() => setShowNewProgramModal(true)} size="lg" className="text-lg px-8 py-6">
-              <Plus className="w-5 h-5 mr-2" />
+            <Button onClick={() => setShowNewProgramModal(true)} size="lg" className="text-base sm:text-lg px-6 py-5 sm:px-8 sm:py-6">
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               Crea Nuovo Programma
             </Button>
           </CardContent>
@@ -165,21 +165,21 @@ export function ProgramsTab() {
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
           <div>
-            <h2 className="text-2xl font-bold">Gestione Programmi</h2>
-            <p className="text-muted-foreground">Crea, gestisci e seleziona i tuoi programmi di allenamento</p>
+            <h2 className="text-xl sm:text-2xl font-bold">Gestione Programmi</h2>
+            <p className="text-sm sm:text-base text-muted-foreground">Crea, gestisci e seleziona i tuoi programmi di allenamento</p>
           </div>
-          <Button onClick={() => setShowNewProgramModal(true)} size="lg">
+          <Button onClick={() => setShowNewProgramModal(true)} size="lg" className="w-full sm:w-auto">
             <Plus className="w-4 h-4 mr-2" />
             Nuovo Programma
           </Button>
         </div>
 
         {/* Programs Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full">
           {programList.map((program) => {
             const isActive = currentProgramId === program.id;
             const weekCount = Object.keys(program.weeks || {}).length;
@@ -188,49 +188,49 @@ export function ProgramsTab() {
             return (
               <Card
                 key={program.id}
-                className={`relative transition-all ${
+                className={`relative transition-all min-w-0 w-full ${
                   isActive
                     ? 'ring-2 ring-primary shadow-lg'
                     : 'hover:shadow-md'
                 }`}
               >
                 {isActive && (
-                  <div className="absolute top-3 right-3">
-                    <Badge variant="default" className="gap-1">
+                  <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+                    <Badge variant="default" className="gap-1 text-xs">
                       <CheckCircle2 className="w-3 h-3" />
                       Attivo
                     </Badge>
                   </div>
                 )}
 
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg pr-20">{program.name}</CardTitle>
+                <CardHeader className="pb-2 sm:pb-3">
+                  <CardTitle className="text-base sm:text-lg pr-16 sm:pr-20">{program.name}</CardTitle>
                   {program.description && (
-                    <CardDescription className="text-sm">{program.description}</CardDescription>
+                    <CardDescription className="text-xs sm:text-sm">{program.description}</CardDescription>
                   )}
                 </CardHeader>
 
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 sm:space-y-4">
                   {/* Info */}
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Calendar className="w-4 h-4" />
-                      <span>{createdDate}</span>
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-muted-foreground">
+                      <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                      <span className="truncate">{createdDate}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Layers className="w-4 h-4" />
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-muted-foreground">
+                      <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                       <span>{weekCount} settimane</span>
                     </div>
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-2 pt-2">
+                  <div className="flex gap-1.5 sm:gap-2 pt-1 sm:pt-2">
                     {!isActive ? (
                       <Button
                         variant="default"
                         size="sm"
                         onClick={() => setCurrentProgram(program.id)}
-                        className="flex-1"
+                        className="flex-1 text-xs sm:text-sm"
                       >
                         Seleziona
                       </Button>
@@ -239,7 +239,7 @@ export function ProgramsTab() {
                         variant="outline"
                         size="sm"
                         disabled
-                        className="flex-1"
+                        className="flex-1 text-xs sm:text-sm"
                       >
                         In Uso
                       </Button>
@@ -249,16 +249,18 @@ export function ProgramsTab() {
                       size="sm"
                       onClick={() => handleOpenEditModal(program.id)}
                       title="Modifica"
+                      className="px-2 sm:px-3"
                     >
-                      <Pencil className="w-4 h-4" />
+                      <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleDuplicateProgram(program.id)}
                       title="Duplica"
+                      className="px-2 sm:px-3"
                     >
-                      <Copy className="w-4 h-4" />
+                      <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </Button>
                     {programList.length > 1 && (
                       <Button
@@ -266,8 +268,9 @@ export function ProgramsTab() {
                         size="sm"
                         onClick={() => handleDeleteProgram(program.id)}
                         title="Elimina"
+                        className="px-2 sm:px-3"
                       >
-                        <Trash2 className="w-4 h-4 text-red-500" />
+                        <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500" />
                       </Button>
                     )}
                   </div>
@@ -280,9 +283,9 @@ export function ProgramsTab() {
         {/* Empty State */}
         {programList.length === 0 && (
           <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground mb-4">Nessun programma disponibile</p>
-              <Button onClick={() => setShowNewProgramModal(true)}>
+            <CardContent className="py-8 sm:py-12 text-center px-4">
+              <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">Nessun programma disponibile</p>
+              <Button onClick={() => setShowNewProgramModal(true)} className="w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
                 Crea il Primo Programma
               </Button>

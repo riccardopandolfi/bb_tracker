@@ -67,22 +67,22 @@ export function LogbookTable({ sessions }: LogbookTableProps) {
     return (
       <Collapsible open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-3 sm:pb-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <CardTitle>Storico Sessioni</CardTitle>
+                <CardTitle className="text-base sm:text-lg">Storico Sessioni</CardTitle>
               </div>
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="w-9 p-0">
-                  <ChevronDown className={`h-4 w-4 transition-transform ${isHistoryOpen ? '' : '-rotate-90'}`} />
+                <Button variant="ghost" size="sm" className="w-8 h-8 sm:w-9 sm:h-9 p-0">
+                  <ChevronDown className={`h-3.5 w-3.5 sm:h-4 sm:w-4 transition-transform ${isHistoryOpen ? '' : '-rotate-90'}`} />
                   <span className="sr-only">Espandi/Comprimi storico</span>
                 </Button>
               </CollapsibleTrigger>
             </div>
           </CardHeader>
           <CollapsibleContent>
-            <CardContent>
-              <p className="text-center py-8 text-muted-foreground">
+            <CardContent className="px-3 sm:px-6">
+              <p className="text-center py-6 sm:py-8 text-xs sm:text-sm text-muted-foreground">
                 Nessuna sessione trovata con questi filtri
               </p>
             </CardContent>
@@ -96,25 +96,25 @@ export function LogbookTable({ sessions }: LogbookTableProps) {
     <>
       <Collapsible open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-3 sm:pb-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <CardTitle>Storico Sessioni</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-base sm:text-lg">Storico Sessioni</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
                   {sortedGroups.length} esercizio/i trovato/i ({sessions.length} blocchi totali)
                 </CardDescription>
               </div>
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="w-9 p-0">
-                  <ChevronDown className={`h-4 w-4 transition-transform ${isHistoryOpen ? '' : '-rotate-90'}`} />
+                <Button variant="ghost" size="sm" className="w-8 h-8 sm:w-9 sm:h-9 p-0">
+                  <ChevronDown className={`h-3.5 w-3.5 sm:h-4 sm:w-4 transition-transform ${isHistoryOpen ? '' : '-rotate-90'}`} />
                   <span className="sr-only">Espandi/Comprimi storico</span>
                 </Button>
               </CollapsibleTrigger>
             </div>
           </CardHeader>
           <CollapsibleContent>
-            <CardContent>
-              <div className="space-y-3">
+            <CardContent className="px-3 sm:px-6">
+              <div className="space-y-2 sm:space-y-3">
                 {sortedGroups.map(([groupId, groupSessions]) => {
                   // Ordina i blocchi per blockIndex
                   const sortedGroupSessions = [...groupSessions].sort((a, b) =>

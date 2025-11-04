@@ -26,15 +26,15 @@ export function LogbookFilters({ filters, setFilters, totalSessions, availableWe
 
   return (
     <Card>
-      <CardContent className="pt-6">
-        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
-          <div className="space-y-2">
-            <Label>Esercizio</Label>
+      <CardContent className="pt-4 sm:pt-6">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm">Esercizio</Label>
             <Select
               value={filters.exercise || 'all'}
               onValueChange={(v) => setFilters({ ...filters, exercise: v === 'all' ? '' : v })}
             >
-              <SelectTrigger>
+              <SelectTrigger className="text-xs sm:text-sm">
                 <SelectValue placeholder="Tutti" />
               </SelectTrigger>
               <SelectContent>
@@ -48,13 +48,13 @@ export function LogbookFilters({ filters, setFilters, totalSessions, availableWe
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label>Week</Label>
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm">Week</Label>
             <Select
               value={filters.weekNum || 'all'}
               onValueChange={(v) => setFilters({ ...filters, weekNum: v === 'all' ? '' : v })}
             >
-              <SelectTrigger>
+              <SelectTrigger className="text-xs sm:text-sm">
                 <SelectValue placeholder="Tutte" />
               </SelectTrigger>
               <SelectContent>
@@ -68,13 +68,13 @@ export function LogbookFilters({ filters, setFilters, totalSessions, availableWe
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label>Giorno</Label>
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm">Giorno</Label>
             <Select
               value={filters.dayName || 'all'}
               onValueChange={(v) => setFilters({ ...filters, dayName: v === 'all' ? '' : v })}
             >
-              <SelectTrigger>
+              <SelectTrigger className="text-xs sm:text-sm">
                 <SelectValue placeholder="Tutti" />
               </SelectTrigger>
               <SelectContent>
@@ -88,13 +88,13 @@ export function LogbookFilters({ filters, setFilters, totalSessions, availableWe
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label>Rep Range</Label>
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm">Rep Range</Label>
             <Select
               value={filters.repRange || 'all'}
               onValueChange={(v) => setFilters({ ...filters, repRange: v === 'all' ? '' : v })}
             >
-              <SelectTrigger>
+              <SelectTrigger className="text-xs sm:text-sm">
                 <SelectValue placeholder="Tutti" />
               </SelectTrigger>
               <SelectContent>
@@ -108,13 +108,13 @@ export function LogbookFilters({ filters, setFilters, totalSessions, availableWe
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label>Tecnica</Label>
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm">Tecnica</Label>
             <Select
               value={filters.technique || 'all'}
               onValueChange={(v) => setFilters({ ...filters, technique: v === 'all' ? '' : v })}
             >
-              <SelectTrigger>
+              <SelectTrigger className="text-xs sm:text-sm">
                 <SelectValue placeholder="Tutte" />
               </SelectTrigger>
               <SelectContent>
@@ -129,13 +129,13 @@ export function LogbookFilters({ filters, setFilters, totalSessions, availableWe
           </div>
         </div>
 
-        <div className="mt-4 flex items-center justify-between">
-          <span className="text-sm font-medium">
+        <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+          <span className="text-xs sm:text-sm font-medium">
             {totalSessions} sessioni trovate
           </span>
           <button
             onClick={() => setFilters({ exercise: '', repRange: '', technique: '', weekNum: '', dayName: '' })}
-            className="text-sm text-muted-foreground hover:text-foreground underline"
+            className="text-xs sm:text-sm text-muted-foreground hover:text-foreground underline"
           >
             Resetta filtri
           </button>

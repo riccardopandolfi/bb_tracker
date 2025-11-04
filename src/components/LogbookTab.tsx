@@ -53,21 +53,21 @@ export function LogbookTab() {
   });
 
   return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
           <div>
-            <h2 className="text-2xl font-bold">Logbook e Progressioni</h2>
-            <p className="text-muted-foreground">Analizza i tuoi allenamenti e le tue progressioni</p>
+            <h2 className="text-xl sm:text-2xl font-bold">Logbook e Progressioni</h2>
+            <p className="text-sm sm:text-base text-muted-foreground">Analizza i tuoi allenamenti e le tue progressioni</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
             {currentProgram && (
-              <Badge variant="secondary" className="gap-2 px-3 py-1.5">
+              <Badge variant="secondary" className="gap-2 px-3 py-1.5 justify-center sm:justify-start">
                 <Folder className="w-4 h-4" />
-                <span>{currentProgram.name}</span>
+                <span className="truncate">{currentProgram.name}</span>
               </Badge>
             )}
-            <Button onClick={handleExport} variant="outline">
+            <Button onClick={handleExport} variant="outline" className="w-full sm:w-auto">
               <Download className="w-4 h-4 mr-2" />
               Esporta CSV
             </Button>

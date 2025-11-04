@@ -196,20 +196,20 @@ export function LoadProgressionChart() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Progressione Set per Set</CardTitle>
-        <CardDescription>
+      <CardHeader className="pb-3 sm:pb-6">
+        <CardTitle className="text-base sm:text-lg">Progressione Set per Set</CardTitle>
+        <CardDescription className="text-xs sm:text-sm">
           Confronto tra <span className="font-semibold text-blue-600">Programma (Target)</span> e <span className="font-semibold text-green-600">Eseguito (Actual)</span> per ogni blocco e sottoblocco
         </CardDescription>
 
         {/* Toggle */}
-        <div className="space-y-4 mt-4">
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold">Metrica</Label>
+        <div className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm font-semibold">Metrica</Label>
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => setMetricType('load')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
                   metricType === 'load'
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
@@ -219,7 +219,7 @@ export function LoadProgressionChart() {
               </button>
               <button
                 onClick={() => setMetricType('reps')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
                   metricType === 'reps'
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
@@ -232,11 +232,11 @@ export function LoadProgressionChart() {
         </div>
 
         {/* Filters */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-4">
-          <div className="space-y-2">
-            <Label>Esercizio</Label>
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mt-3 sm:mt-4">
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm">Esercizio</Label>
             <Select value={selectedExercise || 'all'} onValueChange={(v) => setSelectedExercise(v === 'all' ? '' : v)}>
-              <SelectTrigger>
+              <SelectTrigger className="text-xs sm:text-sm">
                 <SelectValue placeholder="Tutti" />
               </SelectTrigger>
               <SelectContent>
@@ -250,10 +250,10 @@ export function LoadProgressionChart() {
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label>Target (Set x Reps)</Label>
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm">Target (Set x Reps)</Label>
             <Select value={selectedTarget || 'all'} onValueChange={(v) => setSelectedTarget(v === 'all' ? '' : v)}>
-              <SelectTrigger>
+              <SelectTrigger className="text-xs sm:text-sm">
                 <SelectValue placeholder="Tutti" />
               </SelectTrigger>
               <SelectContent>
@@ -267,8 +267,8 @@ export function LoadProgressionChart() {
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label>Data Da</Label>
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm">Data Da</Label>
             <DatePicker
               date={dateFrom ? new Date(dateFrom) : undefined}
               onSelect={(date) => setDateFrom(date ? format(date, 'yyyy-MM-dd') : '')}
@@ -276,8 +276,8 @@ export function LoadProgressionChart() {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>Data A</Label>
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm">Data A</Label>
             <DatePicker
               date={dateTo ? new Date(dateTo) : undefined}
               onSelect={(date) => setDateTo(date ? format(date, 'yyyy-MM-dd') : '')}
@@ -287,18 +287,18 @@ export function LoadProgressionChart() {
         </div>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="px-2 sm:px-6">
         {!hasFilters || data.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <TrendingUp className="w-12 h-12 mb-4 opacity-50" />
-            <p className="text-center">
+          <div className="flex flex-col items-center justify-center py-8 sm:py-12 text-muted-foreground">
+            <TrendingUp className="w-10 h-10 sm:w-12 sm:h-12 mb-3 sm:mb-4 opacity-50" />
+            <p className="text-center text-xs sm:text-sm px-4">
               {!hasFilters
                 ? 'Seleziona almeno un filtro per vedere la progressione'
                 : 'Nessun dato disponibile con questi filtri'}
             </p>
           </div>
         ) : (
-          <div className="h-[500px]">
+          <div className="h-[350px] sm:h-[500px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" />

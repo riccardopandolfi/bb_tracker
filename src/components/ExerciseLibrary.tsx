@@ -93,19 +93,20 @@ export function ExerciseLibrary() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center flex-wrap gap-2">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-2">
         <div>
-          <h2 className="text-2xl font-bold">Libreria Esercizi</h2>
-          <p className="text-muted-foreground">Gestisci esercizi, cardio e gruppi muscolari</p>
+          <h2 className="text-xl sm:text-2xl font-bold">Libreria Esercizi</h2>
+          <p className="text-sm sm:text-base text-muted-foreground">Gestisci esercizi, cardio e gruppi muscolari</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
           <Dialog open={showMuscleDialog} onOpenChange={setShowMuscleDialog}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Plus className="w-4 h-4 mr-2" />
-                Gruppo Muscolare
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Gruppo Muscolare</span>
+                <span className="sm:hidden">Gruppo M.</span>
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -134,9 +135,10 @@ export function ExerciseLibrary() {
 
           <Dialog open={showTechniqueDialog} onOpenChange={setShowTechniqueDialog}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Settings2 className="w-4 h-4 mr-2" />
-                Tecnica Personalizzata
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+                <Settings2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Tecnica Personalizzata</span>
+                <span className="sm:hidden">Tecnica</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -265,12 +267,12 @@ export function ExerciseLibrary() {
             </DialogContent>
           </Dialog>
 
-          <Button onClick={handleAddCardio} variant="secondary" size="sm">
-            <Plus className="w-4 h-4 mr-2" />
+          <Button onClick={handleAddCardio} variant="secondary" size="sm" className="text-xs sm:text-sm">
+            <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
             Cardio
           </Button>
-          <Button onClick={handleAddExercise} size="sm">
-            <Plus className="w-4 h-4 mr-2" />
+          <Button onClick={handleAddExercise} size="sm" className="text-xs sm:text-sm">
+            <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
             Esercizio
           </Button>
         </div>
@@ -278,8 +280,8 @@ export function ExerciseLibrary() {
 
       {/* Info Box */}
       <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
+        <AlertCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+        <AlertDescription className="text-xs sm:text-sm">
           Ogni esercizio può coinvolgere fino a 3 gruppi muscolari. La somma delle percentuali deve essere 100%.
         </AlertDescription>
       </Alert>
@@ -287,20 +289,20 @@ export function ExerciseLibrary() {
       {/* Custom Techniques Section */}
       {customTechniques.length > 0 && (
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Tecniche Personalizzate</CardTitle>
-            <CardDescription>
+          <CardHeader className="pb-3 sm:pb-6">
+            <CardTitle className="text-base sm:text-lg">Tecniche Personalizzate</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
               {customTechniques.length} tecnica/e personalizzata/e
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 sm:px-6">
             <div className="space-y-2">
               {customTechniques.map((tech, index) => (
-                <div key={index} className="flex items-start justify-between p-3 border rounded-lg">
-                  <div className="flex-1">
-                    <div className="font-medium">{tech.name}</div>
-                    <div className="text-sm text-muted-foreground">{tech.description}</div>
-                    <div className="text-xs text-muted-foreground mt-1">
+                <div key={index} className="flex items-start justify-between p-2 sm:p-3 border rounded-lg gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm sm:text-base truncate">{tech.name}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{tech.description}</div>
+                    <div className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                       {tech.parameters.length} parametro/i: {tech.parameters.map(p => p.label).join(', ')}
                     </div>
                   </div>
@@ -308,9 +310,9 @@ export function ExerciseLibrary() {
                     variant="ghost"
                     size="icon"
                     onClick={() => deleteCustomTechnique(tech.name)}
-                    className="ml-2"
+                    className="ml-2 h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0"
                   >
-                    <Trash2 className="w-4 h-4 text-red-500" />
+                    <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500" />
                   </Button>
                 </div>
               ))}
@@ -320,7 +322,7 @@ export function ExerciseLibrary() {
       )}
 
       {/* Exercise Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full">
         {exercises.map((exercise, index) => (
           <ExerciseCard
             key={index}
@@ -395,29 +397,29 @@ function ExerciseCard({ exercise, index, onUpdate, onDelete, muscleGroups }: Exe
   };
 
   return (
-    <Card className={!isValid ? 'border-red-500 border-2' : ''}>
-      <CardHeader>
-        <CardTitle>
+    <Card className={`${!isValid ? 'border-red-500 border-2' : ''} min-w-0 w-full`}>
+      <CardHeader className="pb-3 sm:pb-6">
+        <CardTitle className="min-w-0">
           <Input
             value={localExercise.name}
             onChange={(e) => handleNameChange(e.target.value)}
-            className="font-bold text-lg"
+            className="font-bold text-base sm:text-lg w-full"
           />
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-xs sm:text-sm">
           {localExercise.type === 'cardio' ? 'Esercizio Cardio' : 'Distribuzione Muscolare'}
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6 min-w-0">
         {localExercise.type === 'cardio' ? (
           /* Cardio Equipment */
-          <div>
-            <Label>Attrezzatura</Label>
+          <div className="w-full">
+            <Label className="text-xs sm:text-sm">Attrezzatura</Label>
             <Select
               value={localExercise.cardioEquipment || 'Cyclette'}
               onValueChange={(value) => handleCardioEquipmentChange(value as CardioEquipment)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="text-xs sm:text-sm w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -433,14 +435,14 @@ function ExerciseCard({ exercise, index, onUpdate, onDelete, muscleGroups }: Exe
           <>
             {/* Muscles */}
             {localExercise.muscles?.map((muscle, muscleIndex) => (
-              <div key={muscleIndex} className="flex gap-2 items-end">
-                <div className="flex-1">
-                  <Label>Muscolo {muscleIndex + 1}</Label>
+              <div key={muscleIndex} className="flex gap-1.5 sm:gap-2 items-end w-full">
+                <div className="flex-1 min-w-0">
+                  <Label className="text-xs sm:text-sm">Muscolo {muscleIndex + 1}</Label>
                   <Select
                     value={muscle.muscle}
                     onValueChange={(value) => handleMuscleChange(muscleIndex, 'muscle', value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="text-xs sm:text-sm w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -452,14 +454,15 @@ function ExerciseCard({ exercise, index, onUpdate, onDelete, muscleGroups }: Exe
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="w-24">
-                  <Label>%</Label>
+                <div className="w-16 sm:w-20 flex-shrink-0">
+                  <Label className="text-xs sm:text-sm">%</Label>
                   <Input
                     type="number"
                     min="0"
                     max="100"
                     value={muscle.percent}
                     onChange={(e) => handleMuscleChange(muscleIndex, 'percent', e.target.value)}
+                    className="text-xs sm:text-sm w-full"
                   />
                 </div>
                 {(localExercise.muscles?.length || 0) > 1 && (
@@ -467,9 +470,9 @@ function ExerciseCard({ exercise, index, onUpdate, onDelete, muscleGroups }: Exe
                     variant="ghost"
                     size="icon"
                     onClick={() => handleRemoveMuscle(muscleIndex)}
-                    className="mb-0"
+                    className="mb-0 h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0"
                   >
-                    <Trash2 className="w-4 h-4 text-red-500" />
+                    <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500" />
                   </Button>
                 )}
               </div>
@@ -477,17 +480,17 @@ function ExerciseCard({ exercise, index, onUpdate, onDelete, muscleGroups }: Exe
 
             {/* Add Muscle Button */}
             {(localExercise.muscles?.length || 0) < 3 && (
-              <Button variant="outline" size="sm" onClick={handleAddMuscle} className="w-full">
-                <Plus className="w-4 h-4 mr-2" />
+              <Button variant="outline" size="sm" onClick={handleAddMuscle} className="w-full text-xs sm:text-sm">
+                <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 Aggiungi Muscolo
               </Button>
             )}
 
             {/* Total Percentage */}
-            <div className="flex justify-between items-center pt-2 border-t">
-              <span className="text-sm font-medium">Totale:</span>
+            <div className="flex justify-between items-center pt-1.5 sm:pt-2 border-t">
+              <span className="text-xs sm:text-sm font-medium">Totale:</span>
               <span
-                className={`text-sm font-bold ${
+                className={`text-xs sm:text-sm font-bold ${
                   isValid ? 'text-green-600' : 'text-red-600'
                 }`}
               >
@@ -498,8 +501,8 @@ function ExerciseCard({ exercise, index, onUpdate, onDelete, muscleGroups }: Exe
         )}
 
         {/* Delete Exercise */}
-        <Button variant="destructive" size="sm" onClick={() => onDelete(index)} className="w-full">
-          <Trash2 className="w-4 h-4 mr-2" />
+        <Button variant="destructive" size="sm" onClick={() => onDelete(index)} className="w-full text-xs sm:text-sm">
+          <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
           Elimina Esercizio
         </Button>
       </CardContent>

@@ -41,14 +41,14 @@ export function VolumeByMuscleChart() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Volume per Gruppo Muscolare</CardTitle>
-        <CardDescription>Distribuzione del volume per muscolo</CardDescription>
-        <div className="grid gap-4 md:grid-cols-2 mt-4">
-          <div className="space-y-2">
-            <Label>Settimana</Label>
+      <CardHeader className="pb-3 sm:pb-6">
+        <CardTitle className="text-base sm:text-lg">Volume per Gruppo Muscolare</CardTitle>
+        <CardDescription className="text-xs sm:text-sm">Distribuzione del volume per muscolo</CardDescription>
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 mt-3 sm:mt-4">
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm">Settimana</Label>
             <Select value={selectedWeek.toString()} onValueChange={(v) => setSelectedWeek(Number(v))}>
-              <SelectTrigger>
+              <SelectTrigger className="text-xs sm:text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -60,10 +60,10 @@ export function VolumeByMuscleChart() {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label>Muscolo</Label>
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm">Muscolo</Label>
             <Select value={selectedMuscle} onValueChange={setSelectedMuscle}>
-              <SelectTrigger>
+              <SelectTrigger className="text-xs sm:text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -78,15 +78,15 @@ export function VolumeByMuscleChart() {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-[400px] w-full">
+      <CardContent className="px-2 sm:px-6">
+        <ChartContainer config={chartConfig} className="h-[300px] sm:h-[400px] w-full">
           <BarChart
             accessibilityLayer
             data={muscleData}
             layout="vertical"
             margin={{
-              left: 10,
-              right: 20,
+              left: 5,
+              right: 10,
             }}
           >
             <XAxis
@@ -94,14 +94,16 @@ export function VolumeByMuscleChart() {
               dataKey="volume"
               tickLine={false}
               axisLine={false}
+              tick={{ fontSize: 10 }}
             />
             <YAxis
               dataKey="name"
               type="category"
               tickLine={false}
-              tickMargin={10}
+              tickMargin={5}
               axisLine={false}
-              width={150}
+              width={100}
+              tick={{ fontSize: 10 }}
             />
             <ChartTooltip
               cursor={false}

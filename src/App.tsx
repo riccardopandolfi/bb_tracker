@@ -34,11 +34,11 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 max-w-7xl">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Dumbbell className="h-6 w-6 text-purple-600" />
-              <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+        <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8">
+          <div className="flex h-14 sm:h-16 items-center justify-between">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Dumbbell className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
+              <h1 className="text-base sm:text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                 BB Tracker Pro
               </h1>
             </div>
@@ -50,10 +50,10 @@ function App() {
       </header>
 
       {/* Navigation */}
-      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 max-w-7xl">
-          <NavigationMenu className="max-w-full justify-start py-2">
-            <NavigationMenuList className="flex-wrap gap-1">
+      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 overflow-x-auto">
+        <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8">
+          <NavigationMenu className="max-w-full justify-start py-1.5 sm:py-2">
+            <NavigationMenuList className="flex-wrap gap-0.5 sm:gap-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isDisabled = item.requiresProgram && !hasPrograms;
@@ -88,14 +88,16 @@ function App() {
       </div>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6 max-w-7xl">
-        <div className="animate-in fade-in duration-500">
-          {currentTab === 'home' && <HomeTab />}
-          {currentTab === 'library' && <ExerciseLibrary />}
-          {currentTab === 'programs' && <ProgramsTab />}
-          {currentTab === 'program' && <ProgramTab />}
-          {currentTab === 'logbook' && <LogbookTab />}
-          {currentTab === 'macros' && <MacrosTab />}
+      <main className="w-full overflow-x-hidden">
+        <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6">
+          <div className="animate-in fade-in duration-500 w-full">
+            {currentTab === 'home' && <HomeTab />}
+            {currentTab === 'library' && <ExerciseLibrary />}
+            {currentTab === 'programs' && <ProgramsTab />}
+            {currentTab === 'program' && <ProgramTab />}
+            {currentTab === 'logbook' && <LogbookTab />}
+            {currentTab === 'macros' && <MacrosTab />}
+          </div>
         </div>
       </main>
     </div>
