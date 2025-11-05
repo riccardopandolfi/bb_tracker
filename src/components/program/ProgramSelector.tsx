@@ -13,16 +13,78 @@ export function ProgramSelector() {
   const [newProgramName, setNewProgramName] = useState('');
   const [newProgramDescription, setNewProgramDescription] = useState('');
 
-  // Safety checks
-  if (!programs || Object.keys(programs).length === 0) {
-    return <div>Caricamento programmi...</div>;
-  }
-
   const programList = Object.values(programs).sort((a, b) => a.id - b.id);
-  const currentProgram = programs[currentProgramId];
+  const activeProgramId = currentProgramId ?? programList[0]?.id ?? null;
+  const currentProgram = activeProgramId != null ? programs[activeProgramId] : undefined;
 
-  if (!currentProgram) {
-    return <div>Errore: programma non trovato</div>;
+  if (programList.length === 0 || !currentProgram) {
+    return (
+      <Card>
+        <CardContent className="py-8">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <Folder className="w-8 h-8 text-muted-foreground" />
+            <h3 className="text-lg font-semibold">Nessun programma disponibile</h3>
+            <p className="text-sm text-muted-foreground">
+              Crea il tuo primo programma per iniziare a pianificare le settimane di allenamento.
+            </p>
+            <Button onClick={() => setShowNewProgramModal(true)}>
+              <Plus className="w-4 h-4 mr-1" />
+              Nuovo Programma
+            </Button>
+          </div>
+        </CardContent>
+
+        <Dialog open={showNewProgramModal} onOpenChange={setShowNewProgramModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Crea Nuovo Programma</DialogTitle>
+              <DialogDescription>
+                Crea un nuovo programma di allenamento con settimane, giorni ed esercizi personalizzati.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label htmlFor="program-name">Nome Programma *</Label>
+                <Input
+                  id="program-name"
+                  value={newProgramName}
+                  onChange={(e) => setNewProgramName(e.target.value)}
+                  placeholder="es. Mesociclo Forza Q1 2025"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="program-description">Descrizione (opzionale)</Label>
+                <Input
+                  id="program-description"
+                  value={newProgramDescription}
+                  onChange={(e) => setNewProgramDescription(e.target.value)}
+                  placeholder="es. Focus su incremento forza massimale"
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowNewProgramModal(false)}>
+                Annulla
+              </Button>
+              <Button onClick={() => {
+                if (!newProgramName.trim()) {
+                  alert('Inserisci un nome per il programma');
+                  return;
+                }
+                addProgram(newProgramName.trim(), newProgramDescription.trim());
+                setNewProgramName('');
+                setNewProgramDescription('');
+                setShowNewProgramModal(false);
+              }}>
+                Crea Programma
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </Card>
+    );
   }
 
   const handleCreateProgram = () => {
@@ -38,17 +100,17 @@ export function ProgramSelector() {
   };
 
   const handleDuplicateProgram = () => {
-    if (confirm(`Duplicare il programma "${currentProgram?.name}"?`)) {
-      duplicateProgram(currentProgramId);
+    if (!currentProgram || activeProgramId == null) return;
+    if (confirm(`Duplicare il programma "${currentProgram.name}"?`)) {
+      duplicateProgram(activeProgramId);
     }
   };
 
   const handleDeleteProgram = () => {
-    if (programList.length === 1) {
-      alert('Non puoi eliminare l\'ultimo programma!');
-      return;
+    if (!currentProgram || activeProgramId == null) return;
+    if (confirm(`Eliminare il programma "${currentProgram.name}"?\n\nQuesta azione eliminerà anche tutte le sessioni loggate relative a questo programma.`)) {
+      deleteProgram(activeProgramId);
     }
-    deleteProgram(currentProgramId);
   };
 
   return (
@@ -88,7 +150,7 @@ export function ProgramSelector() {
                 {programList.map((program) => (
                   <Button
                     key={program.id}
-                    variant={currentProgramId === program.id ? 'default' : 'outline'}
+                    variant={activeProgramId === program.id ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setCurrentProgram(program.id)}
                   >

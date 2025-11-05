@@ -217,7 +217,7 @@ export interface WeekMacros {
 // Global State
 export interface AppState {
   currentTab: 'home' | 'library' | 'programs' | 'program' | 'logbook' | 'macros';
-  currentProgramId: number;
+  currentProgramId: number | null;
   currentWeek: number;
   exercises: Exercise[];
   programs: Record<number, Program>;

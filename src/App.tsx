@@ -33,16 +33,16 @@ function App() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b border-black/40 bg-black text-white">
         <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8">
           <div className="flex h-14 sm:h-16 items-center justify-between">
             <div className="flex items-center gap-1.5 sm:gap-2">
-              <Dumbbell className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
-              <h1 className="text-base sm:text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                BB Tracker Pro
+              <Dumbbell className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+              <h1 className="text-base sm:text-xl font-bold tracking-wide text-white brand-font">
+                Nobody Cares Work Harder
               </h1>
             </div>
-            <p className="hidden md:block text-sm text-muted-foreground">
+            <p className="hidden md:block text-sm text-white/80">
               Il tuo tracker di allenamento professionale
             </p>
           </div>

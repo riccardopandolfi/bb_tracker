@@ -140,6 +140,10 @@ export function LogSessionModal({
 
   const handleSave = () => {
     if (!exercise || !block) return;
+    if (currentProgramId == null) {
+      alert('Seleziona un programma prima di loggare una sessione.');
+      return;
+    }
     // Per tecniche normali richiedi repRange, per tecniche speciali no
     const isNormalTechnique = block.technique === 'Normale';
     if (!block.technique || (isNormalTechnique && !block.repRange) || block.coefficient === undefined || block.targetRPE === undefined) return;

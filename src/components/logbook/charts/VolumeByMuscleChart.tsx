@@ -6,10 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { BarChart, Bar, XAxis, YAxis } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '../../ui/chart';
 import { calculateVolume } from '@/lib/calculations';
-import { MUSCLE_COLORS } from '@/lib/constants';
 
 export function VolumeByMuscleChart() {
-  const { getCurrentWeeks, exercises, currentWeek } = useApp();
+  const { getCurrentWeeks, exercises, currentWeek, getMuscleColor: resolveMuscleColor } = useApp();
   const [selectedWeek, setSelectedWeek] = useState(currentWeek);
   const [selectedMuscle, setSelectedMuscle] = useState('all');
 
@@ -27,7 +26,7 @@ export function VolumeByMuscleChart() {
     .map(([muscle, data]) => ({
       name: muscle,
       volume: parseFloat(data.volume.toFixed(1)),
-      fill: MUSCLE_COLORS[muscle] || '#6b7280',
+      fill: resolveMuscleColor(muscle) || '#6b7280',
     }));
 
   const uniqueMuscles = Object.keys(volumeData.byMuscle);

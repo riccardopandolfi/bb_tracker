@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { getExerciseBlocks } from '@/lib/exerciseUtils';
 import { calculateBlockTargetReps } from '@/lib/calculations';
-import { MUSCLE_COLORS } from '@/lib/constants';
+import { adjustColor, getContrastTextColor } from '@/lib/colorUtils';
 
 interface LoggedSessionCardProps {
   session: LoggedSession;
@@ -29,7 +29,7 @@ export function LoggedSessionCard({
   onDelete,
 }: LoggedSessionCardProps) {
   const [showBlockSelector, setShowBlockSelector] = useState(false);
-  const { getCurrentWeeks, exercises } = useApp();
+  const { getCurrentWeeks, exercises, getMuscleColor: resolveMuscleColor } = useApp();
   const weeks = getCurrentWeeks();
   const week = weeks[session.weekNum];
   
@@ -97,153 +97,38 @@ export function LoggedSessionCard({
     return colors[(weekNum - 1) % colors.length];
   };
 
-  // Funzioni helper per ottenere colori basati sul muscolo
-  const getBlockColorForMuscle = (muscle: string | null, blockIndex: number): string => {
-    if (!muscle) return 'bg-gray-500 text-white';
-    
-    const shadeIndex = blockIndex % 8;
-    const shades = ['400', '500', '600', '500', '400', '500', '600', '500'];
-    const shade = shades[shadeIndex];
-    
-    const colorMap: Record<string, Record<string, string>> = {
-      'Petto': {
-        '400': 'bg-red-400 text-white',
-        '500': 'bg-red-500 text-white',
-        '600': 'bg-red-600 text-white',
-      },
-      'Dorso - Lats': {
-        '400': 'bg-blue-400 text-white',
-        '500': 'bg-blue-500 text-white',
-        '600': 'bg-blue-600 text-white',
-      },
-      'Dorso - Upper Back': {
-        '400': 'bg-blue-400 text-white',
-        '500': 'bg-blue-500 text-white',
-        '600': 'bg-blue-600 text-white',
-      },
-      'Dorso - Trapezi': {
-        '400': 'bg-blue-400 text-white',
-        '500': 'bg-blue-500 text-white',
-        '600': 'bg-blue-600 text-white',
-      },
-      'Deltoidi - Anteriore': {
-        '400': 'bg-orange-400 text-white',
-        '500': 'bg-orange-500 text-white',
-        '600': 'bg-orange-600 text-white',
-      },
-      'Deltoidi - Laterale': {
-        '400': 'bg-orange-400 text-white',
-        '500': 'bg-orange-500 text-white',
-        '600': 'bg-orange-600 text-white',
-      },
-      'Deltoidi - Posteriore': {
-        '400': 'bg-orange-400 text-white',
-        '500': 'bg-orange-500 text-white',
-        '600': 'bg-orange-600 text-white',
-      },
-      'Bicipiti': {
-        '400': 'bg-purple-400 text-white',
-        '500': 'bg-purple-500 text-white',
-        '600': 'bg-purple-600 text-white',
-      },
-      'Tricipiti': {
-        '400': 'bg-pink-400 text-white',
-        '500': 'bg-pink-500 text-white',
-        '600': 'bg-pink-600 text-white',
-      },
-      'Avambracci': {
-        '400': 'bg-purple-400 text-white',
-        '500': 'bg-purple-500 text-white',
-        '600': 'bg-purple-600 text-white',
-      },
-      'Quadricipiti': {
-        '400': 'bg-green-400 text-white',
-        '500': 'bg-green-500 text-white',
-        '600': 'bg-green-600 text-white',
-      },
-      'Femorali': {
-        '400': 'bg-green-400 text-white',
-        '500': 'bg-green-500 text-white',
-        '600': 'bg-green-600 text-white',
-      },
-      'Glutei': {
-        '400': 'bg-green-400 text-white',
-        '500': 'bg-green-500 text-white',
-        '600': 'bg-green-600 text-white',
-      },
-      'Polpacci': {
-        '400': 'bg-green-400 text-white',
-        '500': 'bg-green-500 text-white',
-        '600': 'bg-green-600 text-white',
-      },
-      'Adduttori': {
-        '400': 'bg-teal-400 text-white',
-        '500': 'bg-teal-500 text-white',
-        '600': 'bg-teal-600 text-white',
-      },
-      'Abduttori': {
-        '400': 'bg-teal-400 text-white',
-        '500': 'bg-teal-500 text-white',
-        '600': 'bg-teal-600 text-white',
-      },
-      'Addome': {
-        '400': 'bg-yellow-400 text-white',
-        '500': 'bg-yellow-500 text-white',
-        '600': 'bg-yellow-600 text-white',
-      },
-      'Obliqui': {
-        '400': 'bg-yellow-400 text-white',
-        '500': 'bg-yellow-500 text-white',
-        '600': 'bg-yellow-600 text-white',
-      },
-      'Core': {
-        '400': 'bg-yellow-400 text-white',
-        '500': 'bg-yellow-500 text-white',
-        '600': 'bg-yellow-600 text-white',
-      },
+  const fallbackColor = '#6b7280';
+
+  const resolveColor = (muscle?: string | null) => {
+    if (!muscle) return fallbackColor;
+    return resolveMuscleColor(muscle) || fallbackColor;
+  };
+
+  const getBadgeStyle = (baseColor: string, modifier = 0) => {
+    const adjusted = modifier !== 0 ? adjustColor(baseColor, modifier) : baseColor;
+    return {
+      backgroundColor: adjusted,
+      color: getContrastTextColor(adjusted),
     };
-    
-    return colorMap[muscle]?.[shade] || 'bg-gray-500 text-white';
   };
 
-  const getTechniqueColorForMuscle = (muscle: string | null, technique: string): string => {
-    if (!muscle) {
-      return technique === 'Normale' ? 'bg-gray-300 text-gray-900' : 'bg-gray-400 text-white';
-    }
-    
-    const colorMap: Record<string, { normal: string; special: string }> = {
-      'Petto': { normal: 'bg-red-300 text-red-900', special: 'bg-red-400 text-white' },
-      'Dorso - Lats': { normal: 'bg-blue-300 text-blue-900', special: 'bg-blue-400 text-white' },
-      'Dorso - Upper Back': { normal: 'bg-blue-300 text-blue-900', special: 'bg-blue-400 text-white' },
-      'Dorso - Trapezi': { normal: 'bg-blue-300 text-blue-900', special: 'bg-blue-400 text-white' },
-      'Deltoidi - Anteriore': { normal: 'bg-orange-300 text-orange-900', special: 'bg-orange-400 text-white' },
-      'Deltoidi - Laterale': { normal: 'bg-orange-300 text-orange-900', special: 'bg-orange-400 text-white' },
-      'Deltoidi - Posteriore': { normal: 'bg-orange-300 text-orange-900', special: 'bg-orange-400 text-white' },
-      'Bicipiti': { normal: 'bg-purple-300 text-purple-900', special: 'bg-purple-400 text-white' },
-      'Tricipiti': { normal: 'bg-pink-300 text-pink-900', special: 'bg-pink-400 text-white' },
-      'Avambracci': { normal: 'bg-purple-300 text-purple-900', special: 'bg-purple-400 text-white' },
-      'Quadricipiti': { normal: 'bg-green-300 text-green-900', special: 'bg-green-400 text-white' },
-      'Femorali': { normal: 'bg-green-300 text-green-900', special: 'bg-green-400 text-white' },
-      'Glutei': { normal: 'bg-green-300 text-green-900', special: 'bg-green-400 text-white' },
-      'Polpacci': { normal: 'bg-green-300 text-green-900', special: 'bg-green-400 text-white' },
-      'Adduttori': { normal: 'bg-teal-300 text-teal-900', special: 'bg-teal-400 text-white' },
-      'Abduttori': { normal: 'bg-teal-300 text-teal-900', special: 'bg-teal-400 text-white' },
-      'Addome': { normal: 'bg-yellow-300 text-yellow-900', special: 'bg-yellow-400 text-white' },
-      'Obliqui': { normal: 'bg-yellow-300 text-yellow-900', special: 'bg-yellow-400 text-white' },
-      'Core': { normal: 'bg-yellow-300 text-yellow-900', special: 'bg-yellow-400 text-white' },
-    };
-    
-    const colors = colorMap[muscle] || { normal: 'bg-gray-300 text-gray-900', special: 'bg-gray-400 text-white' };
-    return technique === 'Normale' ? colors.normal : colors.special;
+  const getBlockStyleForMuscle = (muscle: string | null, blockIndex: number) => {
+    const base = resolveColor(muscle);
+    const shades = [0, -0.12, 0.18, -0.2, 0.14, -0.05, 0.24, -0.1];
+    return getBadgeStyle(base, shades[blockIndex % shades.length]);
   };
 
-  const getBlockColor = (blockIndex: number): string => {
-    return getBlockColorForMuscle(primaryMuscle?.muscle || null, blockIndex);
+  const getTechniqueStyleForMuscle = (muscle: string | null, technique: string) => {
+    const base = resolveColor(muscle);
+    const modifier = technique === 'Normale' ? 0.22 : -0.12;
+    return getBadgeStyle(base, modifier);
   };
 
-  const getTechniqueColor = (technique: string): string => {
-    return getTechniqueColorForMuscle(primaryMuscle?.muscle || null, technique);
-  };
+  const getBlockStyle = (blockIndex: number) =>
+    getBlockStyleForMuscle(primaryMuscle?.muscle || null, blockIndex);
+
+  const getTechniqueStyle = (technique: string) =>
+    getTechniqueStyleForMuscle(primaryMuscle?.muscle || null, technique);
 
   const hasMultipleBlocks = groupedSessions && groupedSessions.length > 1;
   
@@ -292,8 +177,8 @@ export function LoggedSessionCard({
               {primaryMuscle && (
                 <div className="mb-1">
                   <span
-                    className="inline-block px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded text-white"
-                    style={{ backgroundColor: MUSCLE_COLORS[primaryMuscle.muscle] || '#6b7280' }}
+                    className="inline-block px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded"
+                    style={getBadgeStyle(resolveColor(primaryMuscle.muscle))}
                   >
                     {primaryMuscle.muscle}
                   </span>
@@ -400,10 +285,16 @@ export function LoggedSessionCard({
                       return (
                         <div key={idx} className="w-full border border-gray-200 rounded-md p-3 bg-white">
                           <div className="flex items-center gap-2 text-xs mb-2 pb-2 border-b border-gray-100">
-                            <span className={`px-2 py-0.5 ${getBlockColor(blockSession.blockIndex !== undefined ? blockSession.blockIndex : idx)} rounded text-xs font-medium`}>
+                            <span
+                              className="px-2 py-0.5 rounded text-xs font-medium"
+                              style={getBlockStyle(blockSession.blockIndex !== undefined ? blockSession.blockIndex : idx)}
+                            >
                               B{blockSession.blockIndex !== undefined ? blockSession.blockIndex + 1 : idx + 1}
                             </span>
-                            <span className={`px-2 py-0.5 ${getTechniqueColor(blockSession.technique)} rounded text-xs font-medium`}>
+                            <span
+                              className="px-2 py-0.5 rounded text-xs font-medium"
+                              style={getTechniqueStyle(blockSession.technique)}
+                            >
                               {blockSession.technique}
                             </span>
                             {blockSession.blockRest && idx < groupedSessions.length - 1 && (
@@ -497,21 +388,27 @@ export function LoggedSessionCard({
                     const blockMuscle = getPrimaryMuscleForExercise(blockSession.exercise);
                     
                     // Funzioni colore specifiche per questo blocco
-                    const getBlockColorForThis = (blockIdx: number) => {
-                      return getBlockColorForMuscle(blockMuscle?.muscle || null, blockIdx);
+                    const getBlockStyleForThis = (blockIdx: number) => {
+                      return getBlockStyleForMuscle(blockMuscle?.muscle || null, blockIdx);
                     };
                     
-                    const getTechniqueColorForThis = (technique: string) => {
-                      return getTechniqueColorForMuscle(blockMuscle?.muscle || null, technique);
+                    const getTechniqueStyleForThis = (technique: string) => {
+                      return getTechniqueStyleForMuscle(blockMuscle?.muscle || null, technique);
                     };
                     
                     return (
                       <div key={idx} className="w-full border border-gray-200 rounded-md p-3 bg-white">
                         <div className="flex items-center gap-2 text-xs mb-2 pb-2 border-b border-gray-100">
-                          <span className={`px-2 py-0.5 ${getBlockColorForThis(blockSession.blockIndex !== undefined ? blockSession.blockIndex : idx)} rounded text-xs font-medium`}>
+                          <span
+                            className="px-2 py-0.5 rounded text-xs font-medium"
+                            style={getBlockStyleForThis(blockSession.blockIndex !== undefined ? blockSession.blockIndex : idx)}
+                          >
                             B{blockSession.blockIndex !== undefined ? blockSession.blockIndex + 1 : idx + 1}
                           </span>
-                          <span className={`px-2 py-0.5 ${getTechniqueColorForThis(blockSession.technique)} rounded text-xs font-medium`}>
+                          <span
+                            className="px-2 py-0.5 rounded text-xs font-medium"
+                            style={getTechniqueStyleForThis(blockSession.technique)}
+                          >
                             {blockSession.technique}
                           </span>
                           {blockSession.blockRest && idx < groupedSessions.length - 1 && (
@@ -560,7 +457,10 @@ export function LoggedSessionCard({
                     // Tecnica speciale: mostra set individuali
                     <div className="w-full border border-gray-200 rounded-md p-3 bg-white">
                       <div className="flex items-center gap-2 text-xs mb-2 pb-2 border-b border-gray-100">
-                        <span className={`px-2 py-0.5 ${getTechniqueColor(session.technique)} rounded text-xs font-medium`}>
+                        <span
+                          className="px-2 py-0.5 rounded text-xs font-medium"
+                          style={getTechniqueStyle(session.technique)}
+                        >
                           {session.technique}
                         </span>
                       </div>

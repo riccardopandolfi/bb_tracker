@@ -43,12 +43,6 @@ export function ProgramsTab() {
   };
 
   const handleDeleteProgram = (programId: number) => {
-    const programList = Object.values(programs).sort((a, b) => b.id - a.id);
-    if (programList.length === 1) {
-      alert('Non puoi eliminare l\'ultimo programma!');
-      return;
-    }
-
     const program = programs[programId];
     if (confirm(`Eliminare il programma "${program?.name}"?\n\nQuesta azione eliminerà anche tutte le sessioni loggate relative a questo programma.`)) {
       deleteProgram(programId);

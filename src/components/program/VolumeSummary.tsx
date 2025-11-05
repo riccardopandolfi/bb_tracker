@@ -2,13 +2,12 @@ import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { calculateVolume } from '@/lib/calculations';
-import { MUSCLE_COLORS } from '@/lib/constants';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { Button } from '../ui/button';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 export function VolumeSummary() {
-  const { currentWeek, getCurrentWeeks, exercises } = useApp();
+  const { currentWeek, getCurrentWeeks, exercises, getMuscleColor: resolveMuscleColor } = useApp();
   const weeks = getCurrentWeeks();
   const week = weeks[currentWeek];
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -23,7 +22,7 @@ export function VolumeSummary() {
   const volumeCards = (
     <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
       {musclesSorted.map(([muscle, data]) => {
-        const muscleColor = MUSCLE_COLORS[muscle] || '#6b7280';
+        const muscleColor = resolveMuscleColor(muscle) || '#6b7280';
         return (
           <div
             key={muscle}

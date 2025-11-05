@@ -6,7 +6,7 @@ import { generateDemoPrograms, generateDemoLoggedSessions } from '@/lib/demoData
 
 interface AppContextType extends AppState {
   setCurrentTab: (tab: 'home' | 'library' | 'programs' | 'program' | 'logbook' | 'macros') => void;
-  setCurrentProgram: (programId: number) => void;
+  setCurrentProgram: (programId: number | null) => void;
   setCurrentWeek: (week: number) => void;
   setExercises: (exercises: Exercise[]) => void;
   addExercise: (exercise: Exercise) => void;
@@ -45,26 +45,13 @@ const STORAGE_KEY = 'bodybuilding-data';
 
 const defaultState: AppState = {
   currentTab: 'home',
-  currentProgramId: 1,
+  currentProgramId: null,
   currentWeek: 1,
   exercises: DEFAULT_EXERCISES,
-  programs: {
-    1: {
-      id: 1,
-      name: 'Programma Default',
-      description: 'Il tuo primo programma di allenamento',
-      createdAt: new Date().toISOString(),
-      weeks: {
-        1: { days: [] },
-      },
-      macros: {
-        1: { kcal: '', protein: '', carbs: '', fat: '', notes: '' },
-      },
-    },
-  },
+  programs: {},
   loggedSessions: [],
   muscleGroups: [...DEFAULT_MUSCLE_GROUPS],
-  muscleGroupColors: {}, // I colori vengono aggiunti solo per i gruppi custom
+  muscleGroupColors: {},
   customTechniques: [],
 };
 
@@ -80,12 +67,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         // MIGRATION: Convert old format (weeks/macros at root) to new format (programs)
         let migratedPrograms: Record<number, Program>;
-        let migratedCurrentProgramId: number;
+        let migratedCurrentProgramId: number | null;
 
         if (data.programs) {
           // New format already exists
           migratedPrograms = data.programs;
-          migratedCurrentProgramId = data.currentProgramId || 1;
+          if (typeof data.currentProgramId === 'number') {
+            migratedCurrentProgramId = data.currentProgramId;
+          } else {
+            const firstProgramId = Object.keys(migratedPrograms)[0];
+            migratedCurrentProgramId = firstProgramId ? Number(firstProgramId) : null;
+          }
         } else {
           // Old format: convert weeks/macros to Program 1
           console.log('Migrating old data format to new program structure...');
@@ -239,7 +231,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [state]);
 
   // Helper getters
-  const getCurrentProgram = () => state.programs[state.currentProgramId];
+  const getCurrentProgram = () => {
+    if (state.currentProgramId == null) return undefined;
+    return state.programs[state.currentProgramId];
+  };
 
   const getCurrentWeeks = () => {
     const program = getCurrentProgram();
@@ -255,7 +250,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, currentTab: tab }));
   };
 
-  const setCurrentProgram = (programId: number) => {
+  const setCurrentProgram = (programId: number | null) => {
     setState((prev) => ({ ...prev, currentProgramId: programId, currentWeek: 1 }));
   };
 
@@ -291,25 +286,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Program management
   const addProgram = (name: string, description?: string) => {
-    const newId = Math.max(...Object.keys(state.programs).map(Number), 0) + 1;
-    const newProgram: Program = {
-      id: newId,
-      name,
-      description: description || '',
-      createdAt: new Date().toISOString(),
-      weeks: { 1: { days: [] } },
-      macros: { 1: { kcal: '', protein: '', carbs: '', fat: '', notes: '' } },
-    };
+    setState((prev) => {
+      const existingIds = Object.keys(prev.programs).map(Number);
+      const newId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
+      const newProgram: Program = {
+        id: newId,
+        name,
+        description: description || '',
+        createdAt: new Date().toISOString(),
+        weeks: { 1: { days: [] } },
+        macros: { 1: { kcal: '', protein: '', carbs: '', fat: '', notes: '' } },
+      };
 
-    setState((prev) => ({
-      ...prev,
-      programs: {
-        ...prev.programs,
-        [newId]: newProgram,
-      },
-      currentProgramId: newId,
-      currentWeek: 1,
-    }));
+      return {
+        ...prev,
+        programs: {
+          ...prev.programs,
+          [newId]: newProgram,
+        },
+        currentProgramId: newId,
+        currentWeek: 1,
+      };
+    });
   };
 
   const updateProgram = (programId: number, program: Program) => {
@@ -323,23 +321,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteProgram = (programId: number) => {
-    if (Object.keys(state.programs).length === 1) {
-      alert('Non puoi eliminare l\'ultimo programma!');
-      return;
-    }
+    if (!state.programs[programId]) return;
 
     if (confirm(`Eliminare il programma "${state.programs[programId]?.name}"?`)) {
       setState((prev) => {
         const newPrograms = { ...prev.programs };
         delete newPrograms[programId];
 
-        // If deleting current program, switch to first available
-        const newCurrentId = prev.currentProgramId === programId
-          ? Number(Object.keys(newPrograms)[0])
-          : prev.currentProgramId;
+        const remainingIds = Object.keys(newPrograms);
+        const newCurrentId =
+          prev.currentProgramId === programId
+            ? remainingIds.length > 0
+              ? Number(remainingIds[0])
+              : null
+            : prev.currentProgramId;
 
-        // Remove logged sessions for this program
-        const filteredSessions = prev.loggedSessions.filter(s => s.programId !== programId);
+        const filteredSessions = prev.loggedSessions.filter((s) => s.programId !== programId);
 
         return {
           ...prev,
@@ -356,30 +353,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const sourceProgram = state.programs[programId];
     if (!sourceProgram) return;
 
-    const newId = Math.max(...Object.keys(state.programs).map(Number)) + 1;
-    const newProgram: Program = {
-      ...JSON.parse(JSON.stringify(sourceProgram)),
-      id: newId,
-      name: `${sourceProgram.name} (Copia)`,
-      createdAt: new Date().toISOString(),
-    };
+    setState((prev) => {
+      const existingIds = Object.keys(prev.programs).map(Number);
+      const newId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
+      const newProgram: Program = {
+        ...JSON.parse(JSON.stringify(sourceProgram)),
+        id: newId,
+        name: `${sourceProgram.name} (Copia)`,
+        createdAt: new Date().toISOString(),
+      };
 
-    setState((prev) => ({
-      ...prev,
-      programs: {
-        ...prev.programs,
-        [newId]: newProgram,
-      },
-      currentProgramId: newId,
-      currentWeek: 1,
-    }));
+      return {
+        ...prev,
+        programs: {
+          ...prev.programs,
+          [newId]: newProgram,
+        },
+        currentProgramId: newId,
+        currentWeek: 1,
+      };
+    });
   };
 
   const setWeeks = (weeks: Record<number, Week>) => {
     const program = getCurrentProgram();
     if (!program) return;
 
-    updateProgram(state.currentProgramId, {
+    updateProgram(program.id, {
       ...program,
       weeks,
     });
@@ -389,7 +389,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const program = getCurrentProgram();
     if (!program) return;
 
-    updateProgram(state.currentProgramId, {
+    updateProgram(program.id, {
       ...program,
       weeks: {
         ...program.weeks,
@@ -411,7 +411,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const newWeekNum = Math.max(...Object.keys(program.weeks).map(Number)) + 1;
 
-    updateProgram(state.currentProgramId, {
+    updateProgram(program.id, {
       ...program,
       weeks: {
         ...program.weeks,
@@ -430,7 +430,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const program = getCurrentProgram();
     if (!program) return;
 
-    updateProgram(state.currentProgramId, {
+    updateProgram(program.id, {
       ...program,
       weeks: {
         ...program.weeks,
@@ -482,6 +482,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setMacros = (weekNum: number, macros: WeekMacros, programId?: number) => {
     const targetProgramId = programId ?? state.currentProgramId;
+    if (targetProgramId == null) return;
     const program = state.programs[targetProgramId];
     if (!program) return;
 
@@ -580,8 +581,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const filteredSessions = prev.loggedSessions.filter(s => s.programId !== 999 && s.programId !== 998);
 
         // Se il programma corrente era uno dei demo, passa al primo disponibile
+        const remainingIds = Object.keys(newPrograms);
         const newCurrentId = (prev.currentProgramId === 999 || prev.currentProgramId === 998)
-          ? Number(Object.keys(newPrograms)[0] || 1)
+          ? remainingIds.length > 0
+            ? Number(remainingIds[0])
+            : null
           : prev.currentProgramId;
 
         return {

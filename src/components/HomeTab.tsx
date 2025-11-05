@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Dumbbell, CheckCircle2, Filter } from 'lucide-react';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from './ui/chart';
 import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
-import { MUSCLE_COLORS } from '@/lib/constants';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -12,9 +11,20 @@ import { Checkbox } from './ui/checkbox';
 import { Button } from './ui/button';
 import { useState } from 'react';
 import { MacrosPieChart } from './home/MacrosPieChart';
+import { adjustColor } from '@/lib/colorUtils';
 
 export function HomeTab() {
-  const { programs, currentProgramId, loggedSessions, loadDemoData, clearDemoData, hasDemoData, exercises, setCurrentTab } = useApp();
+  const {
+    programs,
+    currentProgramId,
+    loggedSessions,
+    loadDemoData,
+    clearDemoData,
+    hasDemoData,
+    exercises,
+    setCurrentTab,
+    getMuscleColor: resolveMuscleColor,
+  } = useApp();
   const [weekRange, setWeekRange] = useState<'all' | 'last2' | 'last4'>('all');
 
   // Default muscle groups to show
@@ -29,47 +39,44 @@ export function HomeTab() {
   ]));
 
   // Get current program
-  const currentProgram = programs[currentProgramId];
+  const currentProgram = currentProgramId != null ? programs[currentProgramId] : undefined;
 
   // Filter sessions by current program
-  const currentProgramSessions = loggedSessions.filter(
-    (session) => session.programId === currentProgramId
-  );
+  const currentProgramSessions =
+    currentProgramId != null
+      ? loggedSessions.filter((session) => session.programId === currentProgramId)
+      : [];
 
   // Get total programs count
   const totalPrograms = Object.keys(programs).length;
+
+  const getMuscleColorHex = (muscle: string) => resolveMuscleColor(muscle) || '#6b7280';
+  const getMuscleGradientColor = (muscle: string, modifier: number) =>
+    adjustColor(getMuscleColorHex(muscle), modifier);
 
   // Empty state when no programs exist
   if (totalPrograms === 0) {
     return (
       <div className="space-y-6">
-        {/* Welcome Section */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-            <p className="text-muted-foreground mt-2">
-              Benvenuto nel tuo tracker di allenamento
-            </p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="demo-mode"
-              checked={hasDemoData()}
-              onCheckedChange={(checked) => {
-                if (checked) {
-                  loadDemoData();
-                } else {
-                  clearDemoData();
-                }
-              }}
-            />
-            <Label htmlFor="demo-mode">Dati Demo</Label>
-          </div>
-        </div>
-
         {/* Empty State */}
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-16 px-4">
+            <div className="self-end mb-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="demo-mode"
+                  checked={hasDemoData()}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      loadDemoData();
+                    } else {
+                      clearDemoData();
+                    }
+                  }}
+                />
+                <Label htmlFor="demo-mode">Dati Demo</Label>
+              </div>
+            </div>
             <div className="rounded-full bg-muted p-4 mb-4">
               <Dumbbell className="h-12 w-12 text-muted-foreground" />
             </div>
@@ -107,7 +114,7 @@ export function HomeTab() {
   const lastWeekNum = lastLoggedSession?.weekNum || 1;
 
   // Get current week structure
-  const currentWeek = currentProgram?.weeks[lastWeekNum];
+  const currentWeek = currentProgram?.weeks?.[lastWeekNum];
   const daysInWeek = currentWeek?.days || [];
 
   // Calculate status for each day
@@ -261,21 +268,14 @@ export function HomeTab() {
   const chartConfig: ChartConfig = muscleList.reduce((config, muscle) => {
     config[muscle] = {
       label: muscle,
-      color: MUSCLE_COLORS[muscle] || '#6b7280',
+      color: getMuscleColorHex(muscle),
     };
     return config;
   }, {} as ChartConfig);
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Welcome Section */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h2>
-          <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-base">
-            Benvenuto nel tuo tracker di allenamento
-          </p>
-        </div>
+      <div className="flex justify-end">
         <div className="flex items-center space-x-2">
           <Switch
             id="demo-mode"
@@ -404,7 +404,7 @@ export function HomeTab() {
                         >
                           <span
                             className="inline-block w-3 h-3 rounded-sm mr-2"
-                            style={{ backgroundColor: MUSCLE_COLORS[muscle] || '#6b7280' }}
+                            style={{ backgroundColor: getMuscleColorHex(muscle) }}
                           />
                           {muscle}
                         </label>
@@ -448,12 +448,12 @@ export function HomeTab() {
                     <linearGradient key={muscle} id={`fill${muscle.replace(/\s+/g, '')}`} x1="0" y1="0" x2="0" y2="1">
                       <stop
                         offset="5%"
-                        stopColor={MUSCLE_COLORS[muscle] || '#6b7280'}
+                        stopColor={getMuscleGradientColor(muscle, 0.18)}
                         stopOpacity={0.8}
                       />
                       <stop
                         offset="95%"
-                        stopColor={MUSCLE_COLORS[muscle] || '#6b7280'}
+                        stopColor={getMuscleGradientColor(muscle, -0.12)}
                         stopOpacity={0.1}
                       />
                     </linearGradient>
@@ -482,7 +482,7 @@ export function HomeTab() {
                     dataKey={muscle}
                     type="natural"
                     fill={`url(#fill${muscle.replace(/\s+/g, '')})`}
-                    stroke={MUSCLE_COLORS[muscle] || '#6b7280'}
+                    stroke={getMuscleColorHex(muscle)}
                     stackId="a"
                   />
                 ))}

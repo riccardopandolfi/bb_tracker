@@ -12,6 +12,8 @@ import { Trash2, Dumbbell, Clock, FileText } from 'lucide-react';
 import { TechniqueParamsForm } from './TechniqueParamsForm';
 import { generateSchemaFromParams, TECHNIQUE_DEFINITIONS } from '@/lib/techniques';
 import { parseSchema } from '@/lib/calculations';
+import { useApp } from '@/contexts/AppContext';
+import { adjustColor, getContrastTextColor } from '@/lib/colorUtils';
 
 interface ExerciseBlockCardProps {
   block: ExerciseBlock;
@@ -42,6 +44,7 @@ export function ExerciseBlockCard({
   isLast,
   canDelete,
 }: ExerciseBlockCardProps) {
+  const { getMuscleColor: resolveMuscleColor } = useApp();
   const [showLoadModal, setShowLoadModal] = useState(false);
   const [localLoadsByCluster, setLocalLoadsByCluster] = useState<string[][]>([]);
   const isNormalTechnique = (block.technique || 'Normale') === 'Normale';
@@ -56,31 +59,31 @@ export function ExerciseBlockCard({
     );
   };
 
-  // Estrae il colore base dal muscolo
-  const getMuscleColorBase = (muscle: string | null): string => {
-    if (!muscle) return 'gray';
-    const colorMap: Record<string, string> = {
-      'Petto': 'red',
-      'Dorso - Lats': 'blue',
-      'Dorso - Upper Back': 'blue',
-      'Dorso - Trapezi': 'blue',
-      'Deltoidi - Anteriore': 'orange',
-      'Deltoidi - Laterale': 'orange',
-      'Deltoidi - Posteriore': 'orange',
-      'Bicipiti': 'purple',
-      'Tricipiti': 'pink',
-      'Avambracci': 'purple',
-      'Quadricipiti': 'green',
-      'Femorali': 'green',
-      'Glutei': 'green',
-      'Polpacci': 'green',
-      'Adduttori': 'teal',
-      'Abduttori': 'teal',
-      'Addome': 'yellow',
-      'Obliqui': 'yellow',
-      'Core': 'yellow',
+  const fallbackColor = '#6b7280';
+
+  const resolveColor = (muscle?: string | null) => {
+    if (!muscle) return fallbackColor;
+    return resolveMuscleColor(muscle) || fallbackColor;
+  };
+
+  const getBadgeStyle = (baseColor: string, modifier = 0) => {
+    const adjusted = modifier !== 0 ? adjustColor(baseColor, modifier) : baseColor;
+    return {
+      backgroundColor: adjusted,
+      color: getContrastTextColor(adjusted),
     };
-    return colorMap[muscle] || 'gray';
+  };
+
+  const getBlockStyle = (blockIndex: number) => {
+    const base = resolveColor(primaryMuscle?.muscle);
+    const shades = [0, -0.12, 0.18, -0.2, 0.14, -0.05, 0.24, -0.1];
+    return getBadgeStyle(base, shades[blockIndex % shades.length]);
+  };
+
+  const getTechniqueStyle = (technique: string) => {
+    const base = resolveColor(primaryMuscle?.muscle);
+    const modifier = technique === 'Normale' ? 0.22 : -0.12;
+    return getBadgeStyle(base, modifier);
   };
 
   const primaryMuscle = getPrimaryMuscle();
@@ -295,33 +298,16 @@ export function ExerciseBlockCard({
     }
   };
 
-  const getBlockColor = (blockIndex: number): string => {
-    const muscleBase = getMuscleColorBase(primaryMuscle?.muscle || null);
-    // Tonalità più chiare/sbiadite: 400, 500, 600 per blocchi diversi
-    const shades = ['400', '500', '600', '500', '400', '500', '600', '500'];
-    const shade = shades[blockIndex % shades.length];
-    return `bg-${muscleBase}-${shade} text-white`;
-  };
-
-  const getTechniqueColor = (technique: string): string => {
-    const muscleBase = getMuscleColorBase(primaryMuscle?.muscle || null);
-    
-    if (technique === 'Normale') {
-      // Per "Normale" usa una tonalità molto chiara/neutra
-      return `bg-${muscleBase}-300 text-${muscleBase}-900`;
-    }
-    
-    // Per tecniche speciali usa una tonalità media/chiara
-    return `bg-${muscleBase}-400 text-white`;
-  };
-
   if (exerciseType === 'cardio') {
     return (
       <Card className="w-full border border-gray-200 shadow-sm">
         <CardHeader className="pb-3 border-b border-gray-100">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
-              <span className={`px-2 py-0.5 ${getBlockColor(blockIndex)} text-xs font-medium rounded`}>
+              <span
+                className="px-2 py-0.5 text-xs font-medium rounded"
+                style={getBlockStyle(blockIndex)}
+              >
                 Blocco {blockIndex + 1}
               </span>
               <span className="px-2 py-0.5 bg-orange-700 text-white text-xs font-medium rounded">
@@ -387,10 +373,16 @@ export function ExerciseBlockCard({
         <CardHeader className="pb-3 border-b border-gray-100">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
-              <span className={`px-2 py-0.5 ${getBlockColor(blockIndex)} text-xs font-medium rounded`}>
+              <span
+                className="px-2 py-0.5 text-xs font-medium rounded"
+                style={getBlockStyle(blockIndex)}
+              >
                 Blocco {blockIndex + 1}
               </span>
-              <span className={`px-2 py-0.5 ${getTechniqueColor(block.technique || 'Normale')} text-xs font-medium rounded`}>
+              <span
+                className="px-2 py-0.5 text-xs font-medium rounded"
+                style={getTechniqueStyle(block.technique || 'Normale')}
+              >
                 {block.technique || 'Normale'}
               </span>
             </div>

@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Race Sport';
+  src: url('/fonts/RaceSport.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -55,6 +63,9 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  .brand-font {
+    font-family: 'Race Sport', 'Bebas Neue', Impact, 'Arial Narrow', sans-serif;
   }
 }
 
