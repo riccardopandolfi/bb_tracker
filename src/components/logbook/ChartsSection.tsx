@@ -1,5 +1,5 @@
 import { VolumeByMuscleChart } from './charts/VolumeByMuscleChart';
-import { LoadProgressionChart } from './charts/LoadProgressionChart';
+import { WorkoutSchemaAnalyzer } from './WorkoutSchemaAnalyzer';
 
 export function ChartsSection() {
   return (
@@ -14,8 +14,8 @@ export function ChartsSection() {
       {/* Chart 1: Volume by Muscle */}
       <VolumeByMuscleChart />
 
-      {/* Chart 2: Parametrized Progression */}
-      <LoadProgressionChart />
+      {/* Chart 2: Workout Schema Analyzer */}
+      <WorkoutSchemaAnalyzer />
     </div>
   );
 }

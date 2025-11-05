@@ -38,38 +38,35 @@ export function generateDemoPrograms(): Program[] {
             {
               exerciseName: 'Panca Piana Bilanciere',
               exerciseType: 'resistance',
-              blocks: [{
-                sets,
-                repsBase: '8',
-                repRange: '6-8',
-                rest: 180,
-                targetLoads: Array(sets).fill(0).map((_, i) => progressLoad(80 + i * 2.5, weekNum).toFixed(1)),
-                targetRPE: 8.5,
-                technique: 'Normale',
-                techniqueSchema: `${sets}x8`,
-                techniqueParams: {},
-                coefficient: 1.0,
-                blockRest: 120,
-              }],
+              blocks: [
+                {
+                  sets,
+                  repsBase: '8',
+                  repRange: '6-8',
+                  rest: 180,
+                  targetLoads: Array(sets).fill(0).map((_, i) => progressLoad(80 + i * 2.5, weekNum).toFixed(1)),
+                  targetRPE: 8.5,
+                  technique: 'Normale',
+                  techniqueSchema: `${sets}x8`,
+                  techniqueParams: {},
+                  coefficient: 1.0,
+                  blockRest: 120,
+                },
+                {
+                  sets: Math.max(2, sets - 1),
+                  repsBase: '12',
+                  repRange: '8-12',
+                  rest: 150,
+                  targetLoads: Array(Math.max(2, sets - 1)).fill(0).map(() => progressLoad(60, weekNum).toFixed(1)),
+                  targetRPE: 8.0,
+                  technique: 'Normale',
+                  techniqueSchema: `${Math.max(2, sets - 1)}x12`,
+                  techniqueParams: {},
+                  coefficient: 0.85,
+                  blockRest: 120,
+                }
+              ],
               notes: '',
-            },
-            {
-              exerciseName: 'Panca Piana Bilanciere',
-              exerciseType: 'resistance',
-              blocks: [{
-                sets: Math.max(2, sets - 1),
-                repsBase: '12',
-                repRange: '8-12',
-                rest: 150,
-                targetLoads: Array(Math.max(2, sets - 1)).fill(0).map(() => progressLoad(60, weekNum).toFixed(1)),
-                targetRPE: 8.0,
-                technique: 'Normale',
-                techniqueSchema: `${Math.max(2, sets - 1)}x12`,
-                techniqueParams: {},
-                coefficient: 0.85,
-                blockRest: 120,
-              }],
-              notes: 'Serie pompa',
             },
             {
               exerciseName: 'Military Press',
@@ -170,19 +167,34 @@ export function generateDemoPrograms(): Program[] {
             {
               exerciseName: 'Rematore Bilanciere',
               exerciseType: 'resistance',
-              blocks: [{
-                sets,
-                repsBase: '10',
-                repRange: '8-12',
-                rest: 150,
-                targetLoads: Array(sets).fill(0).map((_, i) => progressLoad(60 + i * 5, weekNum).toFixed(1)),
-                targetRPE: 8.0,
-                technique: 'Normale',
-                techniqueSchema: `${sets}x10`,
-                techniqueParams: {},
-                coefficient: 0.95,
-                blockRest: 90,
-              }],
+              blocks: [
+                {
+                  sets,
+                  repsBase: '10',
+                  repRange: '8-12',
+                  rest: 150,
+                  targetLoads: Array(sets).fill(0).map((_, i) => progressLoad(60 + i * 5, weekNum).toFixed(1)),
+                  targetRPE: 8.0,
+                  technique: 'Normale',
+                  techniqueSchema: `${sets}x10`,
+                  techniqueParams: {},
+                  coefficient: 0.95,
+                  blockRest: 90,
+                },
+                {
+                  sets: Math.max(2, sets - 1),
+                  repsBase: '15',
+                  repRange: '12-20',
+                  rest: 120,
+                  targetLoads: Array(Math.max(2, sets - 1)).fill(0).map(() => progressLoad(50, weekNum).toFixed(1)),
+                  targetRPE: 7.5,
+                  technique: 'Normale',
+                  techniqueSchema: `${Math.max(2, sets - 1)}x15`,
+                  techniqueParams: {},
+                  coefficient: 0.8,
+                  blockRest: 90,
+                }
+              ],
               notes: '',
             },
             {
@@ -202,24 +214,6 @@ export function generateDemoPrograms(): Program[] {
                 blockRest: 60,
               }],
               notes: '',
-            },
-            {
-              exerciseName: 'Rematore Bilanciere',
-              exerciseType: 'resistance',
-              blocks: [{
-                sets: Math.max(2, sets - 1),
-                repsBase: '15',
-                repRange: '12-20',
-                rest: 120,
-                targetLoads: Array(Math.max(2, sets - 1)).fill(0).map(() => progressLoad(50, weekNum).toFixed(1)),
-                targetRPE: 7.5,
-                technique: 'Normale',
-                techniqueSchema: `${Math.max(2, sets - 1)}x15`,
-                techniqueParams: {},
-                coefficient: 0.8,
-                blockRest: 90,
-              }],
-              notes: 'Serie pompa',
             },
             {
               exerciseName: 'Curl Bilanciere',
@@ -805,10 +799,12 @@ export function generateDemoLoggedSessions(): LoggedSession[] {
   }
 
   // Program 2 (998) - Upper/Lower - fatto da 8 settimane fa a 1 settimana fa
+  // IMPORTANTE: usa weekNum 9-16 per continuità progressiva (non ripete 1-8)
   const program2 = programs[1];
-  for (let weekNum = 1; weekNum <= 8; weekNum++) {
-    const week = program2.weeks[weekNum];
-    const weekDaysOffset = (8 - weekNum) * 7; // Week 1 = 8 settimane fa, Week 8 = 1 settimana fa
+  for (let cycleWeek = 1; cycleWeek <= 8; cycleWeek++) {
+    const week = program2.weeks[cycleWeek]; // Usa la settimana del programma (1-8)
+    const weekNum = cycleWeek + 8; // Ma logga con weekNum progressivo (9-16)
+    const weekDaysOffset = (8 - cycleWeek) * 7; // Week 1 del ciclo = 8 settimane fa, Week 8 = 1 settimana fa
 
     week.days.forEach((day, dayIndex) => {
       const dayOffset = weekDaysOffset + dayIndex; // Spaziare i giorni nella settimana
@@ -826,14 +822,14 @@ export function generateDemoLoggedSessions(): LoggedSession[] {
             block.sets,
             block.repsBase,
             block.targetLoads,
-            weekNum
+            cycleWeek // Usa cycleWeek (1-8) per la progressione del carico
           );
 
           sessions.push({
             id: sessionId++,
             programId: 998,
             date: daysAgo(dayOffset),
-            weekNum,
+            weekNum, // Usa weekNum progressivo (9-16)
             exercise: exercise.exerciseName,
             dayIndex,
             dayName: day.name,
