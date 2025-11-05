@@ -83,19 +83,7 @@ export function LoggedSessionCard({
   // Per sessioni multiple, ogni blocco può avere muscolo diverso (ma di solito è lo stesso)
   const primaryMuscle = getPrimaryMuscleForExercise(session.exercise);
 
-  const getWeekColor = (weekNum: number): string => {
-    const colors = [
-      'bg-emerald-700 text-white',  // W1 - Emerald
-      'bg-teal-700 text-white',     // W2 - Teal
-      'bg-cyan-700 text-white',     // W3 - Cyan
-      'bg-sky-700 text-white',      // W4 - Sky
-      'bg-blue-700 text-white',     // W5 - Blue
-      'bg-indigo-700 text-white',   // W6 - Indigo
-      'bg-violet-700 text-white',   // W7 - Violet
-      'bg-purple-700 text-white',   // W8 - Purple
-    ];
-    return colors[(weekNum - 1) % colors.length];
-  };
+  const weekBadgeClass = 'bg-black text-white';
 
   const fallbackColor = '#6b7280';
 
@@ -164,7 +152,7 @@ export function LoggedSessionCard({
                 <span className="text-xs sm:text-sm font-medium text-gray-600">
                   {formatDate(session.date)}
                 </span>
-                <span className={`px-1.5 sm:px-2 py-0.5 ${getWeekColor(session.weekNum)} text-[10px] sm:text-xs font-medium rounded`}>
+                <span className={`px-1.5 sm:px-2 py-0.5 ${weekBadgeClass} text-[10px] sm:text-xs font-medium rounded`}>
                   W{session.weekNum}
                 </span>
                 {session.dayName && (

@@ -293,7 +293,7 @@ export function LogSessionModal({
             <h4 className="font-bold mb-3">Riepilogo Live</h4>
             <div className="grid grid-cols-2 gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold text-purple-600">{metrics.totalReps}</div>
+                <div className="text-2xl font-bold text-black">{metrics.totalReps}</div>
                 <div className="text-xs text-muted-foreground">Reps Totali</div>
               </div>
               <div>

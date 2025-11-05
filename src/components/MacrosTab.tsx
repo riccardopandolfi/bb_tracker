@@ -229,7 +229,7 @@ export function MacrosTab() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-purple-600" />
+            <TrendingUp className="w-5 h-5 text-black" />
             <CardTitle>Trend Macronutrienti</CardTitle>
           </div>
           <CardDescription>

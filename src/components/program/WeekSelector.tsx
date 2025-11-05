@@ -8,23 +8,8 @@ export function WeekSelector() {
   const weeks = getCurrentWeeks();
   const weekNumbers = Object.keys(weeks).map(Number).sort((a, b) => a - b);
 
-  const getWeekColor = (weekNum: number): string => {
-    const colors = [
-      'bg-emerald-700 text-white',  // W1 - Emerald
-      'bg-teal-700 text-white',     // W2 - Teal
-      'bg-cyan-700 text-white',     // W3 - Cyan
-      'bg-sky-700 text-white',      // W4 - Sky
-      'bg-blue-700 text-white',     // W5 - Blue
-      'bg-indigo-700 text-white',   // W6 - Indigo
-      'bg-violet-700 text-white',   // W7 - Violet
-      'bg-purple-700 text-white',   // W8 - Purple
-    ];
-    return colors[(weekNum - 1) % colors.length];
-  };
-
-  const hasLoggedSessions = (weekNum: number) => {
-    return loggedSessions.some((s) => s.weekNum === weekNum && s.programId === currentProgramId);
-  };
+  const hasLoggedSessions = (weekNum: number) =>
+    loggedSessions.some((s) => s.weekNum === weekNum && s.programId === currentProgramId);
 
   const handleAddWeek = () => {
     const newWeekNum = Math.max(...weekNumbers, 0) + 1;
@@ -39,36 +24,40 @@ export function WeekSelector() {
           <span className="text-sm font-medium mr-2">Settimana:</span>
           {weekNumbers.map((weekNum) => {
             const isActive = currentWeek === weekNum;
-            const weekColorClass = getWeekColor(weekNum);
-            // Estrai solo il colore di sfondo (es. "bg-emerald-700") senza "text-white"
-            const bgColor = weekColorClass.split(' ')[0];
-            const borderColor = bgColor.replace('bg-', 'border-').replace('-700', '-300');
-            
+            const activeClasses = 'bg-black text-white';
+            const inactiveClasses = 'bg-black/5 border border-black/40 text-black hover:bg-black/15';
+
             return (
               <Button
                 key={weekNum}
-                variant={isActive ? 'default' : 'outline'}
+                variant="outline"
                 size="sm"
                 onClick={() => setCurrentWeek(weekNum)}
-                className={`relative ${
-                  isActive 
-                    ? weekColorClass 
-                    : `${bgColor.replace('-700', '-100')} border-2 ${borderColor} text-gray-900 hover:${bgColor.replace('-700', '-200')}`
-                }`}
+                className={`relative ${isActive ? activeClasses : inactiveClasses}`}
               >
                 W{weekNum}
                 {hasLoggedSessions(weekNum) && (
-                  <Check className="w-3 h-3 ml-1 text-green-500" />
+                  <Check className={`w-3 h-3 ml-1 ${isActive ? 'text-white' : 'text-black'}`} />
                 )}
               </Button>
             );
           })}
-          <Button variant="secondary" size="sm" onClick={handleAddWeek}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleAddWeek}
+            className="border border-black/40 text-black hover:bg-black/10"
+          >
             <Plus className="w-4 h-4 mr-1" />
             Nuova
           </Button>
           {weeks[currentWeek] && (
-            <Button variant="outline" size="sm" onClick={() => duplicateWeek(currentWeek)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => duplicateWeek(currentWeek)}
+              className="border border-black/40 text-black hover:bg-black/10"
+            >
               <Copy className="w-4 h-4 mr-1" />
               Duplica
             </Button>
