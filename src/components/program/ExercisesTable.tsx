@@ -20,7 +20,6 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
   const [logModalOpen, setLogModalOpen] = useState(false);
   const [selectedExerciseIndex, setSelectedExerciseIndex] = useState<number | null>(null);
   const [selectedBlockIndex, setSelectedBlockIndex] = useState<number | null>(null);
-  const [expandedExercises, setExpandedExercises] = useState<Set<number>>(new Set());
 
   // Add exercise modal state
   const [showAddExerciseModal, setShowAddExerciseModal] = useState(false);
@@ -88,13 +87,6 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
     updateWeek(currentWeek, updatedWeek);
     setShowAddExerciseModal(false);
     setSelectedExerciseName('');
-
-    // Auto-expand the newly added exercise
-    setExpandedExercises(prev => {
-      const newExpanded = new Set(prev);
-      newExpanded.add(day.exercises.length);
-      return newExpanded;
-    });
   };
 
   const handleUpdateExercise = (exIndex: number, field: keyof ProgramExercise, value: any) => {
@@ -189,20 +181,11 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
     };
 
     const updatedBlocks = [...(exercise.blocks || [])];
-    const oldBlock = updatedBlocks[blockIndex];
     // Applica tutti gli aggiornamenti in una singola operazione
     updatedBlocks[blockIndex] = {
       ...updatedBlocks[blockIndex],
       ...updates,
     };
-
-    console.log('✅ Batch update applied:', {
-      exIndex,
-      blockIndex,
-      oldBlock,
-      updates,
-      newBlock: updatedBlocks[blockIndex],
-    });
 
     const updatedExercise: ProgramExercise = {
       ...exercise,
@@ -333,16 +316,6 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
     setLogModalOpen(true);
   };
 
-  const toggleExpanded = (exIndex: number) => {
-    const newExpanded = new Set(expandedExercises);
-    if (newExpanded.has(exIndex)) {
-      newExpanded.delete(exIndex);
-    } else {
-      newExpanded.add(exIndex);
-    }
-    setExpandedExercises(newExpanded);
-  };
-
   return (
     <>
       {day.exercises.length === 0 ? (
@@ -365,8 +338,6 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
                 exerciseLibrary={exercises}
                 allTechniques={allTechniques}
                 customTechniques={customTechniques}
-                isExpanded={expandedExercises.has(exIndex)}
-                onToggleExpand={() => toggleExpanded(exIndex)}
                 onUpdate={(field, value) => handleUpdateExercise(exIndex, field, value)}
                 onUpdateBlock={(blockIndex, field, value) => handleUpdateBlock(exIndex, blockIndex, field, value)}
                 onUpdateBlockBatch={(blockIndex, updates) => handleUpdateBlockBatch(exIndex, blockIndex, updates)}

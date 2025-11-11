@@ -291,13 +291,6 @@ export function ExerciseBlockCard({
         updates.targetLoadsByCluster = updatedLoadsByCluster.slice(0, numSets);
       }
 
-      console.log('🔄 Technique params changed, updating:', {
-        technique: block.technique,
-        params,
-        schema,
-        updates,
-      });
-
       // Usa onUpdateBatch se disponibile per aggiornare tutto in una volta
       if (onUpdateBatch) {
         onUpdateBatch(blockIndex, updates);

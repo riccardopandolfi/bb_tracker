@@ -2,12 +2,9 @@ import { useState } from 'react';
 import { ProgramExercise, Exercise, ExerciseBlock } from '@/types';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
-import { ChevronDown, ChevronUp, Trash2, ClipboardList, Plus, Clock } from 'lucide-react';
-import { ExerciseBlockCard } from './ExerciseBlockCard';
+import { Settings, Trash2, ClipboardList, Clock } from 'lucide-react';
+import { ConfigureExerciseModal } from './ConfigureExerciseModal';
 import { getExerciseBlocks } from '@/lib/exerciseUtils';
 import { REP_RANGES } from '@/types';
 import { useApp } from '@/contexts/AppContext';
@@ -19,8 +16,6 @@ interface ExerciseCardProps {
   exerciseLibrary: Exercise[];
   allTechniques: string[];
   customTechniques: any[];
-  isExpanded: boolean;
-  onToggleExpand: () => void;
   onUpdate: (field: keyof ProgramExercise, value: any) => void;
   onUpdateBlock: (blockIndex: number, field: keyof ExerciseBlock, value: any) => void;
   onUpdateBlockBatch?: (blockIndex: number, updates: Partial<ExerciseBlock>) => void;
@@ -36,8 +31,6 @@ export function ExerciseCard({
   exerciseLibrary,
   allTechniques,
   customTechniques,
-  isExpanded,
-  onToggleExpand,
   onUpdate,
   onUpdateBlock,
   onUpdateBlockBatch,
@@ -48,6 +41,7 @@ export function ExerciseCard({
 }: ExerciseCardProps) {
   const { getMuscleColor: resolveMuscleColor } = useApp();
   const [showBlockSelector, setShowBlockSelector] = useState(false);
+  const [showConfigModal, setShowConfigModal] = useState(false);
   const blocks = getExerciseBlocks(exercise);
 
   const handleLogClick = (e: React.MouseEvent) => {
@@ -109,7 +103,7 @@ export function ExerciseCard({
   // Cardio view
   if (exercise.exerciseType === 'cardio') {
     return (
-      <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
+      <>
         <Card className="hover:shadow-md transition-shadow">
           <CardContent className="pt-6">
             <div className="flex flex-col gap-4 mb-3 sm:flex-row sm:items-start sm:justify-between">
@@ -182,112 +176,48 @@ export function ExerciseCard({
               </div>
               </div>
               <div className="flex gap-1 self-end sm:self-start">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onLog(); // Log del primo blocco
-                  }}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowConfigModal(true)}
+                  title="Configura esercizio"
+                >
+                  <Settings className="w-4 h-4 text-blue-500" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleLogClick}
                   title="Log sessione"
                 >
                   <ClipboardList className="w-4 h-4 text-orange-500" />
                 </Button>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    {isExpanded ? (
-                      <ChevronUp className="w-4 h-4" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4" />
-                    )}
-                  </Button>
-                </CollapsibleTrigger>
                 <Button variant="ghost" size="icon" onClick={onDelete}>
                   <Trash2 className="w-4 h-4 text-red-500" />
                 </Button>
               </div>
             </div>
+          </CardContent>
+        </Card>
 
-            <CollapsibleContent>
-              <div className="pt-6 mt-4 border-t-2 border-orange-100 bg-gradient-to-b from-orange-50/30 to-transparent rounded-b-lg">
-                {/* Header sezione espansa */}
-                <div className="px-4 mb-4">
-                  <h4 className="text-sm font-bold text-orange-900 mb-1">⚙️ Configurazione Blocchi Cardio</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Imposta durata, riposi e note per ogni blocco cardio.
-                  </p>
-                </div>
+        {/* Configure Modal */}
+        <ConfigureExerciseModal
+          open={showConfigModal}
+          onOpenChange={setShowConfigModal}
+          exercise={exercise}
+          exerciseIndex={exerciseIndex}
+          exerciseLibrary={exerciseLibrary}
+          allTechniques={allTechniques}
+          customTechniques={customTechniques}
+          onUpdate={onUpdate}
+          onUpdateBlock={onUpdateBlock}
+          onUpdateBlockBatch={onUpdateBlockBatch}
+          onAddBlock={onAddBlock}
+          onDeleteBlock={onDeleteBlock}
+        />
 
-                {/* Blocks */}
-                <div className="space-y-4 px-4">
-                  {blocks.map((block, blockIndex) => (
-                    <div key={blockIndex}>
-                      <ExerciseBlockCard
-                        block={block}
-                        blockIndex={blockIndex}
-                        exerciseType="cardio"
-                        exerciseLibrary={exerciseLibrary}
-                        exerciseName={exercise.exerciseName}
-                        allTechniques={allTechniques}
-                        customTechniques={customTechniques}
-                        onUpdate={onUpdateBlock}
-                        onUpdateBatch={onUpdateBlockBatch}
-                        onDelete={onDeleteBlock}
-                        isLast={blockIndex === blocks.length - 1}
-                        canDelete={blocks.length > 1}
-                      />
-                      
-                      {/* Separatore tra blocchi */}
-                      {blockIndex < blocks.length - 1 && (
-                        <div className="flex items-center justify-center py-4 my-4">
-                          <div className="flex-1 border-t-2 border-dashed border-gray-300"></div>
-                          {block.blockRest ? (
-                            <div className="px-4 py-1.5 bg-amber-100 border border-amber-300 rounded-full text-xs font-semibold text-amber-900 mx-3">
-                              ⏱️ Rest Blocco: {block.blockRest}s
-                            </div>
-                          ) : (
-                            <div className="px-4 py-1 bg-gray-100 border border-gray-300 rounded-full text-xs text-gray-600 mx-3">
-                              ⬇️ Blocco successivo
-                            </div>
-                          )}
-                          <div className="flex-1 border-t-2 border-dashed border-gray-300"></div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Add Block Button */}
-                <div className="px-4 pt-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={onAddBlock} 
-                    className="w-full border-2 border-dashed border-orange-300 hover:bg-orange-50 hover:border-orange-400"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Aggiungi Blocco
-                  </Button>
-                </div>
-
-                {/* Note esercizio */}
-                <div className="px-4 pt-4 pb-6">
-                  <div className="bg-white rounded-lg border border-gray-200 p-4">
-                    <Label className="text-sm font-semibold mb-2 block">📝 Note Esercizio</Label>
-                    <Input
-                      value={exercise.notes || ''}
-                      onChange={(e) => onUpdate('notes', e.target.value)}
-                      placeholder="Aggiungi note generali per questo esercizio..."
-                      className="h-10"
-                    />
-                  </div>
-                </div>
-              </div>
-          </CollapsibleContent>
-        </CardContent>
-      </Card>
-
-      {/* Block Selector Dialog per Cardio */}
-      <Dialog open={showBlockSelector} onOpenChange={setShowBlockSelector}>
+        {/* Block Selector Dialog per Cardio */}
+        <Dialog open={showBlockSelector} onOpenChange={setShowBlockSelector}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Seleziona Blocco da Loggare</DialogTitle>
@@ -328,13 +258,13 @@ export function ExerciseCard({
           </div>
         </DialogContent>
       </Dialog>
-      </Collapsible>
+      </>
     );
   }
 
   // Resistance view
   return (
-    <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
+    <>
       <Card className="hover:shadow-md transition-shadow">
         <CardContent className="pt-6">
           <div className="flex flex-col gap-4 mb-3 sm:flex-row sm:items-start sm:justify-between">
@@ -500,121 +430,45 @@ export function ExerciseCard({
               </div>
             </div>
             <div className="flex gap-1 self-end sm:self-start">
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowConfigModal(true)}
+                title="Configura esercizio"
+              >
+                <Settings className="w-4 h-4 text-blue-500" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={handleLogClick}
                 title="Log sessione"
               >
-                <ClipboardList className="w-4 h-4 text-blue-500" />
+                <ClipboardList className="w-4 h-4 text-green-500" />
               </Button>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  {isExpanded ? (
-                    <ChevronUp className="w-4 h-4" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
-                </Button>
-              </CollapsibleTrigger>
               <Button variant="ghost" size="icon" onClick={onDelete}>
                 <Trash2 className="w-4 h-4 text-red-500" />
               </Button>
             </div>
           </div>
-
-          <CollapsibleContent>
-            <div className="pt-6 mt-4 border-t-2 border-blue-100 bg-gradient-to-b from-blue-50/30 to-transparent rounded-b-lg">
-              {/* Header sezione espansa */}
-              <div className="px-4 mb-4">
-                <h4 className="text-sm font-bold text-blue-900 mb-1">⚙️ Configurazione Blocchi</h4>
-                <p className="text-xs text-muted-foreground">
-                  Configura i dettagli di ogni blocco: carichi, ripetizioni, rest e tecniche avanzate.
-                </p>
-              </div>
-
-              {/* Blocks */}
-              <div className="space-y-4 px-4">
-                {blocks.map((block, blockIndex) => (
-                  <div key={blockIndex} className="relative">
-                    <ExerciseBlockCard
-                      block={block}
-                      blockIndex={blockIndex}
-                      exerciseType="resistance"
-                      exerciseLibrary={exerciseLibrary}
-                      exerciseName={exercise.exerciseName}
-                      allTechniques={allTechniques}
-                      customTechniques={customTechniques}
-                      onUpdate={onUpdateBlock}
-                      onUpdateBatch={onUpdateBlockBatch}
-                      onDelete={onDeleteBlock}
-                      isLast={blockIndex === blocks.length - 1}
-                      canDelete={blocks.length > 1}
-                    />
-                    
-                    {/* Log singolo blocco (solo se ci sono più blocchi) */}
-                    {blocks.length > 1 && (
-                      <div className="flex justify-center mt-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onLog(blockIndex)}
-                          className="bg-white hover:bg-blue-50 border-blue-200"
-                        >
-                          <ClipboardList className="w-4 h-4 mr-2" />
-                          Log Blocco {blockIndex + 1}
-                        </Button>
-                      </div>
-                    )}
-                    
-                    {/* Separatore tra blocchi con rest */}
-                    {blockIndex < blocks.length - 1 && (
-                      <div className="flex items-center justify-center py-4 my-4">
-                        <div className="flex-1 border-t-2 border-dashed border-gray-300"></div>
-                        {block.blockRest ? (
-                          <div className="px-4 py-1.5 bg-amber-100 border border-amber-300 rounded-full text-xs font-semibold text-amber-900 mx-3">
-                            ⏱️ Rest Blocco: {block.blockRest}s
-                          </div>
-                        ) : (
-                          <div className="px-4 py-1 bg-gray-100 border border-gray-300 rounded-full text-xs text-gray-600 mx-3">
-                            ⬇️ Blocco successivo
-                          </div>
-                        )}
-                        <div className="flex-1 border-t-2 border-dashed border-gray-300"></div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Add Block Button */}
-              <div className="px-4 pt-4">
-                <Button 
-                  variant="outline" 
-                  onClick={onAddBlock} 
-                  className="w-full border-2 border-dashed border-blue-300 hover:bg-blue-50 hover:border-blue-400"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Aggiungi Blocco
-                </Button>
-              </div>
-
-              {/* Note esercizio */}
-              <div className="px-4 pt-4 pb-6">
-                <div className="bg-white rounded-lg border border-gray-200 p-4">
-                  <Label className="text-sm font-semibold mb-2 block">📝 Note Esercizio</Label>
-                  <Input
-                    value={exercise.notes || ''}
-                    onChange={(e) => onUpdate('notes', e.target.value)}
-                    placeholder="Aggiungi note generali per questo esercizio..."
-                    className="h-10"
-                  />
-                </div>
-              </div>
-            </div>
-          </CollapsibleContent>
         </CardContent>
       </Card>
+
+      {/* Configure Modal */}
+      <ConfigureExerciseModal
+        open={showConfigModal}
+        onOpenChange={setShowConfigModal}
+        exercise={exercise}
+        exerciseIndex={exerciseIndex}
+        exerciseLibrary={exerciseLibrary}
+        allTechniques={allTechniques}
+        customTechniques={customTechniques}
+        onUpdate={onUpdate}
+        onUpdateBlock={onUpdateBlock}
+        onUpdateBlockBatch={onUpdateBlockBatch}
+        onAddBlock={onAddBlock}
+        onDeleteBlock={onDeleteBlock}
+      />
 
       {/* Block Selector Dialog */}
       <Dialog open={showBlockSelector} onOpenChange={setShowBlockSelector}>
@@ -692,6 +546,6 @@ export function ExerciseCard({
           </div>
         </DialogContent>
       </Dialog>
-    </Collapsible>
+    </>
   );
 }
