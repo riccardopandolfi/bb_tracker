@@ -221,8 +221,6 @@ export function SpecialTechniqueFilters({ filters, setFilters }: SpecialTechniqu
                 <Label className="text-xs sm:text-sm">Set Globali</Label>
                 <Input
                   type="number"
-                  min="1"
-                  max="10"
                   value={filters.specialConfig.totalSets}
                   onChange={e => handleTotalSetsChange(e.target.value)}
                   placeholder="es. 3"
@@ -237,8 +235,6 @@ export function SpecialTechniqueFilters({ filters, setFilters }: SpecialTechniqu
                 <Label className="text-xs sm:text-sm">Intra-set per Set</Label>
                 <Input
                   type="number"
-                  min="1"
-                  max="20"
                   value={filters.specialConfig.intraSetsPerSet}
                   onChange={e => handleIntraSetsChange(e.target.value)}
                   placeholder="es. 4"

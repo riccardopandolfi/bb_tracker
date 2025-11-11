@@ -187,13 +187,22 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
       ...currentExercise,
       blocks: currentExercise.blocks || [createDefaultBlock(currentExercise.exerciseType || 'resistance')],
     };
-    
+
     const updatedBlocks = [...(exercise.blocks || [])];
+    const oldBlock = updatedBlocks[blockIndex];
     // Applica tutti gli aggiornamenti in una singola operazione
     updatedBlocks[blockIndex] = {
       ...updatedBlocks[blockIndex],
       ...updates,
     };
+
+    console.log('✅ Batch update applied:', {
+      exIndex,
+      blockIndex,
+      oldBlock,
+      updates,
+      newBlock: updatedBlocks[blockIndex],
+    });
 
     const updatedExercise: ProgramExercise = {
       ...exercise,

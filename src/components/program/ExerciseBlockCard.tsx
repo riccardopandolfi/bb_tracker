@@ -47,7 +47,36 @@ export function ExerciseBlockCard({
   const { getMuscleColor: resolveMuscleColor } = useApp();
   const [showLoadModal, setShowLoadModal] = useState(false);
   const [localLoadsByCluster, setLocalLoadsByCluster] = useState<string[][]>([]);
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [tempValue, setTempValue] = useState<string>('');
   const isNormalTechnique = (block.technique || 'Normale') === 'Normale';
+
+  // Helper per gestire input numerici con cancellazione libera
+  const getFieldValue = (fieldName: string, actualValue: any) => {
+    return editingField === fieldName ? tempValue : (actualValue || '');
+  };
+
+  const handleNumericFocus = (fieldName: string, currentValue: any) => {
+    setEditingField(fieldName);
+    setTempValue(String(currentValue || ''));
+  };
+
+  const handleNumericChange = (value: string) => {
+    setTempValue(value);
+  };
+
+  const handleNumericBlur = (fieldName: keyof ExerciseBlock, value: string, defaultValue: number = 0) => {
+    const numValue = value === '' ? defaultValue : (fieldName === 'coefficient' || fieldName === 'targetRPE' ? parseFloat(value) : parseInt(value)) || defaultValue;
+    onUpdate(blockIndex, fieldName, numValue);
+    setEditingField(null);
+    setTempValue('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur();
+    }
+  };
 
   // Funzione per ottenere il muscolo primario
   const getPrimaryMuscle = () => {
@@ -216,11 +245,10 @@ export function ExerciseBlockCard({
   };
 
   const handleTechniqueParamsChange = (params: Record<string, any>) => {
-    onUpdate(blockIndex, 'techniqueParams', params);
     if (block.technique) {
       const customTech = customTechniques.find(t => t.name === block.technique);
       let schema = '';
-      
+
       if (customTech) {
         const values = customTech.parameters
           .map((p: any) => params[p.name] ?? p.defaultValue)
@@ -231,15 +259,18 @@ export function ExerciseBlockCard({
       } else {
         schema = generateSchemaFromParams(block.technique, params);
       }
-      
-      onUpdate(blockIndex, 'techniqueSchema', schema);
-      
+
+      const updates: Partial<ExerciseBlock> = {
+        techniqueParams: params,
+        techniqueSchema: schema,
+      };
+
       if (!isNormalTechnique) {
         const clusters = parseSchema(schema);
         const numClusters = clusters.length || 1;
-        const currentLoadsByCluster = block.targetLoadsByCluster || 
+        const currentLoadsByCluster = block.targetLoadsByCluster ||
           (block.targetLoads?.map(load => Array(numClusters).fill(load)) || []);
-        
+
         const updatedLoadsByCluster = currentLoadsByCluster.map(setLoads => {
           if (setLoads.length === numClusters) {
             return setLoads;
@@ -250,14 +281,30 @@ export function ExerciseBlockCard({
             return [...setLoads, ...Array(numClusters - setLoads.length).fill(lastLoad)];
           }
         });
-        
+
         const numSets = block.sets || 1;
         while (updatedLoadsByCluster.length < numSets) {
           const lastSetLoads = updatedLoadsByCluster[updatedLoadsByCluster.length - 1] || Array(numClusters).fill('80');
           updatedLoadsByCluster.push([...lastSetLoads]);
         }
-        
-        onUpdate(blockIndex, 'targetLoadsByCluster', updatedLoadsByCluster.slice(0, numSets));
+
+        updates.targetLoadsByCluster = updatedLoadsByCluster.slice(0, numSets);
+      }
+
+      console.log('🔄 Technique params changed, updating:', {
+        technique: block.technique,
+        params,
+        schema,
+        updates,
+      });
+
+      // Usa onUpdateBatch se disponibile per aggiornare tutto in una volta
+      if (onUpdateBatch) {
+        onUpdateBatch(blockIndex, updates);
+      } else {
+        Object.entries(updates).forEach(([key, value]) => {
+          onUpdate(blockIndex, key as keyof ExerciseBlock, value);
+        });
       }
     }
   };
@@ -329,8 +376,11 @@ export function ExerciseBlockCard({
             </Label>
             <Input
               type="number"
-              value={block.duration || 0}
-              onChange={(e) => onUpdate(blockIndex, 'duration', parseInt(e.target.value) || 0)}
+              value={getFieldValue('duration', block.duration)}
+              onFocus={() => handleNumericFocus('duration', block.duration)}
+              onChange={(e) => handleNumericChange(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onBlur={(e) => handleNumericBlur('duration', e.target.value, 0)}
               className="h-10"
             />
           </div>
@@ -342,8 +392,11 @@ export function ExerciseBlockCard({
               </Label>
               <Input
                 type="number"
-                value={block.blockRest || 0}
-                onChange={(e) => onUpdate(blockIndex, 'blockRest', parseInt(e.target.value) || 0)}
+                value={getFieldValue('blockRest', block.blockRest)}
+                onFocus={() => handleNumericFocus('blockRest', block.blockRest)}
+                onChange={(e) => handleNumericChange(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onBlur={(e) => handleNumericBlur('blockRest', e.target.value, 0)}
                 className="h-10"
                 placeholder="0"
               />
@@ -438,10 +491,16 @@ export function ExerciseBlockCard({
                   <Label className="text-xs text-gray-600 mb-1.5 block">Sets</Label>
                   <Input
                     type="number"
-                    value={block.sets || 0}
-                    onChange={(e) => handleSetsChange(parseInt(e.target.value) || 0)}
-                    min="1"
-                    max="10"
+                    value={getFieldValue('sets', block.sets)}
+                    onFocus={() => handleNumericFocus('sets', block.sets)}
+                    onChange={(e) => handleNumericChange(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onBlur={(e) => {
+                      const val = e.target.value === '' ? 1 : parseInt(e.target.value) || 1;
+                      handleSetsChange(val);
+                      setEditingField(null);
+                      setTempValue('');
+                    }}
                     className="h-10"
                   />
                 </div>
@@ -460,10 +519,16 @@ export function ExerciseBlockCard({
                 <Label className="text-xs text-gray-600 mb-1.5 block">Sets (numero di serie complete)</Label>
                 <Input
                   type="number"
-                  value={block.sets || 0}
-                  onChange={(e) => handleSetsChange(parseInt(e.target.value) || 0)}
-                  min="1"
-                  max="10"
+                  value={getFieldValue('sets-special', block.sets)}
+                  onFocus={() => handleNumericFocus('sets-special', block.sets)}
+                  onChange={(e) => handleNumericChange(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onBlur={(e) => {
+                    const val = e.target.value === '' ? 1 : parseInt(e.target.value) || 1;
+                    handleSetsChange(val);
+                    setEditingField(null);
+                    setTempValue('');
+                  }}
                   className="h-10"
                 />
               </div>
@@ -532,8 +597,11 @@ export function ExerciseBlockCard({
                 <Input
                   type="number"
                   step="0.1"
-                  value={block.coefficient || 0}
-                  onChange={(e) => onUpdate(blockIndex, 'coefficient', parseFloat(e.target.value) || 0)}
+                  value={getFieldValue('coefficient', block.coefficient)}
+                  onFocus={() => handleNumericFocus('coefficient', block.coefficient)}
+                  onChange={(e) => handleNumericChange(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onBlur={(e) => handleNumericBlur('coefficient', e.target.value, 0)}
                   className="h-10"
                 />
               </div>
@@ -542,10 +610,11 @@ export function ExerciseBlockCard({
                 <Input
                   type="number"
                   step="0.5"
-                  min="5"
-                  max="10"
-                  value={block.targetRPE || 0}
-                  onChange={(e) => onUpdate(blockIndex, 'targetRPE', parseFloat(e.target.value) || 0)}
+                  value={getFieldValue('targetRPE', block.targetRPE)}
+                  onFocus={() => handleNumericFocus('targetRPE', block.targetRPE)}
+                  onChange={(e) => handleNumericChange(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onBlur={(e) => handleNumericBlur('targetRPE', e.target.value, 0)}
                   className="h-10"
                 />
               </div>
@@ -569,8 +638,11 @@ export function ExerciseBlockCard({
               </Label>
               <Input
                 type="number"
-                value={block.rest || 0}
-                onChange={(e) => onUpdate(blockIndex, 'rest', parseInt(e.target.value) || 0)}
+                value={getFieldValue('rest', block.rest)}
+                onFocus={() => handleNumericFocus('rest', block.rest)}
+                onChange={(e) => handleNumericChange(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onBlur={(e) => handleNumericBlur('rest', e.target.value, 0)}
                 className="h-10"
               />
             </div>
@@ -580,8 +652,11 @@ export function ExerciseBlockCard({
                 <Label className="text-xs text-gray-600 mb-1.5 block">Rest dopo blocco (secondi)</Label>
                 <Input
                   type="number"
-                  value={block.blockRest || 0}
-                  onChange={(e) => onUpdate(blockIndex, 'blockRest', parseInt(e.target.value) || 0)}
+                  value={getFieldValue('blockRest2', block.blockRest)}
+                  onFocus={() => handleNumericFocus('blockRest2', block.blockRest)}
+                  onChange={(e) => handleNumericChange(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onBlur={(e) => handleNumericBlur('blockRest', e.target.value, 0)}
                   className="h-10"
                   placeholder="0"
                 />

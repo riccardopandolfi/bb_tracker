@@ -264,8 +264,6 @@ export function LogSessionModal({
                             <Label className="text-xs">RPE</Label>
                             <Input
                               type="number"
-                              min="5"
-                              max="10"
                               step="0.5"
                               value={set.rpe}
                               onChange={(e) =>

@@ -134,8 +134,6 @@ export function NormalSetsFilters({ filters, setFilters }: NormalSetsFiltersProp
               <Label className="text-xs sm:text-sm">Numero di Set</Label>
               <Input
                 type="number"
-                min="1"
-                max="10"
                 value={filters.normalConfig?.sets || ''}
                 onChange={e => handleSetsChange(e.target.value)}
                 placeholder="es. 3"
@@ -147,8 +145,6 @@ export function NormalSetsFilters({ filters, setFilters }: NormalSetsFiltersProp
               <Label className="text-xs sm:text-sm">Ripetizioni per Set</Label>
               <Input
                 type="number"
-                min="1"
-                max="50"
                 value={filters.normalConfig?.reps || ''}
                 onChange={e => handleRepsChange(e.target.value)}
                 placeholder="es. 10"

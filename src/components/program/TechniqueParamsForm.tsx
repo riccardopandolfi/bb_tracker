@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Technique } from '@/types';
 import { getTechniqueDefinition } from '@/lib/techniques';
 import { useApp } from '@/contexts/AppContext';
@@ -16,16 +17,60 @@ export function TechniqueParamsForm({ technique, params, onChange }: TechniquePa
   const { customTechniques } = useApp();
   const definition = getTechniqueDefinition(technique);
   const customTechnique = customTechniques.find(t => t.name === technique);
+  const [localValues, setLocalValues] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setLocalValues({});
+  }, [technique]);
+
+  // Pulisci i localValues campo per campo quando i params dal parent vengono aggiornati
+  useEffect(() => {
+    if (Object.keys(localValues).length === 0) return;
+
+    // Controlla ogni campo individualmente e rimuovi quelli sincronizzati
+    const newLocalValues = { ...localValues };
+    let hasChanges = false;
+
+    Object.keys(localValues).forEach(key => {
+      const localVal = localValues[key];
+      const paramVal = params[key];
+
+      // Se il valore locale è vuoto, non fare nulla
+      if (localVal === '') return;
+
+      // Parse il valore locale come numero se possibile
+      const localNum = parseFloat(localVal);
+
+      // Se è un numero valido e corrisponde al param, rimuovilo
+      if (!isNaN(localNum)) {
+        if (paramVal === localNum) {
+          delete newLocalValues[key];
+          hasChanges = true;
+        }
+      } else {
+        // Se non è un numero e corrisponde come stringa, rimuovilo
+        if (paramVal === localVal) {
+          delete newLocalValues[key];
+          hasChanges = true;
+        }
+      }
+    });
+
+    if (hasChanges) {
+      setLocalValues(newLocalValues);
+    }
+  }, [params, localValues]);
 
   if (technique === 'Normale') {
     return null;
   }
 
   const handleParamChange = (paramName: string, value: string | number) => {
-    onChange({
+    const newParams = {
       ...params,
       [paramName]: value,
-    });
+    };
+    onChange(newParams);
   };
 
   // Custom technique
@@ -33,7 +78,20 @@ export function TechniqueParamsForm({ technique, params, onChange }: TechniquePa
     // Generate schema from params (simple concatenation for numbers)
     const generateCustomSchema = () => {
       const values = customTechnique.parameters
-        .map(p => params[p.name] ?? p.defaultValue)
+        .map(p => {
+          // Use local value if editing, otherwise use params
+          if (localValues[p.name] !== undefined) {
+            if (p.type === 'number') {
+              if (localValues[p.name] === '') {
+                return p.defaultValue;
+              }
+              const parsed = parseFloat(localValues[p.name]);
+              return isNaN(parsed) ? p.defaultValue : parsed;
+            }
+            return localValues[p.name];
+          }
+          return params[p.name] ?? p.defaultValue;
+        })
         .filter(v => v !== undefined && v !== '');
 
       // If all values are numbers, join with +
@@ -76,13 +134,33 @@ export function TechniqueParamsForm({ technique, params, onChange }: TechniquePa
                   <Input
                     id={param.name}
                     type={param.type === 'number' ? 'number' : 'text'}
-                    value={params[param.name] ?? param.defaultValue}
-                    onChange={(e) =>
-                      handleParamChange(
-                        param.name,
-                        param.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value
-                      )
-                    }
+                    value={localValues[param.name] !== undefined ? localValues[param.name] : (params[param.name] ?? param.defaultValue)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setLocalValues(prev => ({ ...prev, [param.name]: value }));
+
+                      // Aggiorna immediatamente il parent
+                      if (param.type === 'number') {
+                        if (value === '') {
+                          handleParamChange(param.name, param.defaultValue);
+                        } else {
+                          const parsed = parseFloat(value);
+                          if (!isNaN(parsed)) {
+                            handleParamChange(param.name, parsed);
+                          }
+                        }
+                      } else {
+                        handleParamChange(param.name, value);
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.currentTarget.blur();
+                      }
+                    }}
+                    onBlur={() => {
+                      // I localValues verranno cancellati dal useEffect quando params si aggiorna
+                    }}
                     className="h-8"
                   />
                 )}
@@ -103,6 +181,25 @@ export function TechniqueParamsForm({ technique, params, onChange }: TechniquePa
     return null;
   }
 
+  // Create merged params with local values for live schema preview
+  const getLiveParams = () => {
+    const mergedParams: Record<string, any> = { ...params };
+    Object.keys(localValues).forEach(key => {
+      const param = definition.parameters.find(p => p.name === key);
+      if (param && param.type === 'number') {
+        if (localValues[key] === '') {
+          mergedParams[key] = param.default;
+        } else {
+          const parsed = parseFloat(localValues[key]);
+          mergedParams[key] = isNaN(parsed) ? param.default : parsed;
+        }
+      } else {
+        mergedParams[key] = localValues[key];
+      }
+    });
+    return mergedParams;
+  };
+
   return (
     <Card className="mt-4">
       <CardHeader>
@@ -119,15 +216,33 @@ export function TechniqueParamsForm({ technique, params, onChange }: TechniquePa
               <Input
                 id={param.name}
                 type={param.type}
-                value={params[param.name] ?? param.default}
-                onChange={(e) =>
-                  handleParamChange(
-                    param.name,
-                    param.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value
-                  )
-                }
-                min={param.min}
-                max={param.max}
+                value={localValues[param.name] !== undefined ? localValues[param.name] : (params[param.name] ?? param.default)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setLocalValues(prev => ({ ...prev, [param.name]: value }));
+
+                  // Aggiorna immediatamente il parent
+                  if (param.type === 'number') {
+                    if (value === '') {
+                      handleParamChange(param.name, param.default);
+                    } else {
+                      const parsed = parseFloat(value);
+                      if (!isNaN(parsed)) {
+                        handleParamChange(param.name, parsed);
+                      }
+                    }
+                  } else {
+                    handleParamChange(param.name, value);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.currentTarget.blur();
+                  }
+                }}
+                onBlur={() => {
+                  // I localValues verranno cancellati dal useEffect quando params si aggiorna
+                }}
                 step={param.step}
                 className="h-8"
               />
@@ -136,7 +251,7 @@ export function TechniqueParamsForm({ technique, params, onChange }: TechniquePa
         </div>
         <div className="mt-3 p-2 bg-muted rounded text-xs">
           <strong>Schema generato:</strong>{' '}
-          {definition.generateSchema(params) || 'Configura i parametri'}
+          {definition.generateSchema(getLiveParams()) || 'Configura i parametri'}
         </div>
       </CardContent>
     </Card>

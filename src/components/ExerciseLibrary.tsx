@@ -384,7 +384,7 @@ function ExerciseCard({ exercise, index, onUpdate, onDelete, muscleGroups }: Exe
     if (!updated.muscles) return;
     updated.muscles[muscleIndex] = {
       ...updated.muscles[muscleIndex],
-      [field]: field === 'percent' ? parseInt(value, 10) || 0 : value,
+      [field]: field === 'percent' ? (value === '' ? 0 : parseInt(value, 10) || 0) : value,
     };
     setLocalExercise(updated);
     onUpdate(index, updated);
@@ -478,8 +478,6 @@ function ExerciseCard({ exercise, index, onUpdate, onDelete, muscleGroups }: Exe
                   <Label className="text-xs sm:text-sm">%</Label>
                   <Input
                     type="number"
-                    min="0"
-                    max="100"
                     value={muscle.percent}
                     onChange={(e) => handleMuscleChange(muscleIndex, 'percent', e.target.value)}
                     className="text-xs sm:text-sm w-full"
