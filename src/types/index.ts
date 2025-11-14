@@ -99,6 +99,7 @@ export interface ExerciseBlock {
   sets?: number;
   repsBase?: string;
   repRange?: RepRangeKey;
+  targetReps?: string[]; // Array di ripetizioni, una per ogni set (se vuoi reps diverse per set, altrimenti usa repsBase)
   targetLoads?: string[]; // Array di carichi, uno per ogni set (per tecniche normali o come fallback)
   targetLoadsByCluster?: string[][]; // Array di array: per ogni set, array di carichi per ogni cluster/mini-set (per tecniche speciali)
   targetRPE?: number; // RPE pianificato a priori (5-10)

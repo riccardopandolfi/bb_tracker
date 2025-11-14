@@ -352,7 +352,11 @@ export function ExerciseCard({
                               </span>
                               <span className="font-medium text-gray-700">
                                 {isNormal ? (
-                                  <>{sets}×{block.repsBase || 0}</>
+                                  block.targetReps && block.targetReps.length > 0 ? (
+                                    <>{sets}× {block.targetReps.join('-')}</>
+                                  ) : (
+                                    <>{sets}×{block.repsBase || 0}</>
+                                  )
                                 ) : (
                                   <>{sets}×{block.techniqueSchema || '-'}</>
                                 )}
@@ -525,7 +529,11 @@ export function ExerciseCard({
                     </div>
                     <div className="text-sm">
                       {isNormal ? (
-                        <span>{sets}×{block.repsBase || 0} @ {loads}kg</span>
+                        block.targetReps && block.targetReps.length > 0 ? (
+                          <span>{block.targetReps.join('-')} @ {loads}kg</span>
+                        ) : (
+                          <span>{sets}×{block.repsBase || 0} @ {loads}kg</span>
+                        )
                       ) : (
                         <span>{sets}×{block.techniqueSchema || '-'} @ {loads}kg</span>
                       )}

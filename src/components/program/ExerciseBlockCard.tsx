@@ -303,38 +303,64 @@ export function ExerciseBlockCard({
   };
 
   const handleSetsChange = (newSets: number) => {
-    onUpdate(blockIndex, 'sets', newSets);
-    
+    const currentLoads = block.targetLoads || [];
+    const currentReps = block.targetReps || [];
+    const updates: Partial<ExerciseBlock> = {
+      sets: newSets,
+    };
+
     if (isNormalTechnique) {
-      const currentLoads = block.targetLoads || [];
+      // Gestisci targetLoads
       if (newSets > currentLoads.length) {
         const lastLoad = currentLoads[currentLoads.length - 1] || '80';
-        onUpdate(blockIndex, 'targetLoads', [
+        updates.targetLoads = [
           ...currentLoads,
           ...Array(newSets - currentLoads.length).fill(lastLoad),
-        ]);
+        ];
       } else if (newSets < currentLoads.length) {
-        onUpdate(blockIndex, 'targetLoads', currentLoads.slice(0, newSets));
+        updates.targetLoads = currentLoads.slice(0, newSets);
+      }
+
+      // Gestisci targetReps (solo se già esistono)
+      if (currentReps.length > 0) {
+        if (newSets > currentReps.length) {
+          const lastReps = currentReps[currentReps.length - 1] || block.repsBase || '10';
+          updates.targetReps = [
+            ...currentReps,
+            ...Array(newSets - currentReps.length).fill(lastReps),
+          ];
+        } else if (newSets < currentReps.length) {
+          updates.targetReps = currentReps.slice(0, newSets);
+        }
       }
     } else {
       const clusters = parseSchema(block.techniqueSchema || '');
       const numClusters = clusters.length || 1;
-      const currentLoadsByCluster = block.targetLoadsByCluster || 
+      const currentLoadsByCluster = block.targetLoadsByCluster ||
         (block.targetLoads?.map(load => Array(numClusters).fill(load)) || []);
-      
+
       if (newSets > currentLoadsByCluster.length) {
         const lastSetLoads = currentLoadsByCluster[currentLoadsByCluster.length - 1] || Array(numClusters).fill('80');
         const newLoadsByCluster = [
           ...currentLoadsByCluster,
           ...Array(newSets - currentLoadsByCluster.length).fill([...lastSetLoads]),
         ];
-        onUpdate(blockIndex, 'targetLoadsByCluster', newLoadsByCluster);
-        onUpdate(blockIndex, 'targetLoads', newLoadsByCluster.map(sl => sl[0] || '80'));
+        updates.targetLoadsByCluster = newLoadsByCluster;
+        updates.targetLoads = newLoadsByCluster.map(sl => sl[0] || '80');
       } else if (newSets < currentLoadsByCluster.length) {
         const newLoadsByCluster = currentLoadsByCluster.slice(0, newSets);
-        onUpdate(blockIndex, 'targetLoadsByCluster', newLoadsByCluster);
-        onUpdate(blockIndex, 'targetLoads', newLoadsByCluster.map(sl => sl[0] || '80'));
+        updates.targetLoadsByCluster = newLoadsByCluster;
+        updates.targetLoads = newLoadsByCluster.map(sl => sl[0] || '80');
       }
+    }
+
+    // Usa onUpdateBatch se disponibile per aggiornare tutto in una volta
+    if (onUpdateBatch) {
+      onUpdateBatch(blockIndex, updates);
+    } else {
+      Object.entries(updates).forEach(([key, value]) => {
+        onUpdate(blockIndex, key as keyof ExerciseBlock, value);
+      });
     }
   };
 
@@ -498,11 +524,20 @@ export function ExerciseBlockCard({
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-600 mb-1.5 block">Reps Base</Label>
+                  <Label className="text-xs text-gray-600 mb-1.5 block">
+                    Reps Base <span className="text-xs text-muted-foreground">(numero o MAX)</span>
+                  </Label>
                   <Input
-                    type="number"
+                    type="text"
                     value={block.repsBase || ''}
-                    onChange={(e) => onUpdate(blockIndex, 'repsBase', e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value.toUpperCase();
+                      // Permetti solo numeri o "MAX"
+                      if (value === '' || value === 'MAX' || /^\d+$/.test(value)) {
+                        onUpdate(blockIndex, 'repsBase', value);
+                      }
+                    }}
+                    placeholder="10 o MAX"
                     className="h-10"
                   />
                 </div>
@@ -548,6 +583,69 @@ export function ExerciseBlockCard({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+
+            {/* Ripetizioni per Set - Solo per tecnica normale */}
+            {isNormalTechnique && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="flex items-center justify-between mb-3">
+                  <Label className="text-xs text-gray-600">Ripetizioni per Set</Label>
+                  <span className="text-xs text-muted-foreground">
+                    {block.targetReps && block.targetReps.length > 0
+                      ? 'Personalizzate'
+                      : `Tutte: ${block.repsBase || '10'} reps`}
+                  </span>
+                </div>
+                {block.targetReps && block.targetReps.length > 0 ? (
+                  // Mostra input se targetReps è già configurato
+                  <div className="space-y-2">
+                    {block.targetReps.map((reps, i) => (
+                      <div key={i} className="flex items-center gap-2 p-2 bg-green-50 rounded-lg border border-green-200">
+                        <span className="px-2 py-1 rounded bg-green-600 text-white text-xs font-bold min-w-[3rem] text-center">
+                          Set {i + 1}
+                        </span>
+                        <Input
+                          type="text"
+                          value={reps}
+                          onChange={(e) => {
+                            const value = e.target.value.toUpperCase();
+                            if (value === '' || value === 'MAX' || /^\d+$/.test(value)) {
+                              const newReps = [...(block.targetReps || [])];
+                              newReps[i] = value;
+                              onUpdate(blockIndex, 'targetReps', newReps);
+                            }
+                          }}
+                          className="h-8 flex-1 text-sm"
+                          placeholder="10 o MAX"
+                        />
+                        <span className="text-xs font-medium text-muted-foreground">reps</span>
+                      </div>
+                    ))}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onUpdate(blockIndex, 'targetReps', [])}
+                      className="w-full text-xs text-red-600 hover:text-red-700 hover:bg-red-50 h-8"
+                    >
+                      Rimuovi personalizzazione
+                    </Button>
+                  </div>
+                ) : (
+                  // Pulsante per abilitare reps personalizzate
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const sets = block.sets || 1;
+                      const baseReps = block.repsBase || '10';
+                      onUpdate(blockIndex, 'targetReps', Array(sets).fill(baseReps));
+                    }}
+                    className="w-full border-dashed text-xs h-8"
+                  >
+                    + Personalizza reps per ogni set
+                  </Button>
+                )}
               </div>
             )}
           </div>
@@ -679,8 +777,8 @@ export function ExerciseBlockCard({
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Dumbbell className="w-5 h-5" />
-              Modifica Carichi - Blocco {blockIndex + 1}
+              <Dumbbell className="w-5 h-4" />
+              Dettagli Blocco {blockIndex + 1}
             </DialogTitle>
           </DialogHeader>
 
@@ -691,10 +789,11 @@ export function ExerciseBlockCard({
               <TabsTrigger value="notes">📝 Note</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="loads" className="flex-1 overflow-y-auto p-4 space-y-4">
+            <TabsContent value="loads" className="flex-1 overflow-y-auto p-4 space-y-6">
               {isNormalTechnique ? (
-                // Tecnica normale: un carico per set
+                // Tecnica normale: solo carichi per set
                 <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-700">💪 Carichi per Set</h4>
                   {block.targetLoads?.map((load, i) => (
                     <div key={i} className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                       <span className="px-3 py-1.5 rounded bg-blue-600 text-white text-sm font-bold min-w-[4rem] text-center">

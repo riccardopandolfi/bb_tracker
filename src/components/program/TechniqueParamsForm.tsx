@@ -38,6 +38,15 @@ export function TechniqueParamsForm({ technique, params, onChange }: TechniquePa
       // Se il valore locale è vuoto, non fare nulla
       if (localVal === '') return;
 
+      // Se è "MAX" e corrisponde, rimuovilo
+      if (localVal === 'MAX') {
+        if (paramVal === 'MAX') {
+          delete newLocalValues[key];
+          hasChanges = true;
+        }
+        return;
+      }
+
       // Parse il valore locale come numero se possibile
       const localNum = parseFloat(localVal);
 
@@ -85,6 +94,9 @@ export function TechniqueParamsForm({ technique, params, onChange }: TechniquePa
               if (localValues[p.name] === '') {
                 return p.defaultValue;
               }
+              if (localValues[p.name] === 'MAX') {
+                return 'MAX';
+              }
               const parsed = parseFloat(localValues[p.name]);
               return isNaN(parsed) ? p.defaultValue : parsed;
             }
@@ -94,8 +106,8 @@ export function TechniqueParamsForm({ technique, params, onChange }: TechniquePa
         })
         .filter(v => v !== undefined && v !== '');
 
-      // If all values are numbers, join with +
-      if (values.every(v => !isNaN(Number(v)))) {
+      // If all values are numbers, join with +, otherwise join with + but handle MAX
+      if (values.every(v => v === 'MAX' || !isNaN(Number(v)))) {
         return values.join('+');
       }
       return values.join('-');
@@ -133,16 +145,28 @@ export function TechniqueParamsForm({ technique, params, onChange }: TechniquePa
                 ) : (
                   <Input
                     id={param.name}
-                    type={param.type === 'number' ? 'number' : 'text'}
+                    type="text"
                     value={localValues[param.name] !== undefined ? localValues[param.name] : (params[param.name] ?? param.defaultValue)}
                     onChange={(e) => {
-                      const value = e.target.value;
+                      let value = e.target.value;
+
+                      // Se è un parametro numerico, converti "max" in "MAX" e valida
+                      if (param.type === 'number') {
+                        value = value.toUpperCase();
+                        // Permetti solo numeri o "MAX"
+                        if (value !== '' && value !== 'MAX' && !/^\d+\.?\d*$/.test(value)) {
+                          return; // Ignora input non valido
+                        }
+                      }
+
                       setLocalValues(prev => ({ ...prev, [param.name]: value }));
 
                       // Aggiorna immediatamente il parent
                       if (param.type === 'number') {
                         if (value === '') {
                           handleParamChange(param.name, param.defaultValue);
+                        } else if (value === 'MAX') {
+                          handleParamChange(param.name, 'MAX');
                         } else {
                           const parsed = parseFloat(value);
                           if (!isNaN(parsed)) {
@@ -161,6 +185,7 @@ export function TechniqueParamsForm({ technique, params, onChange }: TechniquePa
                     onBlur={() => {
                       // I localValues verranno cancellati dal useEffect quando params si aggiorna
                     }}
+                    placeholder={param.type === 'number' ? 'numero o MAX' : ''}
                     className="h-8"
                   />
                 )}
@@ -189,6 +214,8 @@ export function TechniqueParamsForm({ technique, params, onChange }: TechniquePa
       if (param && param.type === 'number') {
         if (localValues[key] === '') {
           mergedParams[key] = param.default;
+        } else if (localValues[key] === 'MAX') {
+          mergedParams[key] = 'MAX';
         } else {
           const parsed = parseFloat(localValues[key]);
           mergedParams[key] = isNaN(parsed) ? param.default : parsed;
@@ -215,16 +242,28 @@ export function TechniqueParamsForm({ technique, params, onChange }: TechniquePa
               </Label>
               <Input
                 id={param.name}
-                type={param.type}
+                type="text"
                 value={localValues[param.name] !== undefined ? localValues[param.name] : (params[param.name] ?? param.default)}
                 onChange={(e) => {
-                  const value = e.target.value;
+                  let value = e.target.value;
+
+                  // Se è un parametro numerico, converti "max" in "MAX" e valida
+                  if (param.type === 'number') {
+                    value = value.toUpperCase();
+                    // Permetti solo numeri o "MAX"
+                    if (value !== '' && value !== 'MAX' && !/^\d+\.?\d*$/.test(value)) {
+                      return; // Ignora input non valido
+                    }
+                  }
+
                   setLocalValues(prev => ({ ...prev, [param.name]: value }));
 
                   // Aggiorna immediatamente il parent
                   if (param.type === 'number') {
                     if (value === '') {
                       handleParamChange(param.name, param.default);
+                    } else if (value === 'MAX') {
+                      handleParamChange(param.name, 'MAX');
                     } else {
                       const parsed = parseFloat(value);
                       if (!isNaN(parsed)) {
@@ -243,7 +282,7 @@ export function TechniqueParamsForm({ technique, params, onChange }: TechniquePa
                 onBlur={() => {
                   // I localValues verranno cancellati dal useEffect quando params si aggiorna
                 }}
-                step={param.step}
+                placeholder={param.type === 'number' ? 'numero o MAX' : ''}
                 className="h-8"
               />
             </div>
