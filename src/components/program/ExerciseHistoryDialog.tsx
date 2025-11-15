@@ -2,7 +2,7 @@ import { useApp } from '@/contexts/AppContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Badge } from '../ui/badge';
 import { Card, CardContent } from '../ui/card';
-import { CheckCircle2, AlertCircle, XCircle, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { CheckCircle2, Minus } from 'lucide-react';
 import { LoggedSession, ProgramExercise } from '@/types';
 
 interface ExerciseHistoryDialogProps {
@@ -18,15 +18,18 @@ export function ExerciseHistoryDialog({
   exerciseName,
   programId,
 }: ExerciseHistoryDialogProps) {
-  const { programs, loggedSessions } = useApp();
+  const { programs, loggedSessions, currentWeek } = useApp();
   const program = programs[programId];
 
   if (!program) {
     return null;
   }
 
-  // Ottieni tutte le settimane del programma
-  const weekNumbers = Object.keys(program.weeks).map(Number).sort((a, b) => a - b);
+  // Ottieni tutte le settimane del programma precedenti alla settimana corrente
+  const weekNumbers = Object.keys(program.weeks)
+    .map(Number)
+    .filter((weekNum) => weekNum < currentWeek)
+    .sort((a, b) => a - b);
 
   // Filtra le sessioni loggat per questo esercizio e programma
   const exerciseSessions = loggedSessions.filter(
@@ -57,62 +60,12 @@ export function ExerciseHistoryDialog({
   // Funzione per ottenere lo stato di completamento
   const getCompletionStatus = (weekNum: number) => {
     const sessions = sessionsByWeek[weekNum] || [];
-    const programmedExercise = findProgrammedExercise(weekNum);
 
-    if (!programmedExercise) {
-      return { status: 'no-program', icon: Minus, color: 'text-gray-400', label: 'Non programmato' };
-    }
-
-    if (sessions.length === 0) {
-      return { status: 'not-done', icon: XCircle, color: 'text-red-500', label: 'Non eseguito' };
-    }
-
-    // Calcola il completion rate medio
-    const avgCompletion = sessions.reduce((sum, s) => sum + s.completion, 0) / sessions.length;
-
-    if (avgCompletion >= 90) {
+    if (sessions.length > 0) {
       return { status: 'completed', icon: CheckCircle2, color: 'text-green-500', label: 'Completato' };
-    } else if (avgCompletion >= 50) {
-      return { status: 'partial', icon: AlertCircle, color: 'text-yellow-500', label: 'Parziale' };
-    } else {
-      return { status: 'poor', icon: AlertCircle, color: 'text-orange-500', label: 'Insufficiente' };
-    }
-  };
-
-  // Funzione per ottenere il trend del carico
-  const getLoadTrend = (weekNum: number, previousWeekNum: number) => {
-    const currentSessions = sessionsByWeek[weekNum] || [];
-    const previousSessions = sessionsByWeek[previousWeekNum] || [];
-
-    if (currentSessions.length === 0 || previousSessions.length === 0) {
-      return null;
     }
 
-    // Calcola il carico medio per settimana
-    const getAvgLoad = (sessions: LoggedSession[]) => {
-      const totalLoad = sessions.reduce((sum, session) => {
-        const sessionLoad = session.sets.reduce((setSum, set) => {
-          const load = parseFloat(set.load) || 0;
-          const reps = parseFloat(set.reps) || 0;
-          return setSum + load * reps;
-        }, 0);
-        return sum + sessionLoad;
-      }, 0);
-      return totalLoad / sessions.length;
-    };
-
-    const currentAvg = getAvgLoad(currentSessions);
-    const previousAvg = getAvgLoad(previousSessions);
-
-    const percentChange = ((currentAvg - previousAvg) / previousAvg) * 100;
-
-    if (percentChange > 5) {
-      return { icon: TrendingUp, color: 'text-green-600', label: `+${percentChange.toFixed(1)}%` };
-    } else if (percentChange < -5) {
-      return { icon: TrendingDown, color: 'text-red-600', label: `${percentChange.toFixed(1)}%` };
-    } else {
-      return { icon: Minus, color: 'text-gray-600', label: '~' };
-    }
+    return { status: 'not-done', icon: Minus, color: 'text-gray-400', label: '-' };
   };
 
   // Funzione per formattare i dati programmati
@@ -133,8 +86,8 @@ export function ExerciseHistoryDialog({
 
     let loadStr = '-';
     if (loads.length > 0) {
-      const allSame = loads.every((l) => l === loads[0]);
-      loadStr = allSame ? `${loads[0]}kg` : `${loads[0]}-${loads[loads.length - 1]}kg`;
+      // Mostra tutti i carichi separati da virgola
+      loadStr = `${loads.join(', ')}kg`;
     }
 
     return `${sets}x${reps} @ ${loadStr} ${technique !== 'Normale' ? `(${technique})` : ''}`;
@@ -149,8 +102,8 @@ export function ExerciseHistoryDialog({
       const totalReps = session.totalReps;
       const avgRPE = session.avgRPE.toFixed(1);
       const loads = session.sets.map((s) => s.load);
-      const allSame = loads.every((l) => l === loads[0]);
-      const loadStr = allSame ? `${loads[0]}kg` : `${loads[0]}-${loads[loads.length - 1]}kg`;
+      // Mostra tutti i carichi separati da virgola
+      const loadStr = `${loads.join(', ')}kg`;
 
       return (
         <div key={idx} className="text-sm">
@@ -181,16 +134,12 @@ export function ExerciseHistoryDialog({
               const programmedExercise = findProgrammedExercise(weekNum);
               const sessions = sessionsByWeek[weekNum] || [];
               const completionStatus = getCompletionStatus(weekNum);
-              const trend = idx > 0 ? getLoadTrend(weekNum, weekNumbers[idx - 1]) : null;
 
               const StatusIcon = completionStatus.icon;
 
               return (
                 <Card key={weekNum} className="border-l-4" style={{ borderLeftColor:
-                  completionStatus.status === 'completed' ? '#22c55e' :
-                  completionStatus.status === 'partial' ? '#eab308' :
-                  completionStatus.status === 'poor' ? '#f97316' :
-                  completionStatus.status === 'not-done' ? '#ef4444' : '#9ca3af'
+                  completionStatus.status === 'completed' ? '#22c55e' : '#9ca3af'
                 }}>
                   <CardContent className="pt-4 pb-4">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
@@ -198,14 +147,8 @@ export function ExerciseHistoryDialog({
                       <div className="md:col-span-2">
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="font-bold">
-                            S{weekNum}
+                            W{weekNum}
                           </Badge>
-                          {trend && (
-                            <div className={`flex items-center gap-1 ${trend.color}`}>
-                              <trend.icon className="w-3 h-3" />
-                              <span className="text-xs">{trend.label}</span>
-                            </div>
-                          )}
                         </div>
                       </div>
 
