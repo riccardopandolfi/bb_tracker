@@ -130,7 +130,7 @@ export function ExerciseHistoryDialog({
               Nessuna settimana trovata nel programma
             </div>
           ) : (
-            weekNumbers.map((weekNum, idx) => {
+            weekNumbers.map((weekNum) => {
               const programmedExercise = findProgrammedExercise(weekNum);
               const sessions = sessionsByWeek[weekNum] || [];
               const completionStatus = getCompletionStatus(weekNum);
