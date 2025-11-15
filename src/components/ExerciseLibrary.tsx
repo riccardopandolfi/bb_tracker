@@ -478,9 +478,11 @@ function ExerciseCard({ exercise, index, onUpdate, onDelete, muscleGroups }: Exe
                   <Label className="text-xs sm:text-sm">%</Label>
                   <Input
                     type="number"
-                    value={muscle.percent}
+                    value={muscle.percent === 0 ? '' : muscle.percent}
                     onChange={(e) => handleMuscleChange(muscleIndex, 'percent', e.target.value)}
                     className="text-xs sm:text-sm w-full"
+                    min="0"
+                    max="100"
                   />
                 </div>
                 {(localExercise.muscles?.length || 0) > 1 && (
