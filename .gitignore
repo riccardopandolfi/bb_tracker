@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# .mcp.json e cartella .claude
+.mcp.json
+.claude/

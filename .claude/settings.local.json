@@ -17,7 +17,11 @@
       "Bash(pkill:*)",
       "Read(//dev/**)",
       "Bash(lsof:*)",
-      "Bash(xargs kill:*)"
+      "Bash(xargs kill:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

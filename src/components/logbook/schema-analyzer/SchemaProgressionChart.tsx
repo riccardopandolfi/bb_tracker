@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { LoggedSession } from '@/types';
 import { WorkoutSchemaFilters } from '../WorkoutSchemaAnalyzer';
-import { Label } from '../../ui/label';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { getExerciseBlocks } from '@/lib/exerciseUtils';
 
@@ -14,7 +13,7 @@ interface SchemaProgressionChartProps {
 
 type MetricType = 'load' | 'reps';
 
-export function SchemaProgressionChart({ sessions, filters, mode }: SchemaProgressionChartProps) {
+export function SchemaProgressionChart({ sessions, filters: _filters, mode }: SchemaProgressionChartProps) {
   const { getCurrentWeeks } = useApp();
   const weeks = getCurrentWeeks();
 

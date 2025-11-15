@@ -12,8 +12,7 @@ interface NormalSetsFiltersProps {
 }
 
 export function NormalSetsFilters({ filters, setFilters }: NormalSetsFiltersProps) {
-  const { loggedSessions, getCurrentWeeks, currentProgramId } = useApp();
-  const weeks = getCurrentWeeks();
+  const { loggedSessions, currentProgramId } = useApp();
 
   // Filtra le sessioni per il programma attivo
   const programSessions = loggedSessions.filter(s => s.programId === currentProgramId);

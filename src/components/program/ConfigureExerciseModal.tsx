@@ -27,7 +27,7 @@ export function ConfigureExerciseModal({
   open,
   onOpenChange,
   exercise,
-  exerciseIndex,
+  exerciseIndex: _exerciseIndex,
   exerciseLibrary,
   allTechniques,
   customTechniques,
