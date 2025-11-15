@@ -1,8 +1,9 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { AppState, Exercise, Week, LoggedSession, WeekMacros, CustomTechnique, Program } from '@/types';
 import { DEFAULT_EXERCISES, MUSCLE_COLORS } from '@/lib/constants';
 import { DEFAULT_MUSCLE_GROUPS } from '@/types';
 import { generateDemoPrograms, generateDemoLoggedSessions } from '@/lib/demoData';
+import { loadAppState, saveAppState, subscribeToAppState, migrateFromLocalStorage } from '@/lib/supabaseService';
 
 interface AppContextType extends AppState {
   setCurrentTab: (tab: 'home' | 'library' | 'programs' | 'program' | 'logbook' | 'macros') => void;
@@ -57,13 +58,53 @@ const defaultState: AppState = {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(defaultState);
+  const [isLoading, setIsLoading] = useState(true);
+  const isSavingRef = useRef(false);
 
-  // Load from localStorage on mount
+  // Load from Supabase (with localStorage fallback) on mount
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
+    const loadData = async () => {
       try {
-        const data = JSON.parse(saved);
+        // Try to load from Supabase first
+        const supabaseData = await loadAppState();
+
+        if (supabaseData) {
+          console.log('Loaded data from Supabase');
+          setState(migrateData(supabaseData));
+          setIsLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.error('Error loading from Supabase:', error);
+      }
+
+      // Fallback to localStorage
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          const migratedData = migrateData(data);
+          setState(migratedData);
+
+          // Migrate to Supabase in background
+          migrateFromLocalStorage(migratedData).then((success) => {
+            if (success) {
+              console.log('Migrated data to Supabase');
+            }
+          });
+        } catch (error) {
+          console.error('Error loading data from localStorage:', error);
+        }
+      }
+
+      setIsLoading(false);
+    };
+
+    loadData();
+  }, []);
+
+  // Helper function to migrate data format
+  const migrateData = (data: any): AppState => {
 
         // MIGRATION: Convert old format (weeks/macros at root) to new format (programs)
         let migratedPrograms: Record<number, Program>;
@@ -204,31 +245,60 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return ex;
         });
 
-        setState({
-          currentTab: data.currentTab || 'library',
-          currentProgramId: migratedCurrentProgramId,
-          currentWeek: data.currentWeek || 1,
-          exercises: migratedExercises,
-          programs: migratedPrograms,
-          loggedSessions: migratedSessions,
-          muscleGroups: data.muscleGroups || [...DEFAULT_MUSCLE_GROUPS],
-          muscleGroupColors: data.muscleGroupColors || {},
-          customTechniques: data.customTechniques || [],
-        });
-      } catch (error) {
-        console.error('Error loading data from localStorage:', error);
-      }
-    }
-  }, []);
+    return {
+      currentTab: data.currentTab || 'library',
+      currentProgramId: migratedCurrentProgramId,
+      currentWeek: data.currentWeek || 1,
+      exercises: migratedExercises,
+      programs: migratedPrograms,
+      loggedSessions: migratedSessions,
+      muscleGroups: data.muscleGroups || [...DEFAULT_MUSCLE_GROUPS],
+      muscleGroupColors: data.muscleGroupColors || {},
+      customTechniques: data.customTechniques || [],
+    };
+  };
 
-  // Save to localStorage on state change (debounced)
+  // Real-time subscription
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
+    if (!isLoading) {
+      const unsubscribe = subscribeToAppState((newState) => {
+        console.log('Received update from Supabase');
+        isSavingRef.current = true;
+        setState(newState);
+        // Also update localStorage
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+        setTimeout(() => {
+          isSavingRef.current = false;
+        }, 100);
+      });
+
+      return () => {
+        unsubscribe();
+      };
+    }
+  }, [isLoading]);
+
+  // Save to localStorage and Supabase on state change (debounced)
+  useEffect(() => {
+    if (isLoading || isSavingRef.current) return;
+
+    const timeoutId = setTimeout(async () => {
+      // Save to localStorage
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+
+      // Save to Supabase
+      try {
+        const success = await saveAppState(state);
+        if (success) {
+          console.log('Saved to Supabase');
+        }
+      } catch (error) {
+        console.error('Error saving to Supabase:', error);
+      }
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [state]);
+  }, [state, isLoading]);
 
   // Helper getters
   const getCurrentProgram = () => {
@@ -600,6 +670,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
       alert('Dati demo eliminati con successo!');
     }
   };
+
+  // Show loading indicator while data is being loaded
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-600 font-medium">Caricamento dati...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AppContext.Provider
