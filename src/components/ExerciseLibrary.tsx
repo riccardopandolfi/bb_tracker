@@ -16,6 +16,7 @@ export function ExerciseLibrary() {
   const [newMuscleGroup, setNewMuscleGroup] = useState('');
   const [newMuscleColor, setNewMuscleColor] = useState('#6b7280'); // Default gray
   const [showMuscleDialog, setShowMuscleDialog] = useState(false);
+  const [showMuscleGroupsManager, setShowMuscleGroupsManager] = useState(false);
   const [showTechniqueDialog, setShowTechniqueDialog] = useState(false);
   const [newTechnique, setNewTechnique] = useState<CustomTechnique>({
     name: '',
@@ -103,6 +104,51 @@ export function ExerciseLibrary() {
           <p className="text-sm sm:text-base text-muted-foreground">Gestisci esercizi, cardio e gruppi muscolari</p>
         </div>
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+          <Dialog open={showMuscleGroupsManager} onOpenChange={setShowMuscleGroupsManager}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+                <Settings2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Gestisci Gruppi</span>
+                <span className="sm:hidden">Gruppi</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Gestione Gruppi Muscolari</DialogTitle>
+                <DialogDescription>
+                  {muscleGroups.length} gruppo/i muscolare/i disponibile/i. Puoi modificare i colori o eliminare i gruppi non utilizzati.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                {muscleGroups.map((muscle) => (
+                  <div key={muscle} className="flex items-center justify-between p-2 sm:p-3 border rounded-lg gap-2">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <Input
+                        type="color"
+                        value={getMuscleColor(muscle)}
+                        onChange={(e) => updateMuscleGroupColor(muscle, e.target.value)}
+                        className="w-10 h-10 cursor-pointer flex-shrink-0"
+                        title="Cambia colore"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-xs sm:text-sm truncate">{muscle}</div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => deleteMuscleGroup(muscle)}
+                      className="h-8 w-8 flex-shrink-0"
+                      title="Elimina gruppo"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
+
           <Dialog open={showMuscleDialog} onOpenChange={setShowMuscleDialog}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" className="text-xs sm:text-sm">
@@ -340,45 +386,6 @@ export function ExerciseLibrary() {
           </CardContent>
         </Card>
       )}
-
-      {/* Muscle Groups Section */}
-      <Card>
-        <CardHeader className="pb-3 sm:pb-6">
-          <CardTitle className="text-base sm:text-lg">Gruppi Muscolari</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">
-            {muscleGroups.length} gruppo/i muscolare/i disponibile/i
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="px-3 sm:px-6">
-          <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {muscleGroups.map((muscle) => (
-              <div key={muscle} className="flex items-center justify-between p-2 sm:p-3 border rounded-lg gap-2">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <Input
-                    type="color"
-                    value={getMuscleColor(muscle)}
-                    onChange={(e) => updateMuscleGroupColor(muscle, e.target.value)}
-                    className="w-10 h-10 cursor-pointer flex-shrink-0"
-                    title="Cambia colore"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-xs sm:text-sm truncate">{muscle}</div>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => deleteMuscleGroup(muscle)}
-                  className="h-8 w-8 flex-shrink-0"
-                  title="Elimina gruppo"
-                >
-                  <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Exercise Cards */}
       <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full">
