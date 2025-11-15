@@ -70,7 +70,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         if (supabaseData) {
           console.log('Loaded data from Supabase');
-          setState(migrateData(supabaseData));
+          const migratedData = migrateData(supabaseData);
+          setState(migratedData);
+
+          // If exercises were populated from defaults, save immediately to Supabase
+          if ((!supabaseData.exercises || supabaseData.exercises.length === 0) && migratedData.exercises.length > 0) {
+            console.log('Populating Supabase with default exercises...');
+            await saveAppState(migratedData);
+          }
+
           setIsLoading(false);
           return;
         }
