@@ -526,6 +526,9 @@ export function ExerciseBlockCard({
                 <div>
                   <Label className="text-xs text-gray-600 mb-1.5 block">
                     Reps Base <span className="text-xs text-muted-foreground">(numero o MAX)</span>
+                    {block.targetReps && block.targetReps.length > 0 && (
+                      <span className="text-xs text-orange-600 ml-1">(disabilitato - reps personalizzate attive)</span>
+                    )}
                   </Label>
                   <Input
                     type="text"
@@ -539,6 +542,7 @@ export function ExerciseBlockCard({
                     }}
                     placeholder="10 o MAX"
                     className="h-10"
+                    disabled={block.targetReps && block.targetReps.length > 0}
                   />
                 </div>
               </div>

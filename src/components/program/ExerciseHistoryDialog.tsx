@@ -85,9 +85,17 @@ export function ExerciseHistoryDialog({
     // Per resistance training - mostra tutti i blocchi
     return exercise.blocks.map((block, idx) => {
       const sets = block.sets || 0;
-      const reps = block.repsBase || block.repRange || '-';
       const technique = block.technique || 'Normale';
       const loads = block.targetLoads && block.targetLoads.length > 0 ? block.targetLoads : [];
+
+      // Se ci sono targetReps personalizzate, mostrale tutte separate da virgola
+      // Altrimenti mostra repsBase o repRange
+      let repsStr = '-';
+      if (block.targetReps && block.targetReps.length > 0) {
+        repsStr = block.targetReps.join(', ');
+      } else {
+        repsStr = block.repsBase || block.repRange || '-';
+      }
 
       let loadStr = '-';
       if (loads.length > 0) {
@@ -100,7 +108,11 @@ export function ExerciseHistoryDialog({
       return (
         <div key={idx} className="text-sm">
           {exercise.blocks.length > 1 && <span className="text-muted-foreground">B{idx + 1}: </span>}
-          {sets}x{reps} @ {loadStr}{techniqueStr}
+          {block.targetReps && block.targetReps.length > 0 ? (
+            <>{repsStr} reps @ {loadStr}{techniqueStr}</>
+          ) : (
+            <>{sets}x{repsStr} @ {loadStr}{techniqueStr}</>
+          )}
         </div>
       );
     });
