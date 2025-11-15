@@ -234,7 +234,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         });
 
         // Migrate exercises: add type field if missing
-        const migratedExercises = (data.exercises || DEFAULT_EXERCISES).map((ex: any) => {
+        // Use DEFAULT_EXERCISES if no exercises exist or array is empty
+        const migratedExercises = (data.exercises && data.exercises.length > 0 ? data.exercises : DEFAULT_EXERCISES).map((ex: any) => {
           if (!ex.type) {
             // If no type, assume resistance if it has muscles, cardio otherwise
             return {
