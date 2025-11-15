@@ -84,8 +84,8 @@ export function HomeTab() {
             <p className="text-muted-foreground text-center mb-6 max-w-md">
               Inizia creando il tuo primo programma di allenamento per sbloccare tutte le funzionalità dell'app.
             </p>
-            <div className="flex gap-3">
-              <Button onClick={() => setCurrentTab('programs')} size="lg">
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <Button onClick={() => setCurrentTab('programs')} size="lg" className="w-full sm:w-auto">
                 <Dumbbell className="mr-2 h-5 w-5" />
                 Crea il Primo Programma
               </Button>
@@ -96,6 +96,7 @@ export function HomeTab() {
                   loadDemoData();
                   setCurrentTab('program');
                 }}
+                className="w-full sm:w-auto"
               >
                 Carica Dati Demo
               </Button>
