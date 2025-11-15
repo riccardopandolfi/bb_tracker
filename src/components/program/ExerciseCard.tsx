@@ -3,8 +3,9 @@ import { ProgramExercise, Exercise, ExerciseBlock } from '@/types';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
-import { Settings, Trash2, ClipboardList, Clock } from 'lucide-react';
+import { Settings, Trash2, ClipboardList, Clock, BarChart3 } from 'lucide-react';
 import { ConfigureExerciseModal } from './ConfigureExerciseModal';
+import { ExerciseHistoryDialog } from './ExerciseHistoryDialog';
 import { getExerciseBlocks } from '@/lib/exerciseUtils';
 import { REP_RANGES } from '@/types';
 import { useApp } from '@/contexts/AppContext';
@@ -39,9 +40,10 @@ export function ExerciseCard({
   onDelete,
   onLog,
 }: ExerciseCardProps) {
-  const { getMuscleColor: resolveMuscleColor } = useApp();
+  const { getMuscleColor: resolveMuscleColor, currentProgramId } = useApp();
   const [showBlockSelector, setShowBlockSelector] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false);
   const blocks = getExerciseBlocks(exercise);
 
   const handleLogClick = (e: React.MouseEvent) => {
@@ -187,6 +189,14 @@ export function ExerciseCard({
                 <Button
                   variant="ghost"
                   size="icon"
+                  onClick={() => setShowHistoryDialog(true)}
+                  title="Storico progressione"
+                >
+                  <BarChart3 className="w-4 h-4 text-purple-500" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={handleLogClick}
                   title="Log sessione"
                 >
@@ -258,6 +268,16 @@ export function ExerciseCard({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Exercise History Dialog */}
+      {currentProgramId && (
+        <ExerciseHistoryDialog
+          open={showHistoryDialog}
+          onOpenChange={setShowHistoryDialog}
+          exerciseName={exercise.exerciseName}
+          programId={currentProgramId}
+        />
+      )}
       </>
     );
   }
@@ -445,6 +465,14 @@ export function ExerciseCard({
               <Button
                 variant="ghost"
                 size="icon"
+                onClick={() => setShowHistoryDialog(true)}
+                title="Storico progressione"
+              >
+                <BarChart3 className="w-4 h-4 text-purple-500" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={handleLogClick}
                 title="Log sessione"
               >
@@ -554,6 +582,16 @@ export function ExerciseCard({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Exercise History Dialog */}
+      {currentProgramId && (
+        <ExerciseHistoryDialog
+          open={showHistoryDialog}
+          onOpenChange={setShowHistoryDialog}
+          exerciseName={exercise.exerciseName}
+          programId={currentProgramId}
+        />
+      )}
     </>
   );
 }
