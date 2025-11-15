@@ -30,34 +30,28 @@ export const DEFAULT_EXERCISES: Exercise[] = [
     name: 'Panca Piana Bilanciere',
     type: 'resistance',
     muscles: [
-      { muscle: 'Petto', percent: 80 },
-      { muscle: 'Tricipiti', percent: 20 },
+      { muscle: 'Petto', percent: 100 },
     ],
   },
   {
     name: 'Military Press',
     type: 'resistance',
     muscles: [
-      { muscle: 'Deltoidi - Anteriore', percent: 60 },
-      { muscle: 'Deltoidi - Laterale', percent: 30 },
-      { muscle: 'Tricipiti', percent: 10 },
+      { muscle: 'Deltoidi - Anteriore', percent: 100 },
     ],
   },
   {
     name: 'Dips',
     type: 'resistance',
     muscles: [
-      { muscle: 'Petto', percent: 50 },
-      { muscle: 'Tricipiti', percent: 40 },
-      { muscle: 'Deltoidi - Anteriore', percent: 10 },
+      { muscle: 'Petto', percent: 100 },
     ],
   },
   {
     name: 'Alzate Laterali',
     type: 'resistance',
     muscles: [
-      { muscle: 'Deltoidi - Laterale', percent: 90 },
-      { muscle: 'Deltoidi - Anteriore', percent: 10 },
+      { muscle: 'Deltoidi - Laterale', percent: 100 },
     ],
   },
   {
@@ -72,34 +66,28 @@ export const DEFAULT_EXERCISES: Exercise[] = [
     name: 'Rematore Bilanciere',
     type: 'resistance',
     muscles: [
-      { muscle: 'Dorso - Upper Back', percent: 70 },
-      { muscle: 'Dorso - Lats', percent: 20 },
-      { muscle: 'Bicipiti', percent: 10 },
+      { muscle: 'Dorso - Upper Back', percent: 100 },
     ],
   },
   {
     name: 'Trazioni',
     type: 'resistance',
     muscles: [
-      { muscle: 'Dorso - Lats', percent: 70 },
-      { muscle: 'Dorso - Upper Back', percent: 20 },
-      { muscle: 'Bicipiti', percent: 10 },
+      { muscle: 'Dorso - Lats', percent: 100 },
     ],
   },
   {
     name: 'Pulley',
     type: 'resistance',
     muscles: [
-      { muscle: 'Dorso - Lats', percent: 80 },
-      { muscle: 'Bicipiti', percent: 20 },
+      { muscle: 'Dorso - Lats', percent: 100 },
     ],
   },
   {
     name: 'Curl Bilanciere',
     type: 'resistance',
     muscles: [
-      { muscle: 'Bicipiti', percent: 90 },
-      { muscle: 'Avambracci', percent: 10 },
+      { muscle: 'Bicipiti', percent: 100 },
     ],
   },
   // Legs
@@ -107,17 +95,14 @@ export const DEFAULT_EXERCISES: Exercise[] = [
     name: 'Squat',
     type: 'resistance',
     muscles: [
-      { muscle: 'Quadricipiti', percent: 60 },
-      { muscle: 'Glutei', percent: 30 },
-      { muscle: 'Femorali', percent: 10 },
+      { muscle: 'Quadricipiti', percent: 100 },
     ],
   },
   {
     name: 'Leg Press',
     type: 'resistance',
     muscles: [
-      { muscle: 'Quadricipiti', percent: 70 },
-      { muscle: 'Glutei', percent: 30 },
+      { muscle: 'Quadricipiti', percent: 100 },
     ],
   },
   {
