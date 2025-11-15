@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Textarea } from './ui/textarea';
 
 export function ExerciseLibrary() {
-  const { exercises, addExercise, updateExercise, deleteExercise, muscleGroups, addMuscleGroup, customTechniques, addCustomTechnique, deleteCustomTechnique } = useApp();
+  const { exercises, addExercise, updateExercise, deleteExercise, muscleGroups, addMuscleGroup, updateMuscleGroupColor, deleteMuscleGroup, getMuscleColor, customTechniques, addCustomTechnique, deleteCustomTechnique } = useApp();
   const [newMuscleGroup, setNewMuscleGroup] = useState('');
   const [newMuscleColor, setNewMuscleColor] = useState('#6b7280'); // Default gray
   const [showMuscleDialog, setShowMuscleDialog] = useState(false);
@@ -340,6 +340,45 @@ export function ExerciseLibrary() {
           </CardContent>
         </Card>
       )}
+
+      {/* Muscle Groups Section */}
+      <Card>
+        <CardHeader className="pb-3 sm:pb-6">
+          <CardTitle className="text-base sm:text-lg">Gruppi Muscolari</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
+            {muscleGroups.length} gruppo/i muscolare/i disponibile/i
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="px-3 sm:px-6">
+          <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {muscleGroups.map((muscle) => (
+              <div key={muscle} className="flex items-center justify-between p-2 sm:p-3 border rounded-lg gap-2">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <Input
+                    type="color"
+                    value={getMuscleColor(muscle)}
+                    onChange={(e) => updateMuscleGroupColor(muscle, e.target.value)}
+                    className="w-10 h-10 cursor-pointer flex-shrink-0"
+                    title="Cambia colore"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-xs sm:text-sm truncate">{muscle}</div>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => deleteMuscleGroup(muscle)}
+                  className="h-8 w-8 flex-shrink-0"
+                  title="Elimina gruppo"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Exercise Cards */}
       <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full">

@@ -26,6 +26,8 @@ interface AppContextType extends AppState {
   deleteLoggedSession: (sessionId: number) => void;
   setMacros: (weekNum: number, macros: WeekMacros, programId?: number) => void;
   addMuscleGroup: (muscleGroup: string, color?: string) => void;
+  updateMuscleGroupColor: (muscleGroup: string, color: string) => void;
+  deleteMuscleGroup: (muscleGroup: string) => boolean;
   getMuscleColor: (muscleName: string) => string;
   addCustomTechnique: (technique: CustomTechnique) => void;
   deleteCustomTechnique: (techniqueName: string) => void;
@@ -584,6 +586,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const updateMuscleGroupColor = (muscleGroup: string, color: string) => {
+    setState((prev) => ({
+      ...prev,
+      muscleGroupColors: {
+        ...prev.muscleGroupColors,
+        [muscleGroup]: color,
+      },
+    }));
+  };
+
+  const deleteMuscleGroup = (muscleGroup: string) => {
+    // Check if muscle group is used in any exercise
+    const isUsed = state.exercises.some(
+      (ex) => ex.muscles?.some((m) => m.muscle === muscleGroup)
+    );
+
+    if (isUsed) {
+      alert(`Impossibile eliminare "${muscleGroup}": è utilizzato in uno o più esercizi.`);
+      return false;
+    }
+
+    if (confirm(`Eliminare il gruppo muscolare "${muscleGroup}"?`)) {
+      setState((prev) => {
+        const { [muscleGroup]: _, ...remainingColors } = prev.muscleGroupColors;
+        return {
+          ...prev,
+          muscleGroups: prev.muscleGroups.filter((m) => m !== muscleGroup),
+          muscleGroupColors: remainingColors,
+        };
+      });
+      return true;
+    }
+    return false;
+  };
+
   const getMuscleColor = (muscleName: string): string => {
     // Prima controlla se c'è un colore personalizzato
     if (state.muscleGroupColors[muscleName]) {
@@ -716,6 +753,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         deleteLoggedSession,
         setMacros,
         addMuscleGroup,
+        updateMuscleGroupColor,
+        deleteMuscleGroup,
         getMuscleColor,
         addCustomTechnique,
         deleteCustomTechnique,
