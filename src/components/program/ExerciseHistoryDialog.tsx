@@ -111,17 +111,18 @@ export function ExerciseHistoryDialog({
     if (sessions.length === 0) return '-';
 
     return sessions.map((session, idx) => {
-      const totalSets = session.sets.length;
-      const totalReps = session.totalReps;
-      const avgRPE = session.avgRPE.toFixed(1);
+      const reps = session.sets.map((s) => s.reps);
       const loads = session.sets.map((s) => s.load);
-      // Mostra tutti i carichi separati da virgola
+      const avgRPE = session.avgRPE.toFixed(1);
+
+      // Mostra tutte le reps e tutti i carichi separati da virgola
+      const repsStr = reps.join(', ');
       const loadStr = `${loads.join(', ')}kg`;
 
       return (
         <div key={idx} className="text-sm">
           {sessions.length > 1 && <span className="text-muted-foreground">B{session.blockIndex + 1}: </span>}
-          {totalSets}x{Math.round(totalReps / totalSets)} @ {loadStr} (RPE {avgRPE})
+          {repsStr} reps @ {loadStr} (RPE {avgRPE})
         </div>
       );
     });
