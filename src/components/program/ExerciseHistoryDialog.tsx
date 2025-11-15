@@ -71,26 +71,39 @@ export function ExerciseHistoryDialog({
   // Funzione per formattare i dati programmati
   const formatProgrammedData = (exercise: ProgramExercise) => {
     if (exercise.exerciseType === 'cardio') {
-      const duration = exercise.blocks[0]?.duration || exercise.duration || 0;
-      return `${duration} min`;
+      return exercise.blocks.map((block, idx) => {
+        const duration = block.duration || 0;
+        return (
+          <div key={idx} className="text-sm">
+            {exercise.blocks.length > 1 && <span className="text-muted-foreground">B{idx + 1}: </span>}
+            {duration} min
+          </div>
+        );
+      });
     }
 
-    // Per resistance training
-    const block = exercise.blocks[0];
-    if (!block) return '-';
+    // Per resistance training - mostra tutti i blocchi
+    return exercise.blocks.map((block, idx) => {
+      const sets = block.sets || 0;
+      const reps = block.repsBase || block.repRange || '-';
+      const technique = block.technique || 'Normale';
+      const loads = block.targetLoads && block.targetLoads.length > 0 ? block.targetLoads : [];
 
-    const sets = block.sets || 0;
-    const reps = block.repsBase || block.repRange || '-';
-    const technique = block.technique || 'Normale';
-    const loads = block.targetLoads && block.targetLoads.length > 0 ? block.targetLoads : [];
+      let loadStr = '-';
+      if (loads.length > 0) {
+        // Mostra tutti i carichi separati da virgola
+        loadStr = `${loads.join(', ')}kg`;
+      }
 
-    let loadStr = '-';
-    if (loads.length > 0) {
-      // Mostra tutti i carichi separati da virgola
-      loadStr = `${loads.join(', ')}kg`;
-    }
+      const techniqueStr = technique !== 'Normale' ? ` (${technique})` : '';
 
-    return `${sets}x${reps} @ ${loadStr} ${technique !== 'Normale' ? `(${technique})` : ''}`;
+      return (
+        <div key={idx} className="text-sm">
+          {exercise.blocks.length > 1 && <span className="text-muted-foreground">B{idx + 1}: </span>}
+          {sets}x{reps} @ {loadStr}{techniqueStr}
+        </div>
+      );
+    });
   };
 
   // Funzione per formattare i dati eseguiti
