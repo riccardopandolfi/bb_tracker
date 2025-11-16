@@ -245,16 +245,16 @@ export function ExerciseCard({
                 <Button
                   key={blockIndex}
                   variant="outline"
-                  className="w-full justify-start h-auto p-4"
+                  className="w-full justify-start h-auto p-4 overflow-hidden"
                   onClick={() => handleSelectBlock(blockIndex)}
                 >
                   <div className="flex flex-col items-start gap-1 text-left w-full min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="px-2 py-0.5 rounded bg-orange-50 text-orange-700 text-xs font-medium">
                         Blocco {blockIndex + 1}
                       </span>
                     </div>
-                    <div className="text-sm w-full break-words">
+                    <div className="text-sm w-full min-w-0" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                       <span>{duration} minuti</span>
                       <span className="text-muted-foreground ml-2">
                         • Rest: {restIntraSet}
@@ -541,7 +541,7 @@ export function ExerciseCard({
                 <Button
                   key={blockIndex}
                   variant="outline"
-                  className="w-full justify-start h-auto p-4"
+                  className="w-full justify-start h-auto p-4 overflow-hidden"
                   onClick={() => handleSelectBlock(blockIndex)}
                 >
                   <div className="flex flex-col items-start gap-1 text-left w-full min-w-0">
@@ -555,7 +555,7 @@ export function ExerciseCard({
                         </span>
                       )}
                     </div>
-                    <div className="text-sm w-full break-words">
+                    <div className="text-sm w-full min-w-0" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                       {isNormal ? (
                         block.targetReps && block.targetReps.length > 0 ? (
                           <span>{block.targetReps.join('-')} @ {loads}kg</span>

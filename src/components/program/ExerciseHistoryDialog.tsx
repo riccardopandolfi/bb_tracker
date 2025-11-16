@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Badge } from '../ui/badge';
 import { Card, CardContent } from '../ui/card';
-import { CheckCircle2, Minus } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
+import { CheckCircle2, Minus, ChevronDown } from 'lucide-react';
 import { LoggedSession, ProgramExercise } from '@/types';
 
 interface ExerciseHistoryDialogProps {
@@ -20,10 +22,33 @@ export function ExerciseHistoryDialog({
 }: ExerciseHistoryDialogProps) {
   const { programs, loggedSessions, currentWeek } = useApp();
   const program = programs[programId];
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<number>>(new Set());
 
   if (!program) {
     return null;
   }
+
+  const toggleWeek = (weekNum: number) => {
+    const newExpanded = new Set(expandedWeeks);
+    if (newExpanded.has(weekNum)) {
+      newExpanded.delete(weekNum);
+    } else {
+      newExpanded.add(weekNum);
+    }
+    setExpandedWeeks(newExpanded);
+  };
+
+  // Helper per colori distintivi per ogni blocco
+  const getBlockColor = (blockIndex: number) => {
+    const colors = [
+      { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-300' },
+      { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-300' },
+      { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-300' },
+      { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-300' },
+      { bg: 'bg-pink-100', text: 'text-pink-700', border: 'border-pink-300' },
+    ];
+    return colors[blockIndex % colors.length];
+  };
 
   // Ottieni tutte le settimane del programma precedenti alla settimana corrente
   const weekNumbers = Object.keys(program.weeks)
@@ -73,9 +98,12 @@ export function ExerciseHistoryDialog({
     if (exercise.exerciseType === 'cardio') {
       return exercise.blocks.map((block, idx) => {
         const duration = block.duration || 0;
+        const blockColor = getBlockColor(idx);
         return (
-          <div key={idx} className="text-sm">
-            {exercise.blocks.length > 1 && <span className="text-muted-foreground">B{idx + 1}: </span>}
+          <div key={idx} className={`text-sm p-2 rounded-md border ${blockColor.bg} ${blockColor.border}`}>
+            {exercise.blocks.length > 1 && (
+              <span className={`font-semibold ${blockColor.text}`}>B{idx + 1}: </span>
+            )}
             {duration} min
           </div>
         );
@@ -87,6 +115,7 @@ export function ExerciseHistoryDialog({
       const sets = block.sets || 0;
       const technique = block.technique || 'Normale';
       const loads = block.targetLoads && block.targetLoads.length > 0 ? block.targetLoads : [];
+      const blockColor = getBlockColor(idx);
 
       // Se ci sono targetReps personalizzate, mostrale tutte separate da virgola
       // Altrimenti mostra repsBase o repRange
@@ -103,12 +132,14 @@ export function ExerciseHistoryDialog({
         loadStr = `${loads.join(', ')}kg`;
       }
 
-      const techniqueStr = technique !== 'Normale' ? ` (${technique})` : '';
+      const techniqueStr = technique !== 'Normale' ? ` - ${technique}` : '';
 
       return (
-        <div key={idx} className="text-sm space-y-1">
+        <div key={idx} className={`text-sm space-y-1 p-2 rounded-md border mb-2 ${blockColor.bg} ${blockColor.border}`}>
           <div>
-            {exercise.blocks.length > 1 && <span className="text-muted-foreground">B{idx + 1}: </span>}
+            {exercise.blocks.length > 1 && (
+              <span className={`font-semibold ${blockColor.text}`}>B{idx + 1}: </span>
+            )}
             {block.targetReps && block.targetReps.length > 0 ? (
               <>{repsStr} reps @ {loadStr}{techniqueStr}</>
             ) : (
@@ -116,7 +147,7 @@ export function ExerciseHistoryDialog({
             )}
           </div>
           {block.notes && (
-            <div className="text-xs text-muted-foreground italic pl-2 border-l-2 border-gray-300">
+            <div className="text-xs text-muted-foreground italic pl-2 border-l-2 border-gray-400">
               Note: {block.notes}
             </div>
           )}
@@ -129,23 +160,31 @@ export function ExerciseHistoryDialog({
   const formatExecutedData = (sessions: LoggedSession[]) => {
     if (sessions.length === 0) return '-';
 
-    return sessions.map((session, idx) => {
+    // Ordina le sessioni per blockIndex per mantenere l'ordine corretto
+    const sortedSessions = [...sessions].sort((a, b) => a.blockIndex - b.blockIndex);
+
+    return sortedSessions.map((session, idx) => {
       const reps = session.sets.map((s) => s.reps);
       const loads = session.sets.map((s) => s.load);
       const avgRPE = session.avgRPE.toFixed(1);
+      const blockColor = getBlockColor(session.blockIndex);
+      const technique = session.technique || 'Normale';
+      const techniqueStr = technique !== 'Normale' ? ` - ${technique}` : '';
 
       // Mostra tutte le reps e tutti i carichi separati da virgola
       const repsStr = reps.join(', ');
       const loadStr = `${loads.join(', ')}kg`;
 
       return (
-        <div key={idx} className="text-sm space-y-1">
+        <div key={idx} className={`text-sm space-y-1 p-2 rounded-md border mb-2 ${blockColor.bg} ${blockColor.border}`}>
           <div>
-            {sessions.length > 1 && <span className="text-muted-foreground">B{session.blockIndex + 1}: </span>}
-            {repsStr} reps @ {loadStr} (RPE {avgRPE})
+            {sessions.length > 1 && (
+              <span className={`font-semibold ${blockColor.text}`}>B{session.blockIndex + 1}: </span>
+            )}
+            {repsStr} reps @ {loadStr} (RPE {avgRPE}){techniqueStr}
           </div>
           {session.notes && (
-            <div className="text-xs text-muted-foreground italic pl-2 border-l-2 border-gray-300">
+            <div className="text-xs text-muted-foreground italic pl-2 border-l-2 border-gray-400">
               Note: {session.notes}
             </div>
           )}
@@ -164,7 +203,7 @@ export function ExerciseHistoryDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3 py-4">
+        <div className="space-y-2 py-4">
           {weekNumbers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               Nessuna settimana trovata nel programma
@@ -174,59 +213,72 @@ export function ExerciseHistoryDialog({
               const programmedExercise = findProgrammedExercise(weekNum);
               const sessions = sessionsByWeek[weekNum] || [];
               const completionStatus = getCompletionStatus(weekNum);
+              const isExpanded = expandedWeeks.has(weekNum);
 
               const StatusIcon = completionStatus.icon;
 
               return (
-                <Card key={weekNum} className="border-l-4" style={{ borderLeftColor:
-                  completionStatus.status === 'completed' ? '#22c55e' : '#9ca3af'
-                }}>
-                  <CardContent className="pt-4 pb-4">
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
-                      {/* Settimana */}
-                      <div className="md:col-span-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="font-bold">
-                            W{weekNum}
-                          </Badge>
+                <Collapsible key={weekNum} open={isExpanded} onOpenChange={() => toggleWeek(weekNum)}>
+                  <Card className="border-l-4" style={{ borderLeftColor:
+                    completionStatus.status === 'completed' ? '#22c55e' : '#9ca3af'
+                  }}>
+                    <CardContent className="pt-3 pb-3">
+                      {/* Header collapsible */}
+                      <CollapsibleTrigger className="w-full">
+                        <div className="flex items-center justify-between hover:bg-gray-50 p-2 rounded-md transition-colors">
+                          <div className="flex items-center gap-3">
+                            <Badge variant="outline" className="font-bold">
+                              W{weekNum}
+                            </Badge>
+                            <div className="flex items-center gap-2">
+                              <StatusIcon className={`w-4 h-4 ${completionStatus.color}`} />
+                              <span className={`text-xs font-medium ${completionStatus.color}`}>
+                                {completionStatus.label}
+                              </span>
+                            </div>
+                          </div>
+                          <ChevronDown className={`w-5 h-5 transition-transform ${isExpanded ? 'transform rotate-180' : ''}`} />
                         </div>
-                      </div>
+                      </CollapsibleTrigger>
 
-                      {/* Programmato */}
-                      <div className="md:col-span-4">
-                        <div className="text-xs text-muted-foreground mb-1 font-medium">Programmato</div>
-                        <div className="text-sm font-mono">
-                          {programmedExercise ? formatProgrammedData(programmedExercise) : '-'}
+                      <CollapsibleContent>
+                        <div className="mt-3 space-y-3">
+                          {/* Layout mobile-friendly */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Programmato */}
+                            <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-200">
+                              <div className="text-xs font-semibold text-blue-900 mb-2 uppercase tracking-wide">
+                                Programmato
+                              </div>
+                              <div className="font-mono">
+                                {programmedExercise ? formatProgrammedData(programmedExercise) : '-'}
+                              </div>
+                            </div>
+
+                            {/* Eseguito */}
+                            <div className="bg-green-50/50 p-3 rounded-lg border border-green-200">
+                              <div className="text-xs font-semibold text-green-900 mb-2 uppercase tracking-wide">
+                                Eseguito
+                              </div>
+                              <div className="font-mono">
+                                {formatExecutedData(sessions)}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Note sessioni */}
+                          {sessions.length > 0 && sessions.some(s => s.blockRest) && (
+                            <div className="pt-2 border-t text-xs text-muted-foreground italic">
+                              {sessions.map((s, idx) => s.blockRest && (
+                                <div key={idx}>Blocco {s.blockIndex + 1}: rest {s.blockRest}s</div>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      </div>
-
-                      {/* Eseguito */}
-                      <div className="md:col-span-4">
-                        <div className="text-xs text-muted-foreground mb-1 font-medium">Eseguito</div>
-                        <div className="font-mono">
-                          {formatExecutedData(sessions)}
-                        </div>
-                      </div>
-
-                      {/* Status */}
-                      <div className="md:col-span-2 flex items-center justify-end gap-2">
-                        <StatusIcon className={`w-5 h-5 ${completionStatus.color}`} />
-                        <span className={`text-xs font-medium ${completionStatus.color}`}>
-                          {completionStatus.label}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Note sessioni */}
-                    {sessions.length > 0 && sessions.some(s => s.blockRest) && (
-                      <div className="mt-2 pt-2 border-t text-xs text-muted-foreground italic">
-                        {sessions.map((s, idx) => s.blockRest && (
-                          <div key={idx}>Blocco {s.blockIndex + 1}: rest {s.blockRest}s</div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                      </CollapsibleContent>
+                    </CardContent>
+                  </Card>
+                </Collapsible>
               );
             })
           )}
