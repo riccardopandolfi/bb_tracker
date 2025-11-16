@@ -289,14 +289,15 @@ export function LogSessionModal({
           </Button>
 
           {/* Note */}
-        <div>
-          <Label className="text-sm font-medium mb-2">Note (opzionale)</Label>
-          <Textarea
-            value={sessionNotes}
-            onChange={(e) => setSessionNotes(e.target.value)}
-            placeholder="Aggiungi note sulla sessione..."
-            className="min-h-[80px]"
-          />
+          <div>
+            <Label className="text-sm font-medium mb-2">Note (opzionale)</Label>
+            <Textarea
+              value={sessionNotes}
+              onChange={(e) => setSessionNotes(e.target.value)}
+              placeholder="Aggiungi note sulla sessione..."
+              className="min-h-[80px]"
+            />
+          </div>
         </div>
 
         <DialogFooter>
