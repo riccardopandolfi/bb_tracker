@@ -166,7 +166,7 @@ export function ExerciseHistoryDialog({
     return sortedSessions.map((session, idx) => {
       const reps = session.sets.map((s) => s.reps);
       const loads = session.sets.map((s) => s.load);
-      const avgRPE = session.avgRPE.toFixed(1);
+      const rpes = session.sets.map((s) => s.rpe);
       const blockColor = getBlockColor(session.blockIndex);
       const technique = session.technique || 'Normale';
       const techniqueStr = technique !== 'Normale' ? ` - ${technique}` : '';
@@ -175,13 +175,19 @@ export function ExerciseHistoryDialog({
       const repsStr = reps.join(', ');
       const loadStr = `${loads.join(', ')}kg`;
 
+      // Mostra RPE solo se almeno un set ha RPE inserito
+      const hasAnyRPE = rpes.some(rpe => rpe && rpe.trim() !== '');
+      const rpeStr = hasAnyRPE
+        ? `(RPE ${rpes.map(rpe => rpe && rpe.trim() !== '' ? rpe : '-').join(', ')})`
+        : '';
+
       return (
         <div key={idx} className={`text-sm space-y-1 p-2 rounded-md border mb-2 ${blockColor.bg} ${blockColor.border}`}>
           <div>
             {sessions.length > 1 && (
               <span className={`font-semibold ${blockColor.text}`}>B{session.blockIndex + 1}: </span>
             )}
-            {repsStr} reps @ {loadStr} (RPE {avgRPE}){techniqueStr}
+            {repsStr} reps @ {loadStr} {rpeStr}{techniqueStr}
           </div>
           {session.notes && (
             <div className="text-xs text-muted-foreground italic pl-2 border-l-2 border-gray-400">
