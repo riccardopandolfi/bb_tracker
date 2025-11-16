@@ -188,8 +188,6 @@ export function LogSessionModal({
 
   if (!exercise || !block) return null;
 
-  const metrics = calculateSessionMetrics(tempLogSets);
-
   // Group sets by setNum
   const setGroups = tempLogSets.reduce((acc, set) => {
     if (!acc[set.setNum]) acc[set.setNum] = [];
@@ -290,25 +288,7 @@ export function LogSessionModal({
             Aggiungi Set
           </Button>
 
-          {/* Summary Box */}
-          <Card className="p-4 bg-muted">
-            <h4 className="font-bold mb-3">Riepilogo Live</h4>
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold text-black">{metrics.totalReps}</div>
-                <div className="text-xs text-muted-foreground">Reps Totali</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-orange-600">
-                  {metrics.avgRPE > 0 ? metrics.avgRPE.toFixed(1) : '-'}
-                </div>
-                <div className="text-xs text-muted-foreground">RPE Medio</div>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        {/* Note */}
+          {/* Note */}
         <div>
           <Label className="text-sm font-medium mb-2">Note (opzionale)</Label>
           <Textarea
