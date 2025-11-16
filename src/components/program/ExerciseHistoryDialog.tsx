@@ -114,25 +114,47 @@ export function ExerciseHistoryDialog({
     return exercise.blocks.map((block, idx) => {
       const sets = block.sets || 0;
       const technique = block.technique || 'Normale';
+      const isNormal = technique === 'Normale';
       const loads = block.targetLoads && block.targetLoads.length > 0 ? block.targetLoads : [];
       const blockColor = getBlockColor(idx);
-
-      // Se ci sono targetReps personalizzate, mostrale tutte separate da virgola
-      // Altrimenti mostra repsBase o repRange
-      let repsStr = '-';
-      if (block.targetReps && block.targetReps.length > 0) {
-        repsStr = block.targetReps.join(', ');
-      } else {
-        repsStr = block.repsBase || block.repRange || '-';
-      }
-
-      let loadStr = '-';
-      if (loads.length > 0) {
-        // Mostra tutti i carichi separati da virgola
-        loadStr = `${loads.join(', ')}kg`;
-      }
-
       const techniqueStr = technique !== 'Normale' ? ` - ${technique}` : '';
+
+      let displayStr = '';
+
+      if (isNormal) {
+        // Tecnica normale
+        let repsStr = '-';
+        if (block.targetReps && block.targetReps.length > 0) {
+          repsStr = block.targetReps.join(', ');
+        } else {
+          repsStr = block.repsBase || block.repRange || '-';
+        }
+
+        let loadStr = '-';
+        if (loads.length > 0) {
+          loadStr = `${loads.join(', ')}kg`;
+        }
+
+        if (block.targetReps && block.targetReps.length > 0) {
+          displayStr = `${repsStr} reps @ ${loadStr}`;
+        } else {
+          displayStr = `${sets}x${repsStr} @ ${loadStr}`;
+        }
+      } else {
+        // Tecnica speciale: mostra lo schema dettagliato
+        const schema = block.techniqueSchema || '-';
+
+        // Gestisci targetLoadsByCluster per tecniche speciali
+        if (block.targetLoadsByCluster && block.targetLoadsByCluster.length > 0) {
+          const loadStrings = block.targetLoadsByCluster.map(setLoads => setLoads.join('/')).join(', ');
+          displayStr = `${sets}x${schema} @ ${loadStrings}kg`;
+        } else if (loads.length > 0) {
+          const loadStr = loads.join(', ');
+          displayStr = `${sets}x${schema} @ ${loadStr}kg`;
+        } else {
+          displayStr = `${sets}x${schema} @ -`;
+        }
+      }
 
       return (
         <div key={idx} className={`text-sm space-y-1 p-2 rounded-md border mb-2 ${blockColor.bg} ${blockColor.border}`}>
@@ -140,11 +162,7 @@ export function ExerciseHistoryDialog({
             {exercise.blocks.length > 1 && (
               <span className={`font-semibold ${blockColor.text}`}>B{idx + 1}: </span>
             )}
-            {block.targetReps && block.targetReps.length > 0 ? (
-              <>{repsStr} reps @ {loadStr}{techniqueStr}</>
-            ) : (
-              <>{sets}x{repsStr} @ {loadStr}{techniqueStr}</>
-            )}
+            {displayStr}{techniqueStr}
           </div>
           {block.notes && (
             <div className="text-xs text-muted-foreground italic pl-2 border-l-2 border-gray-400">
