@@ -164,22 +164,66 @@ export function ExerciseHistoryDialog({
     const sortedSessions = [...sessions].sort((a, b) => a.blockIndex - b.blockIndex);
 
     return sortedSessions.map((session, idx) => {
-      const reps = session.sets.map((s) => s.reps);
-      const loads = session.sets.map((s) => s.load);
-      const rpes = session.sets.map((s) => s.rpe);
       const blockColor = getBlockColor(session.blockIndex);
       const technique = session.technique || 'Normale';
       const techniqueStr = technique !== 'Normale' ? ` - ${technique}` : '';
+      const isNormal = technique === 'Normale';
 
-      // Mostra tutte le reps e tutti i carichi separati da virgola
-      const repsStr = reps.join(', ');
-      const loadStr = `${loads.join(', ')}kg`;
+      let repsStr = '';
+      let loadStr = '';
+      let rpeStr = '';
 
-      // Mostra RPE solo se almeno un set ha RPE inserito
-      const hasAnyRPE = rpes.some(rpe => rpe && rpe.trim() !== '');
-      const rpeStr = hasAnyRPE
-        ? `(RPE ${rpes.map(rpe => rpe && rpe.trim() !== '' ? rpe : '-').join(', ')})`
-        : '';
+      if (isNormal) {
+        // Tecnica normale: mostra tutte le reps e i carichi separati da virgola
+        const reps = session.sets.map((s) => s.reps);
+        const loads = session.sets.map((s) => s.load);
+        const rpes = session.sets.map((s) => s.rpe);
+
+        repsStr = reps.join(', ');
+        loadStr = `${loads.join(', ')}kg`;
+
+        // Mostra RPE solo se almeno un set ha RPE inserito
+        const hasAnyRPE = rpes.some(rpe => rpe && rpe.trim() !== '');
+        rpeStr = hasAnyRPE
+          ? `(RPE ${rpes.map(rpe => rpe && rpe.trim() !== '' ? rpe : '-').join(', ')})`
+          : '';
+      } else {
+        // Tecnica speciale: raggruppa per setNum per mostrare i cluster
+        const setGroups: Record<number, typeof session.sets> = {};
+        session.sets.forEach(set => {
+          if (!setGroups[set.setNum]) {
+            setGroups[set.setNum] = [];
+          }
+          setGroups[set.setNum].push(set);
+        });
+
+        const setStrings: string[] = [];
+        const loadStrings: string[] = [];
+        const rpeStrings: string[] = [];
+
+        Object.values(setGroups).forEach(clusters => {
+          // Per ogni set, mostra i cluster separati da '+'
+          const clusterReps = clusters.map(c => c.reps).join('+');
+          const clusterLoads = clusters.map(c => c.load).join('/');
+          const clusterRpes = clusters.map(c => c.rpe);
+
+          setStrings.push(`(${clusterReps})`);
+          loadStrings.push(clusterLoads);
+
+          const hasRPE = clusterRpes.some(rpe => rpe && rpe.trim() !== '');
+          if (hasRPE) {
+            rpeStrings.push(`(${clusterRpes.map(rpe => rpe && rpe.trim() !== '' ? rpe : '-').join('+')})`);
+          } else {
+            rpeStrings.push('-');
+          }
+        });
+
+        repsStr = setStrings.join(', ');
+        loadStr = `${loadStrings.join(', ')}kg`;
+
+        const hasAnyRPE = rpeStrings.some(rpe => rpe !== '-');
+        rpeStr = hasAnyRPE ? `(RPE ${rpeStrings.join(', ')})` : '';
+      }
 
       return (
         <div key={idx} className={`text-sm space-y-1 p-2 rounded-md border mb-2 ${blockColor.bg} ${blockColor.border}`}>
