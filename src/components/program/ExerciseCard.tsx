@@ -228,7 +228,7 @@ export function ExerciseCard({
 
         {/* Block Selector Dialog per Cardio */}
         <Dialog open={showBlockSelector} onOpenChange={setShowBlockSelector}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Seleziona Blocco da Loggare</DialogTitle>
             <DialogDescription>
@@ -240,7 +240,7 @@ export function ExerciseCard({
               const duration = block.duration || 0;
               const restIntraSet = block.rest ? `${block.rest}s` : '-';
               const restBetweenBlocks = blockIndex < blocks.length - 1 && block.blockRest ? `${block.blockRest}s` : null;
-              
+
               return (
                 <Button
                   key={blockIndex}
@@ -248,13 +248,13 @@ export function ExerciseCard({
                   className="w-full justify-start h-auto p-4"
                   onClick={() => handleSelectBlock(blockIndex)}
                 >
-                  <div className="flex flex-col items-start gap-1 text-left">
+                  <div className="flex flex-col items-start gap-1 text-left w-full min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="px-2 py-0.5 rounded bg-orange-50 text-orange-700 text-xs font-medium">
                         Blocco {blockIndex + 1}
                       </span>
                     </div>
-                    <div className="text-sm">
+                    <div className="text-sm w-full break-words">
                       <span>{duration} minuti</span>
                       <span className="text-muted-foreground ml-2">
                         • Rest: {restIntraSet}
@@ -504,7 +504,7 @@ export function ExerciseCard({
 
       {/* Block Selector Dialog */}
       <Dialog open={showBlockSelector} onOpenChange={setShowBlockSelector}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Seleziona Blocco da Loggare</DialogTitle>
             <DialogDescription>
@@ -515,7 +515,7 @@ export function ExerciseCard({
             {blocks.map((block, blockIndex) => {
               const isNormal = block.technique === 'Normale';
               const sets = block.sets || 0;
-              
+
               // Determina i carichi da mostrare
               let loads = '0';
               if (isNormal) {
@@ -533,10 +533,10 @@ export function ExerciseCard({
                   loads = loadsArray.length > 0 ? loadsArray.join('-') : '0';
                 }
               }
-              
+
               const restIntraSet = block.rest ? `${block.rest}s` : '-';
               const restBetweenBlocks = blockIndex < blocks.length - 1 && block.blockRest ? `${block.blockRest}s` : null;
-              
+
               return (
                 <Button
                   key={blockIndex}
@@ -544,8 +544,8 @@ export function ExerciseCard({
                   className="w-full justify-start h-auto p-4"
                   onClick={() => handleSelectBlock(blockIndex)}
                 >
-                  <div className="flex flex-col items-start gap-1 text-left">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-col items-start gap-1 text-left w-full min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-xs font-medium">
                         Blocco {blockIndex + 1}
                       </span>
@@ -555,7 +555,7 @@ export function ExerciseCard({
                         </span>
                       )}
                     </div>
-                    <div className="text-sm">
+                    <div className="text-sm w-full break-words">
                       {isNormal ? (
                         block.targetReps && block.targetReps.length > 0 ? (
                           <span>{block.targetReps.join('-')} @ {loads}kg</span>
