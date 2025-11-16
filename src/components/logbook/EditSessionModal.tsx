@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
 import { Card } from '../ui/card';
 import { Plus, Trash2, CheckCircle } from 'lucide-react';
 import { calculateSessionMetrics, calculateBlockTargetReps } from '@/lib/calculations';
@@ -21,15 +22,41 @@ export function EditSessionModal({
   onOpenChange,
   session,
 }: EditSessionModalProps) {
-  const { updateLoggedSession, getCurrentWeeks } = useApp();
+  const { updateLoggedSession, getCurrentWeeks, programs } = useApp();
   const [tempLogSets, setTempLogSets] = useState<LoggedSet[]>([]);
+  const [sessionNotes, setSessionNotes] = useState<string>('');
+  const [blockNotes, setBlockNotes] = useState<string>('');
 
   useEffect(() => {
     if (open && session) {
       // Initialize with existing sets
       setTempLogSets(session.sets);
+
+      // Initialize session notes
+      setSessionNotes(session.notes || '');
+
+      // Fetch block notes from program
+      const program = programs[session.programId];
+      if (program) {
+        const week = program.weeks[session.weekNum];
+        if (week) {
+          for (const day of week.days) {
+            const exercise = day.exercises.find(e => e.exerciseName === session.exercise);
+            if (exercise) {
+              const blocks = getExerciseBlocks(exercise);
+              const block = blocks[session.blockIndex];
+              if (block && block.notes) {
+                setBlockNotes(block.notes);
+              } else {
+                setBlockNotes('');
+              }
+              break;
+            }
+          }
+        }
+      }
     }
-  }, [open, session]);
+  }, [open, session, programs]);
 
   const handleUpdateSet = (index: number, field: keyof LoggedSet, value: string) => {
     const updated = [...tempLogSets];
@@ -107,6 +134,7 @@ export function EditSessionModal({
       avgRPE: metrics.avgRPE,
       targetReps,
       completion: targetReps > 0 ? (metrics.totalReps / targetReps) * 100 : 0,
+      notes: sessionNotes.trim() || undefined,
     };
 
     updateLoggedSession(updatedSession);
@@ -230,6 +258,27 @@ export function EditSessionModal({
               </div>
             </div>
           </Card>
+
+          {/* Block Notes (from program - read-only) */}
+          {blockNotes && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Note dalla Scheda (sola lettura)</Label>
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-900 italic">
+                {blockNotes}
+              </div>
+            </div>
+          )}
+
+          {/* Session Notes (editable) */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Note Sessione (opzionale)</Label>
+            <Textarea
+              value={sessionNotes}
+              onChange={(e) => setSessionNotes(e.target.value)}
+              placeholder="Aggiungi note sulla sessione..."
+              className="min-h-[80px]"
+            />
+          </div>
         </div>
 
         <DialogFooter>

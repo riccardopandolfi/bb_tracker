@@ -522,21 +522,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addLoggedSession = (session: LoggedSession) => {
     setState((prev) => {
-      // Rimuovi sessioni duplicate per lo stesso esercizio, stesso blocco, stessa data e settimana
-      // Mantieni solo quella più recente (ID più alto = Date.now() più recente)
+      // Rimuovi sessioni duplicate per lo stesso programma, settimana, esercizio e blocco
+      // Sovrascrive sempre l'ultima versione loggata per quella combinazione
       const filtered = prev.loggedSessions.filter((s) => {
         // Se è la stessa sessione (stesso ID), non rimuoverla
         if (s.id === session.id) return false;
-        
-        // Rimuovi se stesso esercizio, stesso blocco, stessa data e settimana
+
+        // Rimuovi se stesso programma, settimana, esercizio e blocco
         return !(
+          s.programId === session.programId &&
+          s.weekNum === session.weekNum &&
           s.exercise === session.exercise &&
-          s.blockIndex === session.blockIndex &&
-          s.date === session.date &&
-          s.weekNum === session.weekNum
+          s.blockIndex === session.blockIndex
         );
       });
-      
+
       // Aggiungi la nuova sessione (che avrà un ID più alto = più recente)
       return {
         ...prev,
