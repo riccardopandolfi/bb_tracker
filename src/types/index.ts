@@ -202,8 +202,9 @@ export interface LoggedSession {
   targetReps: number;
   avgRPE: number; // RPE effettivo (media dei set)
   completion: number;
-  
+
   blockRest?: number; // Rest dopo questo blocco (null se è l'ultimo blocco)
+  notes?: string; // Note del log
 }
 
 // Macros

@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
 import { Card } from '../ui/card';
 import { Plus, Trash2, CheckCircle } from 'lucide-react';
 import { parseSchema, calculateBlockTargetReps, calculateSessionMetrics } from '@/lib/calculations';
@@ -37,11 +38,13 @@ export function LogSessionModal({
   const block = currentBlockIndex !== null ? blocks[currentBlockIndex] : null;
 
   const [tempLogSets, setTempLogSets] = useState<LoggedSet[]>([]);
+  const [sessionNotes, setSessionNotes] = useState<string>('');
 
   useEffect(() => {
     if (open && exercise && block) {
       // Initialize temp log sets
       initializeTempSets();
+      setSessionNotes('');
     }
   }, [open, exercise, block]);
 
@@ -176,6 +179,7 @@ export function LogSessionModal({
       avgRPE: metrics.avgRPE,
       completion: targetReps > 0 ? (metrics.totalReps / targetReps) * 100 : 0,
       blockRest: block.blockRest,
+      notes: sessionNotes.trim() || undefined,
     };
 
     addLoggedSession(session);
@@ -302,6 +306,17 @@ export function LogSessionModal({
               </div>
             </div>
           </Card>
+        </div>
+
+        {/* Note */}
+        <div>
+          <Label className="text-sm font-medium mb-2">Note (opzionale)</Label>
+          <Textarea
+            value={sessionNotes}
+            onChange={(e) => setSessionNotes(e.target.value)}
+            placeholder="Aggiungi note sulla sessione..."
+            className="min-h-[80px]"
+          />
         </div>
 
         <DialogFooter>

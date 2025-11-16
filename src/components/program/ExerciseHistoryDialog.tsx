@@ -106,12 +106,19 @@ export function ExerciseHistoryDialog({
       const techniqueStr = technique !== 'Normale' ? ` (${technique})` : '';
 
       return (
-        <div key={idx} className="text-sm">
-          {exercise.blocks.length > 1 && <span className="text-muted-foreground">B{idx + 1}: </span>}
-          {block.targetReps && block.targetReps.length > 0 ? (
-            <>{repsStr} reps @ {loadStr}{techniqueStr}</>
-          ) : (
-            <>{sets}x{repsStr} @ {loadStr}{techniqueStr}</>
+        <div key={idx} className="text-sm space-y-1">
+          <div>
+            {exercise.blocks.length > 1 && <span className="text-muted-foreground">B{idx + 1}: </span>}
+            {block.targetReps && block.targetReps.length > 0 ? (
+              <>{repsStr} reps @ {loadStr}{techniqueStr}</>
+            ) : (
+              <>{sets}x{repsStr} @ {loadStr}{techniqueStr}</>
+            )}
+          </div>
+          {block.notes && (
+            <div className="text-xs text-muted-foreground italic pl-2 border-l-2 border-gray-300">
+              Note: {block.notes}
+            </div>
           )}
         </div>
       );
@@ -132,9 +139,16 @@ export function ExerciseHistoryDialog({
       const loadStr = `${loads.join(', ')}kg`;
 
       return (
-        <div key={idx} className="text-sm">
-          {sessions.length > 1 && <span className="text-muted-foreground">B{session.blockIndex + 1}: </span>}
-          {repsStr} reps @ {loadStr} (RPE {avgRPE})
+        <div key={idx} className="text-sm space-y-1">
+          <div>
+            {sessions.length > 1 && <span className="text-muted-foreground">B{session.blockIndex + 1}: </span>}
+            {repsStr} reps @ {loadStr} (RPE {avgRPE})
+          </div>
+          {session.notes && (
+            <div className="text-xs text-muted-foreground italic pl-2 border-l-2 border-gray-300">
+              Note: {session.notes}
+            </div>
+          )}
         </div>
       );
     });
