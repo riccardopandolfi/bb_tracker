@@ -230,12 +230,12 @@ export function ExerciseCard({
         <Dialog open={showBlockSelector} onOpenChange={setShowBlockSelector}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Seleziona Blocco da Loggare</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-base sm:text-lg">Seleziona Blocco da Loggare</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
               Scegli quale blocco dell'esercizio <strong>{exercise.exerciseName}</strong> vuoi loggare.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 py-4">
+          <div className="space-y-2 py-3 sm:py-4">
             {blocks.map((block, blockIndex) => {
               const duration = block.duration || 0;
               const restIntraSet = block.rest ? `${block.rest}s` : '-';
@@ -506,12 +506,12 @@ export function ExerciseCard({
       <Dialog open={showBlockSelector} onOpenChange={setShowBlockSelector}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Seleziona Blocco da Loggare</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-base sm:text-lg">Seleziona Blocco da Loggare</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
               Scegli quale blocco dell'esercizio <strong>{exercise.exerciseName}</strong> vuoi loggare.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 py-4">
+          <div className="space-y-2 py-3 sm:py-4">
             {blocks.map((block, blockIndex) => {
               const isNormal = block.technique === 'Normale';
               const sets = block.sets || 0;

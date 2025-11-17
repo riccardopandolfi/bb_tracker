@@ -197,17 +197,17 @@ export function LogSessionModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[85vh] sm:max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Log Sessione</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-base sm:text-lg">Log Sessione</DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm">
             {exercise.exerciseName} - Blocco {currentBlockIndex !== null ? currentBlockIndex + 1 : 1} - {block.technique}
             {block.techniqueSchema && ` (${block.techniqueSchema})`}
             {blocks.length > 1 && ` - ${blocks.length} blocchi totali`}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-3 sm:space-y-4 py-3 sm:py-4">
           {/* Sets */}
           {Object.entries(setGroups).map(([setNumStr, sets]) => {
             const setNum = parseInt(setNumStr, 10);

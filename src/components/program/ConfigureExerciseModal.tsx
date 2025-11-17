@@ -42,10 +42,10 @@ export function ConfigureExerciseModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-5xl max-h-[85vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">
-            ⚙️ Configura Esercizio: {exercise.exerciseName}
+          <DialogTitle className="text-base sm:text-xl font-bold">
+            ⚙️ Configura: {exercise.exerciseName}
           </DialogTitle>
         </DialogHeader>
 

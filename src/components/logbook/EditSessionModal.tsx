@@ -150,16 +150,16 @@ export function EditSessionModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[85vh] sm:max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Modifica Sessione</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-base sm:text-lg">Modifica Sessione</DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm">
             {session.exercise} - {session.technique}
             {session.techniqueSchema && ` (${session.techniqueSchema})`}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-3 sm:space-y-4 py-3 sm:py-4">
           {/* Sets */}
           {Object.entries(setGroups).map(([setNumStr, sets]) => {
             const setNum = parseInt(setNumStr, 10);

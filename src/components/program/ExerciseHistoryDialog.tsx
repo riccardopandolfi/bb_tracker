@@ -263,15 +263,15 @@ export function ExerciseHistoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Storico Progressione: {exerciseName}</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-base sm:text-lg">Storico: {exerciseName}</DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm">
             Visualizza settimana per settimana cosa era programmato vs cosa hai eseguito
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-2 py-4">
+        <div className="space-y-2 py-3 sm:py-4">
           {weekNumbers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               Nessuna settimana trovata nel programma
