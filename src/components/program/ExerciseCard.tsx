@@ -137,6 +137,32 @@ export function ExerciseCard({
                           <span className="px-2 py-0.5 bg-orange-700 text-white text-xs font-medium rounded">
                             Cardio
                           </span>
+                          {/* Pulsante log blocco */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onLog(idx);
+                            }}
+                            className="ml-auto p-1 hover:bg-orange-50 rounded transition-colors"
+                            title="Log blocco"
+                          >
+                            <ClipboardList className="w-3.5 h-3.5 text-gray-400 hover:text-orange-600" />
+                          </button>
+                          {/* Pulsante elimina blocco - solo se ci sono più blocchi */}
+                          {blocks.length > 1 && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm(`Eliminare il Blocco ${idx + 1}?`)) {
+                                  onDeleteBlock(idx);
+                                }
+                              }}
+                              className="p-1 hover:bg-red-50 rounded transition-colors"
+                              title="Elimina blocco"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-600" />
+                            </button>
+                          )}
                         </div>
                         
                         {/* Contenuto blocco */}
@@ -321,6 +347,17 @@ export function ExerciseCard({
                           >
                             {block.technique || 'Normale'}
                           </span>
+                          {/* Pulsante log blocco */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onLog(idx);
+                            }}
+                            className="ml-auto p-1 hover:bg-green-50 rounded transition-colors"
+                            title="Log blocco"
+                          >
+                            <ClipboardList className="w-3.5 h-3.5 text-gray-400 hover:text-green-600" />
+                          </button>
                           {/* Pulsante elimina blocco - solo se ci sono più blocchi */}
                           {blocks.length > 1 && (
                             <button
@@ -330,7 +367,7 @@ export function ExerciseCard({
                                   onDeleteBlock(idx);
                                 }
                               }}
-                              className="ml-auto p-1 hover:bg-red-50 rounded transition-colors"
+                              className="p-1 hover:bg-red-50 rounded transition-colors"
                               title="Elimina blocco"
                             >
                               <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-600" />

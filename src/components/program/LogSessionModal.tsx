@@ -49,12 +49,22 @@ export function LogSessionModal({
   }, [open, exercise, block]);
 
   const initializeTempSets = () => {
-    if (!block || !block.sets || !block.technique) return;
+    if (!block || !block.technique) return;
 
     const sets: LoggedSet[] = [];
 
-    if (block.technique === 'Normale') {
+    if (block.technique === 'Ramping') {
+      // Ramping: inizia con 1 set, l'utente ne aggiunge altri finché non raggiunge RPE target
+      sets.push({
+        reps: block.repsBase || '',
+        load: block.startLoad || '80',
+        rpe: '',
+        setNum: 1,
+        clusterNum: 1,
+      });
+    } else if (block.technique === 'Normale') {
       // Normal technique: N sets
+      if (!block.sets) return;
       for (let setNum = 1; setNum <= block.sets; setNum++) {
         sets.push({
           reps: block.repsBase || '',
@@ -66,6 +76,7 @@ export function LogSessionModal({
       }
     } else {
       // Special technique: N sets × M clusters
+      if (!block.sets) return;
       const clusters = parseSchema(block.techniqueSchema || '');
       if (clusters.length === 0) {
         alert('Schema tecnica non valido!');
