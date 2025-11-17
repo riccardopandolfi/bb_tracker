@@ -5,62 +5,75 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
-import { Calendar, Settings, CheckCircle2, Circle } from 'lucide-react';
+import { CheckCircle2, Circle, Copy } from 'lucide-react';
 
 const DAY_NAMES = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
 
+// Calcola calorie automaticamente
+const calculateKcal = (protein: string, carbs: string, fat: string): number => {
+  const p = parseFloat(protein) || 0;
+  const c = parseFloat(carbs) || 0;
+  const f = parseFloat(fat) || 0;
+  return Math.round(p * 4 + c * 4 + f * 9);
+};
+
 export function MacrosTab() {
   const { dailyMacros, initializeDailyMacros, updateDailyMacros, checkDay, getCurrentDayIndex } = useApp();
-  const [tempMacros, setTempMacros] = useState<DayMacros[]>([]);
-  const [editMode, setEditMode] = useState(false);
+  const [localMacros, setLocalMacros] = useState<DayMacros[]>([]);
 
-  // Inizializza tempMacros quando si apre la tab o quando cambiano i dailyMacros
+  // Inizializza dailyMacros se non esiste
+  useEffect(() => {
+    if (!dailyMacros) {
+      initializeDailyMacros();
+    }
+  }, [dailyMacros, initializeDailyMacros]);
+
+  // Sincronizza localMacros con dailyMacros
   useEffect(() => {
     if (dailyMacros) {
-      setTempMacros([...dailyMacros.days]);
-    } else {
-      const emptyDays: DayMacros[] = Array(7).fill(null).map(() => ({
-        kcal: '',
-        protein: '',
-        carbs: '',
-        fat: '',
-      }));
-      setTempMacros(emptyDays);
+      setLocalMacros([...dailyMacros.days]);
     }
   }, [dailyMacros]);
 
   const currentDayIndex = getCurrentDayIndex();
 
-  const handleUpdateDay = (dayIndex: number, field: keyof DayMacros, value: string) => {
-    const updated = [...tempMacros];
+  // Aggiorna un campo e salva automaticamente
+  const handleUpdateDay = (dayIndex: number, field: keyof Omit<DayMacros, 'kcal'>, value: string) => {
+    const updated = [...localMacros];
+    const currentDay = updated[dayIndex];
+
+    // Aggiorna il campo
     updated[dayIndex] = {
-      ...updated[dayIndex],
+      ...currentDay,
       [field]: value,
     };
-    setTempMacros(updated);
+
+    // Calcola calorie automaticamente
+    const kcal = calculateKcal(
+      field === 'protein' ? value : currentDay.protein,
+      field === 'carbs' ? value : currentDay.carbs,
+      field === 'fat' ? value : currentDay.fat
+    ).toString();
+
+    updated[dayIndex].kcal = kcal;
+
+    setLocalMacros(updated);
+
+    // Salva immediatamente
+    updateDailyMacros(dayIndex, updated[dayIndex]);
   };
 
   const handleCopyToAll = (dayIndex: number) => {
-    const sourceMacros = tempMacros[dayIndex];
-    const updated = tempMacros.map(() => ({ ...sourceMacros }));
-    setTempMacros(updated);
-  };
+    if (!confirm('Copiare i macro di questo giorno a tutti gli altri giorni?')) return;
 
-  const handleSave = () => {
-    // Se dailyMacros non esiste, inizializzalo prima
-    if (!dailyMacros) {
-      initializeDailyMacros();
-      setTimeout(() => {
-        tempMacros.forEach((macros, idx) => {
-          updateDailyMacros(idx, macros);
-        });
-      }, 100);
-    } else {
-      tempMacros.forEach((macros, idx) => {
-        updateDailyMacros(idx, macros);
-      });
-    }
-    setEditMode(false);
+    const sourceMacros = localMacros[dayIndex];
+    const updated = localMacros.map(() => ({ ...sourceMacros }));
+    setLocalMacros(updated);
+
+    // Salva tutti i giorni
+    updated.forEach((macros, idx) => {
+      updateDailyMacros(idx, macros);
+    });
   };
 
   const handleCheckDay = (dayIndex: number) => {
@@ -78,11 +91,15 @@ export function MacrosTab() {
     let count = 0;
 
     dailyMacros.days.forEach((day) => {
-      if (day.kcal || day.protein || day.carbs || day.fat) {
-        totalKcal += parseFloat(day.kcal) || 0;
-        totalProtein += parseFloat(day.protein) || 0;
-        totalCarbs += parseFloat(day.carbs) || 0;
-        totalFat += parseFloat(day.fat) || 0;
+      const protein = parseFloat(day.protein) || 0;
+      const carbs = parseFloat(day.carbs) || 0;
+      const fat = parseFloat(day.fat) || 0;
+
+      if (protein > 0 || carbs > 0 || fat > 0) {
+        totalKcal += calculateKcal(day.protein, day.carbs, day.fat);
+        totalProtein += protein;
+        totalCarbs += carbs;
+        totalFat += fat;
         count++;
       }
     });
@@ -99,6 +116,16 @@ export function MacrosTab() {
 
   const weeklyAverage = calculateWeeklyAverage();
   const completedDays = dailyMacros?.checked.filter(c => c).length || 0;
+
+  if (!dailyMacros) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-3">
+          <p className="text-muted-foreground">Inizializzazione...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -139,179 +166,6 @@ export function MacrosTab() {
                 <div className="text-2xl font-bold">{weeklyAverage.fat}g</div>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Card Configurazione Settimanale */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                <Settings className="w-5 h-5" />
-                Configurazione Settimanale
-              </CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                Imposta i macro per ogni giorno della settimana
-              </CardDescription>
-            </div>
-            {!editMode ? (
-              <Button onClick={() => setEditMode(true)} variant="outline">
-                Modifica
-              </Button>
-            ) : (
-              <div className="flex gap-2">
-                <Button onClick={() => { setEditMode(false); setTempMacros([...dailyMacros!.days]); }} variant="outline">
-                  Annulla
-                </Button>
-                <Button onClick={handleSave}>
-                  Salva
-                </Button>
-              </div>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {DAY_NAMES.map((dayName, dayIndex) => (
-              <Card key={dayIndex} className={`p-4 ${dayIndex === currentDayIndex && !editMode ? 'border-blue-500 border-2' : ''}`}>
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-bold flex items-center gap-2">
-                    <span className={`px-2 py-0.5 rounded text-sm font-medium ${
-                      dayIndex === currentDayIndex
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {dayName}
-                    </span>
-                    {dayIndex === currentDayIndex && !editMode && (
-                      <span className="text-xs text-blue-600">(Oggi)</span>
-                    )}
-                  </h4>
-                  {editMode && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleCopyToAll(dayIndex)}
-                      className="text-xs"
-                    >
-                      Copia a tutti
-                    </Button>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div>
-                    <Label className="text-xs">Kcal</Label>
-                    <Input
-                      type="text"
-                      value={tempMacros[dayIndex]?.kcal || ''}
-                      onChange={(e) => handleUpdateDay(dayIndex, 'kcal', e.target.value)}
-                      placeholder="es. 2500"
-                      disabled={!editMode}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Proteine (g)</Label>
-                    <Input
-                      type="text"
-                      value={tempMacros[dayIndex]?.protein || ''}
-                      onChange={(e) => handleUpdateDay(dayIndex, 'protein', e.target.value)}
-                      placeholder="es. 180"
-                      disabled={!editMode}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Carboidrati (g)</Label>
-                    <Input
-                      type="text"
-                      value={tempMacros[dayIndex]?.carbs || ''}
-                      onChange={(e) => handleUpdateDay(dayIndex, 'carbs', e.target.value)}
-                      placeholder="es. 300"
-                      disabled={!editMode}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Grassi (g)</Label>
-                    <Input
-                      type="text"
-                      value={tempMacros[dayIndex]?.fat || ''}
-                      onChange={(e) => handleUpdateDay(dayIndex, 'fat', e.target.value)}
-                      placeholder="es. 70"
-                      disabled={!editMode}
-                    />
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Card Tracker Giornaliero */}
-      {dailyMacros && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <Calendar className="w-5 h-5" />
-              Tracker Giornaliero
-            </CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              Spunta i giorni quando completi i tuoi macro
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {DAY_NAMES.map((dayName, dayIndex) => {
-                const day = dailyMacros.days[dayIndex];
-                const isChecked = dailyMacros.checked[dayIndex];
-                const isToday = dayIndex === currentDayIndex;
-                const hasMacros = day && (day.kcal || day.protein || day.carbs || day.fat);
-
-                return (
-                  <div
-                    key={dayIndex}
-                    className={`flex items-center justify-between p-3 rounded-lg border ${
-                      isChecked
-                        ? 'border-green-200 bg-green-50'
-                        : isToday
-                        ? 'border-blue-200 bg-blue-50'
-                        : 'border-gray-200 bg-white'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 flex-1">
-                      <button
-                        onClick={() => handleCheckDay(dayIndex)}
-                        className="focus:outline-none"
-                        disabled={!hasMacros}
-                      >
-                        {isChecked ? (
-                          <CheckCircle2 className="w-6 h-6 text-green-600" />
-                        ) : (
-                          <Circle className={`w-6 h-6 ${hasMacros ? 'text-gray-400 hover:text-blue-600' : 'text-gray-300'}`} />
-                        )}
-                      </button>
-                      <div className="flex-1">
-                        <div className="font-medium text-sm">
-                          {dayName}
-                          {isToday && <span className="ml-2 text-xs text-blue-600">(Oggi)</span>}
-                        </div>
-                        {hasMacros ? (
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {day.kcal || '-'} kcal • {day.protein || '-'}g P • {day.carbs || '-'}g C • {day.fat || '-'}g F
-                          </div>
-                        ) : (
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            Nessun macro configurato
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
 
             {/* Progress bar */}
             <div className="mt-4">
@@ -339,6 +193,129 @@ export function MacrosTab() {
           </CardContent>
         </Card>
       )}
+
+      {/* Card Macro Settimanali - Unificata */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base sm:text-lg">Macro Settimanali</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
+            Configura i macro e spunta i giorni completati. Le calorie vengono calcolate automaticamente.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {DAY_NAMES.map((dayName, dayIndex) => {
+              const day = localMacros[dayIndex];
+              const isChecked = dailyMacros.checked[dayIndex];
+              const isToday = dayIndex === currentDayIndex;
+              const hasMacros = day && (day.protein || day.carbs || day.fat);
+              const calculatedKcal = day ? calculateKcal(day.protein, day.carbs, day.fat) : 0;
+
+              return (
+                <Card
+                  key={dayIndex}
+                  className={`p-4 ${
+                    isChecked
+                      ? 'border-green-500 bg-green-50/50'
+                      : isToday
+                      ? 'border-blue-500 border-2 bg-blue-50/50'
+                      : ''
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      {/* Checkbox */}
+                      <button
+                        onClick={() => handleCheckDay(dayIndex)}
+                        className="focus:outline-none"
+                        disabled={!hasMacros}
+                        title={hasMacros ? "Segna come completato" : "Configura prima i macro"}
+                      >
+                        {isChecked ? (
+                          <CheckCircle2 className="w-6 h-6 text-green-600" />
+                        ) : (
+                          <Circle className={`w-6 h-6 ${hasMacros ? 'text-gray-400 hover:text-blue-600 cursor-pointer' : 'text-gray-300'}`} />
+                        )}
+                      </button>
+
+                      {/* Nome giorno */}
+                      <h4 className="font-bold flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded text-sm font-medium ${
+                          isToday
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {dayName}
+                        </span>
+                        {isToday && (
+                          <span className="text-xs text-blue-600">(Oggi)</span>
+                        )}
+                      </h4>
+                    </div>
+
+                    {/* Pulsante copia */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleCopyToAll(dayIndex)}
+                      className="text-xs gap-1"
+                      disabled={!hasMacros}
+                    >
+                      <Copy className="w-3 h-3" />
+                      Copia a tutti
+                    </Button>
+                  </div>
+
+                  {/* Input macro + calorie calcolate */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div>
+                      <Label className="text-xs">Proteine (g)</Label>
+                      <Input
+                        type="number"
+                        value={day?.protein || ''}
+                        onChange={(e) => handleUpdateDay(dayIndex, 'protein', e.target.value)}
+                        placeholder="es. 180"
+                        min="0"
+                        step="1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Carboidrati (g)</Label>
+                      <Input
+                        type="number"
+                        value={day?.carbs || ''}
+                        onChange={(e) => handleUpdateDay(dayIndex, 'carbs', e.target.value)}
+                        placeholder="es. 300"
+                        min="0"
+                        step="1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Grassi (g)</Label>
+                      <Input
+                        type="number"
+                        value={day?.fat || ''}
+                        onChange={(e) => handleUpdateDay(dayIndex, 'fat', e.target.value)}
+                        placeholder="es. 70"
+                        min="0"
+                        step="1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Kcal (calcolate)</Label>
+                      <div className="h-10 px-3 py-2 rounded-md border border-input bg-gray-50 flex items-center">
+                        <span className="text-sm font-semibold text-gray-700">
+                          {calculatedKcal > 0 ? calculatedKcal : '-'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

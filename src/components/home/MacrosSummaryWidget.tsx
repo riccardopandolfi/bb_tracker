@@ -5,6 +5,14 @@ import { Apple, ArrowRight } from 'lucide-react';
 
 const DAY_NAMES = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
 
+// Calcola calorie automaticamente
+const calculateKcal = (protein: string, carbs: string, fat: string): number => {
+  const p = parseFloat(protein) || 0;
+  const c = parseFloat(carbs) || 0;
+  const f = parseFloat(fat) || 0;
+  return Math.round(p * 4 + c * 4 + f * 9);
+};
+
 export function MacrosSummaryWidget() {
   const { dailyMacros, getCurrentDayIndex, setCurrentTab } = useApp();
 
@@ -13,8 +21,10 @@ export function MacrosSummaryWidget() {
   const currentDayChecked = dailyMacros?.checked[currentDayIndex];
 
   const hasMacros = currentDay && (
-    currentDay.kcal || currentDay.protein || currentDay.carbs || currentDay.fat
+    currentDay.protein || currentDay.carbs || currentDay.fat
   );
+
+  const calculatedKcal = currentDay ? calculateKcal(currentDay.protein, currentDay.carbs, currentDay.fat) : 0;
 
   return (
     <Card>
@@ -54,7 +64,7 @@ export function MacrosSummaryWidget() {
                 <div>
                   <span className="text-gray-600">Kcal:</span>
                   <span className="ml-1 font-semibold text-gray-900">
-                    {currentDay.kcal || '-'}
+                    {calculatedKcal > 0 ? calculatedKcal : '-'}
                   </span>
                 </div>
                 <div>
