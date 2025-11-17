@@ -237,31 +237,16 @@ export function ExerciseCard({
           </DialogHeader>
           <div className="space-y-2 py-3 sm:py-4">
             {blocks.map((block, blockIndex) => {
-              const duration = block.duration || 0;
-              const restIntraSet = block.rest ? `${block.rest}s` : '-';
-              const restBetweenBlocks = blockIndex < blocks.length - 1 && block.blockRest ? `${block.blockRest}s` : null;
-
               return (
                 <Button
                   key={blockIndex}
                   variant="outline"
-                  className="w-full justify-start h-auto p-4 overflow-hidden"
+                  className="w-full justify-center h-auto p-4"
                   onClick={() => handleSelectBlock(blockIndex)}
                 >
-                  <div className="flex flex-col items-start gap-1 text-left w-full min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="px-2 py-0.5 rounded bg-orange-50 text-orange-700 text-xs font-medium">
-                        Blocco {blockIndex + 1}
-                      </span>
-                    </div>
-                    <div className="text-sm w-full min-w-0" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                      <span>{duration} minuti</span>
-                      <span className="text-muted-foreground ml-2">
-                        • Rest: {restIntraSet}
-                        {restBetweenBlocks && ` • Rest blocco: ${restBetweenBlocks}`}
-                      </span>
-                    </div>
-                  </div>
+                  <span className="px-3 py-1 rounded bg-orange-50 text-orange-700 text-sm font-medium">
+                    Blocco {blockIndex + 1}
+                  </span>
                 </Button>
               );
             })}
@@ -513,69 +498,16 @@ export function ExerciseCard({
           </DialogHeader>
           <div className="space-y-2 py-3 sm:py-4">
             {blocks.map((block, blockIndex) => {
-              const isNormal = block.technique === 'Normale';
-              const sets = block.sets || 0;
-
-              // Determina i carichi da mostrare
-              let loads = '0';
-              if (isNormal) {
-                // Tecnica normale: mostra tutti i carichi separati da '-'
-                const loadsArray = block.targetLoads || [];
-                loads = loadsArray.length > 0 ? loadsArray.join('-') : '0';
-              } else {
-                // Tecnica speciale: mostra carichi per cluster se disponibili
-                if (block.targetLoadsByCluster && block.targetLoadsByCluster.length > 0) {
-                  // Per ogni set, mostra i carichi separati da '/' e i set separati da '-'
-                  loads = block.targetLoadsByCluster.map(setLoads => setLoads.join('/')).join('-');
-                } else {
-                  // Fallback a targetLoads
-                  const loadsArray = block.targetLoads || [];
-                  loads = loadsArray.length > 0 ? loadsArray.join('-') : '0';
-                }
-              }
-
-              const restIntraSet = block.rest ? `${block.rest}s` : '-';
-              const restBetweenBlocks = blockIndex < blocks.length - 1 && block.blockRest ? `${block.blockRest}s` : null;
-
               return (
                 <Button
                   key={blockIndex}
                   variant="outline"
-                  className="w-full justify-start h-auto p-4 overflow-hidden"
+                  className="w-full justify-center h-auto p-4"
                   onClick={() => handleSelectBlock(blockIndex)}
                 >
-                  <div className="flex flex-col items-start gap-1 text-left w-full min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-xs font-medium">
-                        Blocco {blockIndex + 1}
-                      </span>
-                      {block.technique && block.technique !== 'Normale' && (
-                        <span className="text-xs text-muted-foreground">
-                          {block.technique}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-sm w-full min-w-0" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                      {isNormal ? (
-                        block.targetReps && block.targetReps.length > 0 ? (
-                          <span>{block.targetReps.join('-')} @ {loads}kg</span>
-                        ) : (
-                          <span>{sets}×{block.repsBase || 0} @ {loads}kg</span>
-                        )
-                      ) : (
-                        <span>{sets}×{block.techniqueSchema || '-'} @ {loads}kg</span>
-                      )}
-                      <span className="text-muted-foreground ml-2">
-                        • Rest: {restIntraSet}
-                        {restBetweenBlocks && ` • Rest blocco: ${restBetweenBlocks}`}
-                      </span>
-                    </div>
-                    {block.technique === 'Normale' && block.repRange && (
-                      <div className="text-xs text-muted-foreground">
-                        Range: {block.repRange} - {REP_RANGES[block.repRange as keyof typeof REP_RANGES]?.focus || ''}
-                      </div>
-                    )}
-                  </div>
+                  <span className="px-3 py-1 rounded bg-blue-50 text-blue-700 text-sm font-medium">
+                    Blocco {blockIndex + 1}
+                  </span>
                 </Button>
               );
             })}
