@@ -321,29 +321,34 @@ export function ExerciseCard({
                           >
                             {block.technique || 'Normale'}
                           </span>
+                          {/* Pulsante elimina blocco - solo se ci sono più blocchi */}
+                          {blocks.length > 1 && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm(`Eliminare il Blocco ${idx + 1}?`)) {
+                                  onDeleteBlock(idx);
+                                }
+                              }}
+                              className="ml-auto p-1 hover:bg-red-50 rounded transition-colors"
+                              title="Elimina blocco"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-600" />
+                            </button>
+                          )}
                         </div>
 
                         {/* Contenuto blocco */}
                         <div className="space-y-2">
-                          {/* Ramping - Display speciale */}
+                          {/* Ramping - Display testuale chiaro */}
                           {isRamping ? (
-                            <div className="flex w-full flex-wrap items-center gap-2 text-sm p-2 bg-amber-50 border border-amber-200 rounded-md">
-                              <span className="font-medium text-amber-900">
-                                {block.repsBase || '?'} reps
-                              </span>
-                              <span className="text-amber-700">→</span>
-                              <span className="text-gray-600">
-                                start {block.startLoad || '?'}kg
-                              </span>
-                              {block.increment && (
-                                <>
-                                  <span className="text-amber-700">+</span>
-                                  <span className="text-gray-600">{block.increment}kg/set</span>
-                                </>
-                              )}
-                              <span className="text-amber-700">→</span>
-                              <span className="font-semibold text-amber-900">
-                                RPE {block.targetRPE || '?'}
+                            <div className="flex w-full items-center text-sm p-2">
+                              <span className="text-gray-700">
+                                Ramping {block.repsBase || '?'} rep con partenza da {block.startLoad || '?'}kg
+                                {block.increment
+                                  ? ` ed aumento di ${block.increment}kg`
+                                  : ' (aumento libero)'}
+                                {' '}con target RPE {block.targetRPE || '?'}
                               </span>
                             </div>
                           ) : hasDifferentLoadsByCluster ? (
