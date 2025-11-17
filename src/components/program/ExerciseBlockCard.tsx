@@ -50,6 +50,7 @@ export function ExerciseBlockCard({
   const [editingField, setEditingField] = useState<string | null>(null);
   const [tempValue, setTempValue] = useState<string>('');
   const isNormalTechnique = (block.technique || 'Normale') === 'Normale';
+  const isRampingTechnique = block.technique === 'Ramping';
 
   // Helper per gestire input numerici con cancellazione libera
   const getFieldValue = (fieldName: string, actualValue: any) => {
@@ -489,8 +490,8 @@ export function ExerciseBlockCard({
               </SelectContent>
             </Select>
 
-            {/* Technique Params Form */}
-            {block.technique && block.technique !== 'Normale' && (
+            {/* Technique Params Form - Solo per tecniche speciali (escluso Ramping) */}
+            {block.technique && block.technique !== 'Normale' && block.technique !== 'Ramping' && (
               <div className="mt-3 pt-3 border-t border-gray-200">
                 <TechniqueParamsForm
                   technique={block.technique}
@@ -499,12 +500,81 @@ export function ExerciseBlockCard({
                 />
               </div>
             )}
+
+            {/* Configurazione Ramping */}
+            {isRampingTechnique && (
+              <div className="mt-3 pt-3 border-t border-gray-200 space-y-3 bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-lg border-2 border-amber-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-sm font-bold text-amber-900">⚡ Configurazione Ramping</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs text-gray-700 mb-1.5 block font-medium">Reps per Set</Label>
+                    <Input
+                      type="text"
+                      value={block.repsBase || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '' || /^\d+$/.test(value)) {
+                          onUpdate(blockIndex, 'repsBase', value);
+                        }
+                      }}
+                      placeholder="es. 5"
+                      className="h-10 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-700 mb-1.5 block font-medium">Target RPE</Label>
+                    <Input
+                      type="number"
+                      step="0.5"
+                      value={getFieldValue('targetRPE-ramping', block.targetRPE)}
+                      onFocus={() => handleNumericFocus('targetRPE-ramping', block.targetRPE)}
+                      onChange={(e) => handleNumericChange(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      onBlur={(e) => handleNumericBlur('targetRPE', e.target.value, 0)}
+                      placeholder="es. 9"
+                      className="h-10 bg-white"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs text-gray-700 mb-1.5 block font-medium">Carico Iniziale (kg)</Label>
+                    <Input
+                      type="text"
+                      value={block.startLoad || ''}
+                      onChange={(e) => onUpdate(blockIndex, 'startLoad', e.target.value)}
+                      placeholder="es. 100"
+                      className="h-10 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-700 mb-1.5 block font-medium">
+                      Incremento (kg) <span className="text-xs text-amber-600">(opzionale)</span>
+                    </Label>
+                    <Input
+                      type="text"
+                      value={block.increment || ''}
+                      onChange={(e) => onUpdate(blockIndex, 'increment', e.target.value)}
+                      placeholder="es. 10 o vuoto"
+                      className="h-10 bg-white"
+                    />
+                  </div>
+                </div>
+                <div className="bg-amber-100 border border-amber-300 rounded-md p-2 text-xs text-amber-900">
+                  <strong>Info:</strong> Continua ad aggiungere set aumentando il carico fino a raggiungere RPE {block.targetRPE || 9}.
+                  {block.increment ? ` Incremento suggerito: +${block.increment}kg per set.` : ' Incremento libero.'}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Volume: Sets & Reps */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-block">Volume</Label>
-            {isNormalTechnique ? (
+          {/* Volume: Sets & Reps - Nascosto per Ramping */}
+          {!isRampingTechnique && (
+            <div className="space-y-3">
+              <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-block">Volume</Label>
+              {isNormalTechnique ? (
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs text-gray-600 mb-1.5 block">Sets</Label>
@@ -652,10 +722,12 @@ export function ExerciseBlockCard({
                 )}
               </div>
             )}
-          </div>
+            </div>
+          )}
 
-          {/* Carichi */}
-          <div className="space-y-2">
+          {/* Carichi - Nascosto per Ramping */}
+          {!isRampingTechnique && (
+            <div className="space-y-2">
             <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-flex items-center gap-2">
               <Dumbbell className="w-3.5 h-3.5" />
               Carichi per Set
@@ -681,7 +753,8 @@ export function ExerciseBlockCard({
                 Modifica
               </Button>
             </div>
-          </div>
+            </div>
+          )}
 
           {/* Intensità */}
           <div className="space-y-3">

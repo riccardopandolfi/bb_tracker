@@ -115,13 +115,21 @@ export function ExerciseHistoryDialog({
       const sets = block.sets || 0;
       const technique = block.technique || 'Normale';
       const isNormal = technique === 'Normale';
+      const isRamping = technique === 'Ramping';
       const loads = block.targetLoads && block.targetLoads.length > 0 ? block.targetLoads : [];
       const blockColor = getBlockColor(idx);
       const techniqueStr = technique !== 'Normale' ? ` - ${technique}` : '';
 
       let displayStr = '';
 
-      if (isNormal) {
+      if (isRamping) {
+        // Tecnica Ramping
+        displayStr = `${block.repsBase || '?'} reps → start ${block.startLoad || '?'}kg`;
+        if (block.increment) {
+          displayStr += ` +${block.increment}kg/set`;
+        }
+        displayStr += ` → RPE ${block.targetRPE || '?'}`;
+      } else if (isNormal) {
         // Tecnica normale
         let repsStr = '-';
         if (block.targetReps && block.targetReps.length > 0) {

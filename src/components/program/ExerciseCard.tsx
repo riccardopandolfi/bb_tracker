@@ -298,10 +298,12 @@ export function ExerciseCard({
                     : null;
                   const restBetweenBlocks = idx < blocks.length - 1 && block.blockRest ? `${block.blockRest}s` : null;
                   
-                  const hasDifferentLoadsByCluster = !isNormal && 
-                    block.targetLoadsByCluster && 
+                  const hasDifferentLoadsByCluster = !isNormal &&
+                    block.targetLoadsByCluster &&
                     block.targetLoadsByCluster.length > 0;
-                  
+
+                  const isRamping = block.technique === 'Ramping';
+
                   return (
                     <div key={idx}>
                       <div className="w-full border border-gray-200 rounded-lg p-3 bg-white hover:border-gray-300 transition-colors">
@@ -320,11 +322,32 @@ export function ExerciseCard({
                             {block.technique || 'Normale'}
                           </span>
                         </div>
-                      
+
                         {/* Contenuto blocco */}
                         <div className="space-y-2">
-                          {/* Tecnica speciale con sottoblocchi */}
-                          {hasDifferentLoadsByCluster ? (
+                          {/* Ramping - Display speciale */}
+                          {isRamping ? (
+                            <div className="flex w-full flex-wrap items-center gap-2 text-sm p-2 bg-amber-50 border border-amber-200 rounded-md">
+                              <span className="font-medium text-amber-900">
+                                {block.repsBase || '?'} reps
+                              </span>
+                              <span className="text-amber-700">→</span>
+                              <span className="text-gray-600">
+                                start {block.startLoad || '?'}kg
+                              </span>
+                              {block.increment && (
+                                <>
+                                  <span className="text-amber-700">+</span>
+                                  <span className="text-gray-600">{block.increment}kg/set</span>
+                                </>
+                              )}
+                              <span className="text-amber-700">→</span>
+                              <span className="font-semibold text-amber-900">
+                                RPE {block.targetRPE || '?'}
+                              </span>
+                            </div>
+                          ) : hasDifferentLoadsByCluster ? (
+                            /* Tecnica speciale con sottoblocchi */
                             <div className="space-y-1.5">
                               {block.targetLoadsByCluster!.map((setLoads, setIdx) => {
                                 const loadsDisplay = `${setLoads.join('-')}kg`;

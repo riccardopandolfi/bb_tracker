@@ -42,6 +42,7 @@ export type RepRangeKey = keyof typeof REP_RANGES;
 // Tecniche di allenamento default
 export const DEFAULT_TECHNIQUES = [
   'Normale',
+  'Ramping',
   'Rest-Pause',
   'Myo-Reps',
   'Drop-Set',
@@ -107,6 +108,10 @@ export interface ExerciseBlock {
   techniqueSchema?: string;
   techniqueParams?: Record<string, any>; // Parametri tecnica (per sistema parametrizzato)
   coefficient?: number;
+
+  // Per Ramping
+  startLoad?: string; // Carico iniziale per ramping
+  increment?: string; // Incremento carico per ramping (opzionale - può essere libero)
 
   // Per cardio
   duration?: number; // Minuti

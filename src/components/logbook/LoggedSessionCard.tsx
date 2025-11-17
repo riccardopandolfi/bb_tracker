@@ -140,6 +140,7 @@ export function LoggedSessionCard({
   // Group sets by setNum for techniques
   const uniqueSets = Array.from(new Set(session.sets.map(s => s.setNum)));
   const isSpecialTechnique = session.technique !== 'Normale';
+  const isRampingTechnique = session.technique === 'Ramping';
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
@@ -187,6 +188,7 @@ export function LoggedSessionCard({
                   {groupedSessions.map((blockSession, idx) => {
                     const blockUniqueSets = Array.from(new Set(blockSession.sets.map(s => s.setNum)));
                     const blockIsSpecial = blockSession.technique !== 'Normale';
+                    const isRamping = blockSession.technique === 'Ramping';
                     const numSets = blockUniqueSets.length;
 
                     // Calcola reps target per set (per tecnica normale)
@@ -416,8 +418,17 @@ export function LoggedSessionCard({
                               <span className="sm:hidden font-semibold text-gray-900">P:</span>
                               <span className="hidden sm:inline text-gray-600">Programma:</span>
                               <span className="font-medium text-gray-900">
-                                {numSets}×{blockIsSpecial ? blockSession.techniqueSchema || '' : targetRepsPerSet.toFixed(0)}
-                                {targetLoadsStr !== '-' && ` @ ${targetLoadsStr}kg`}
+                                {isRamping ? (
+                                  <>
+                                    {originalBlock?.repsBase || '?'} reps → start {originalBlock?.startLoad || '?'}kg
+                                    {originalBlock?.increment && ` +${originalBlock.increment}kg/set`} → RPE {originalBlock?.targetRPE || '?'}
+                                  </>
+                                ) : (
+                                  <>
+                                    {numSets}×{blockIsSpecial ? blockSession.techniqueSchema || '' : targetRepsPerSet.toFixed(0)}
+                                    {targetLoadsStr !== '-' && ` @ ${targetLoadsStr}kg`}
+                                  </>
+                                )}
                               </span>
                             </div>
                             <span className="hidden sm:inline text-gray-400">→</span>
@@ -441,7 +452,53 @@ export function LoggedSessionCard({
                 </div>
               ) : (
                 <div className="space-y-2 mb-3">
-                  {isSpecialTechnique ? (
+                  {isRampingTechnique ? (
+                    // Tecnica Ramping: mostra informazioni speciali
+                    <div className="w-full border border-amber-200 rounded-md p-3 bg-amber-50">
+                      <div className="flex items-center gap-2 text-xs mb-2 pb-2 border-b border-amber-200">
+                        <span
+                          className="px-2 py-0.5 rounded text-xs font-medium bg-amber-600 text-white"
+                        >
+                          Ramping
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex w-full flex-col gap-2 text-xs p-2 sm:flex-row sm:items-center sm:gap-2">
+                          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-1.5 w-full">
+                            <div className="flex items-baseline gap-1">
+                              <span className="sm:hidden font-semibold text-gray-900">P:</span>
+                              <span className="hidden sm:inline text-gray-600">Programma:</span>
+                              <span className="font-medium text-gray-900">
+                                {getOriginalBlock(session)?.repsBase || session.techniqueSchema || '?'} reps →
+                                start {getOriginalBlock(session)?.startLoad || '?'}kg
+                                {getOriginalBlock(session)?.increment && ` +${getOriginalBlock(session)!.increment}kg/set`} →
+                                RPE {session.targetRPE || '?'}
+                              </span>
+                            </div>
+                            <span className="hidden sm:inline text-gray-400">→</span>
+                            <div className="flex items-baseline gap-1">
+                              <span className="sm:hidden font-semibold text-gray-900">E:</span>
+                              <span className="hidden sm:inline text-gray-600">Eseguito:</span>
+                              <span className="font-semibold text-gray-900">
+                                {uniqueSets.map((setNum, i) => {
+                                  const setData = session.sets.filter(s => s.setNum === setNum);
+                                  const repsDisplay = setData[0]?.reps || '0';
+                                  const loadValue = parseFloat(setData[0]?.load || '0').toFixed(0);
+                                  const rpeValue = setData[0]?.rpe || '';
+                                  return (
+                                    <span key={setNum}>
+                                      {repsDisplay}@{loadValue}kg{rpeValue && ` (RPE ${rpeValue})`}
+                                      {i < uniqueSets.length - 1 && ' • '}
+                                    </span>
+                                  );
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : isSpecialTechnique ? (
                     // Tecnica speciale: mostra set individuali
                     <div className="w-full border border-gray-200 rounded-md p-3 bg-white">
                       <div className="flex items-center gap-2 text-xs mb-2 pb-2 border-b border-gray-100">
