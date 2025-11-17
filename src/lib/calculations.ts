@@ -222,7 +222,6 @@ export function exportToCSV(data: {
   exercises: Exercise[];
   weeks: Record<number, Week>;
   loggedSessions: LoggedSession[];
-  macros: Record<number, { kcal: string; protein: string; carbs: string; fat: string; notes: string }>;
 }): void {
   let csv = 'BODYBUILDING TRACKER EXPORT\n\n';
 
@@ -270,17 +269,6 @@ export function exportToCSV(data: {
     const repRange = s.technique === 'Normale' ? s.repRange : 'N/A';
     csv += `${s.date},${s.weekNum},"${s.exercise}","${s.technique}","${repRange}",${s.totalReps},${s.targetReps},${s.completion}%,${s.avgRPE}\n`;
   });
-
-  csv += '\n\nMACROS\n';
-  csv += 'Week,Kcal,Protein,Carbs,Fat,Note\n';
-  Object.keys(data.macros)
-    .sort((a, b) => Number(a) - Number(b))
-    .forEach((weekNum) => {
-      const m = data.macros[Number(weekNum)];
-      if (m) {
-        csv += `${weekNum},${m.kcal || ''},${m.protein || ''},${m.carbs || ''},${m.fat || ''},"${m.notes || ''}"\n`;
-      }
-    });
 
   // Download
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

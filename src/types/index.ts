@@ -170,7 +170,6 @@ export interface Program {
   description?: string;
   createdAt: string;
   weeks: Record<number, Week>;
-  macros: Record<number, WeekMacros>;
 }
 
 // Logged Sessions
@@ -210,15 +209,6 @@ export interface LoggedSession {
 
   blockRest?: number; // Rest dopo questo blocco (null se è l'ultimo blocco)
   notes?: string; // Note del log
-}
-
-// Macros
-export interface WeekMacros {
-  kcal: string;
-  protein: string;
-  carbs: string;
-  fat: string;
-  notes: string;
 }
 
 // Daily Macros

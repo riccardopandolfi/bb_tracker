@@ -10,8 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Checkbox } from './ui/checkbox';
 import { Button } from './ui/button';
 import { useState } from 'react';
-import { DailyMacrosCard } from './home/DailyMacrosCard';
-import { DailyMacrosSettingsModal } from './home/DailyMacrosSettingsModal';
+import { MacrosSummaryWidget } from './home/MacrosSummaryWidget';
 import { adjustColor } from '@/lib/colorUtils';
 
 export function HomeTab() {
@@ -27,7 +26,6 @@ export function HomeTab() {
     getMuscleColor: resolveMuscleColor,
   } = useApp();
   const [weekRange, setWeekRange] = useState<'all' | 'last2' | 'last4'>('all');
-  const [showDailyMacrosSettings, setShowDailyMacrosSettings] = useState(false);
 
   // Default muscle groups to show
   const [selectedMuscles, setSelectedMuscles] = useState<Set<string>>(new Set([
@@ -362,15 +360,9 @@ export function HomeTab() {
           </CardContent>
         </Card>
 
-        {/* Daily Macros */}
-        <DailyMacrosCard onOpenSettings={() => setShowDailyMacrosSettings(true)} />
+        {/* Macro Summary Widget */}
+        <MacrosSummaryWidget />
       </div>
-
-      {/* Daily Macros Settings Modal */}
-      <DailyMacrosSettingsModal
-        open={showDailyMacrosSettings}
-        onOpenChange={setShowDailyMacrosSettings}
-      />
 
       {/* Volume Chart */}
       <Card className="min-w-0 w-full">

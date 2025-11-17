@@ -9,10 +9,9 @@ import { LogbookTable } from './logbook/LogbookTable';
 import { ChartsSection } from './logbook/ChartsSection';
 
 export function LogbookTab() {
-  const { exercises, getCurrentWeeks, getCurrentMacros, getCurrentProgram, loggedSessions, currentProgramId } = useApp();
+  const { exercises, getCurrentWeeks, getCurrentProgram, loggedSessions, currentProgramId } = useApp();
 
   const weeks = getCurrentWeeks();
-  const macros = getCurrentMacros();
   const currentProgram = getCurrentProgram();
 
   // Get sessions for current program first
@@ -37,7 +36,7 @@ export function LogbookTab() {
   });
 
   const handleExport = () => {
-    exportToCSV({ exercises, weeks, loggedSessions, macros });
+    exportToCSV({ exercises, weeks, loggedSessions });
   };
 
   // Filter sessions by current program

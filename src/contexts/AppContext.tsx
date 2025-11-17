@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
-import { AppState, Exercise, Week, LoggedSession, WeekMacros, CustomTechnique, Program, DailyMacrosWeek, DayMacros } from '@/types';
+import { AppState, Exercise, Week, LoggedSession, CustomTechnique, Program, DailyMacrosWeek, DayMacros } from '@/types';
 import { DEFAULT_EXERCISES, MUSCLE_COLORS } from '@/lib/constants';
 import { DEFAULT_MUSCLE_GROUPS } from '@/types';
 import { generateDemoPrograms, generateDemoLoggedSessions } from '@/lib/demoData';
@@ -24,7 +24,6 @@ interface AppContextType extends AppState {
   addLoggedSession: (session: LoggedSession) => void;
   updateLoggedSession: (session: LoggedSession) => void;
   deleteLoggedSession: (sessionId: number) => void;
-  setMacros: (weekNum: number, macros: WeekMacros, programId?: number) => void;
   addMuscleGroup: (muscleGroup: string, color?: string) => void;
   updateMuscleGroupColor: (muscleGroup: string, color: string) => void;
   deleteMuscleGroup: (muscleGroup: string) => boolean;
@@ -46,7 +45,6 @@ interface AppContextType extends AppState {
   // Helper getters
   getCurrentProgram: () => Program | undefined;
   getCurrentWeeks: () => Record<number, Week>;
-  getCurrentMacros: () => Record<number, WeekMacros>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -138,11 +136,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
             migratedCurrentProgramId = firstProgramId ? Number(firstProgramId) : null;
           }
         } else {
-          // Old format: convert weeks/macros to Program 1
+          // Old format: convert weeks to Program 1
           console.log('Migrating old data format to new program structure...');
 
           const oldWeeks = data.weeks || { 1: { days: [] } };
-          const oldMacros = data.macros || { 1: { kcal: '', protein: '', carbs: '', fat: '', notes: '' } };
 
           migratedPrograms = {
             1: {
@@ -151,7 +148,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
               description: 'Programma migrato dalla versione precedente',
               createdAt: new Date().toISOString(),
               weeks: oldWeeks,
-              macros: oldMacros,
             },
           };
 
@@ -331,11 +327,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return program?.weeks || {};
   };
 
-  const getCurrentMacros = () => {
-    const program = getCurrentProgram();
-    return program?.macros || {};
-  };
-
   const setCurrentTab = (tab: 'home' | 'library' | 'programs' | 'program' | 'logbook' | 'macros') => {
     setState((prev) => ({ ...prev, currentTab: tab }));
   };
@@ -385,7 +376,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         description: description || '',
         createdAt: new Date().toISOString(),
         weeks: { 1: { days: [] } },
-        macros: { 1: { kcal: '', protein: '', carbs: '', fat: '', notes: '' } },
       };
 
       return {
@@ -485,10 +475,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ...program.weeks,
         [weekNum]: { days: [] },
       },
-      macros: {
-        ...program.macros,
-        [weekNum]: { kcal: '', protein: '', carbs: '', fat: '', notes: '' },
-      },
     });
   };
 
@@ -506,10 +492,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       weeks: {
         ...program.weeks,
         [newWeekNum]: JSON.parse(JSON.stringify(sourceWeek)),
-      },
-      macros: {
-        ...program.macros,
-        [newWeekNum]: JSON.parse(JSON.stringify(program.macros[weekNum] || {})),
       },
     });
 
@@ -568,21 +550,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         loggedSessions: prev.loggedSessions.filter((s) => s.id !== sessionId),
       }));
     }
-  };
-
-  const setMacros = (weekNum: number, macros: WeekMacros, programId?: number) => {
-    const targetProgramId = programId ?? state.currentProgramId;
-    if (targetProgramId == null) return;
-    const program = state.programs[targetProgramId];
-    if (!program) return;
-
-    updateProgram(targetProgramId, {
-      ...program,
-      macros: {
-        ...program.macros,
-        [weekNum]: macros,
-      },
-    });
   };
 
   const addMuscleGroup = (muscleGroup: string, color?: string) => {
@@ -842,7 +809,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addLoggedSession,
         updateLoggedSession,
         deleteLoggedSession,
-        setMacros,
         addMuscleGroup,
         updateMuscleGroupColor,
         deleteMuscleGroup,
@@ -860,7 +826,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         getLastCheckedDayIndex,
         getCurrentProgram,
         getCurrentWeeks,
-        getCurrentMacros,
       }}
     >
       {children}

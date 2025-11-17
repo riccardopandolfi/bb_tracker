@@ -23,7 +23,6 @@ export function generateDemoPrograms(): Program[] {
     description: 'Programma PPL con volume progressivo su 8 settimane. ~20 serie per gruppo muscolare principale.',
     createdAt: new Date().toISOString(),
     weeks: {},
-    macros: {},
   };
 
   for (let weekNum = 1; weekNum <= 8; weekNum++) {
@@ -333,14 +332,6 @@ export function generateDemoPrograms(): Program[] {
         },
       ],
     };
-
-    program1.macros[weekNum] = {
-      kcal: (2800 + weekNum * 25).toString(),
-      protein: (180 + weekNum * 2).toString(),
-      carbs: (350 + weekNum * 5).toString(),
-      fat: (70 + weekNum).toString(),
-      notes: weekNum === 7 ? 'Settimana di deload' : weekNum === 8 ? 'Settimana di peak' : '',
-    };
   }
 
   // Programma 2: Upper Lower (8 settimane)
@@ -350,7 +341,6 @@ export function generateDemoPrograms(): Program[] {
     description: 'Programma Upper/Lower con volume alto su 8 settimane. ~20 serie per gruppo muscolare principale.',
     createdAt: new Date().toISOString(),
     weeks: {},
-    macros: {},
   };
 
   for (let weekNum = 1; weekNum <= 8; weekNum++) {
@@ -689,14 +679,6 @@ export function generateDemoPrograms(): Program[] {
           ],
         },
       ],
-    };
-
-    program2.macros[weekNum] = {
-      kcal: (2900 + weekNum * 25).toString(),
-      protein: (190 + weekNum * 2).toString(),
-      carbs: (360 + weekNum * 5).toString(),
-      fat: (75 + weekNum).toString(),
-      notes: weekNum === 7 ? 'Settimana di deload' : weekNum === 8 ? 'Settimana di peak' : '',
     };
   }
 
