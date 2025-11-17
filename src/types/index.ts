@@ -221,6 +221,19 @@ export interface WeekMacros {
   notes: string;
 }
 
+// Daily Macros
+export interface DayMacros {
+  kcal: string;
+  protein: string;
+  carbs: string;
+  fat: string;
+}
+
+export interface DailyMacrosWeek {
+  days: DayMacros[]; // Array di 7 giorni (0=Lunedì, 6=Domenica)
+  checked: boolean[]; // Array di 7 boolean per tracking spunte
+}
+
 // Global State
 export interface AppState {
   currentTab: 'home' | 'library' | 'programs' | 'program' | 'logbook' | 'macros';
@@ -232,6 +245,7 @@ export interface AppState {
   muscleGroups: string[]; // Gruppi muscolari personalizzati
   muscleGroupColors: Record<string, string>; // Colori per gruppi muscolari personalizzati
   customTechniques: CustomTechnique[]; // Tecniche personalizzate
+  dailyMacros: DailyMacrosWeek | null; // Macro giornalieri settimanali
 }
 
 // Volume calculations

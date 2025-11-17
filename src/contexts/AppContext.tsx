@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
-import { AppState, Exercise, Week, LoggedSession, WeekMacros, CustomTechnique, Program } from '@/types';
+import { AppState, Exercise, Week, LoggedSession, WeekMacros, CustomTechnique, Program, DailyMacrosWeek, DayMacros } from '@/types';
 import { DEFAULT_EXERCISES, MUSCLE_COLORS } from '@/lib/constants';
 import { DEFAULT_MUSCLE_GROUPS } from '@/types';
 import { generateDemoPrograms, generateDemoLoggedSessions } from '@/lib/demoData';
@@ -36,6 +36,13 @@ interface AppContextType extends AppState {
   clearDemoData: () => void;
   hasDemoData: () => boolean;
 
+  // Daily Macros
+  initializeDailyMacros: () => void;
+  updateDailyMacros: (dayIndex: number, macros: DayMacros) => void;
+  checkDay: (dayIndex: number) => void;
+  getCurrentDayIndex: () => number;
+  getLastCheckedDayIndex: () => number | null;
+
   // Helper getters
   getCurrentProgram: () => Program | undefined;
   getCurrentWeeks: () => Record<number, Week>;
@@ -56,6 +63,7 @@ const defaultState: AppState = {
   muscleGroups: [...DEFAULT_MUSCLE_GROUPS],
   muscleGroupColors: {},
   customTechniques: [],
+  dailyMacros: null,
 };
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -266,6 +274,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       muscleGroups: data.muscleGroups || [...DEFAULT_MUSCLE_GROUPS],
       muscleGroupColors: data.muscleGroupColors || {},
       customTechniques: data.customTechniques || [],
+      dailyMacros: data.dailyMacros || null,
     };
   };
 
@@ -646,6 +655,88 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Daily Macros Functions
+  const initializeDailyMacros = () => {
+    const emptyDay: DayMacros = { kcal: '', protein: '', carbs: '', fat: '' };
+    const dailyMacros: DailyMacrosWeek = {
+      days: Array(7).fill(null).map(() => ({ ...emptyDay })),
+      checked: Array(7).fill(false),
+    };
+    setState((prev) => ({ ...prev, dailyMacros }));
+  };
+
+  const updateDailyMacros = (dayIndex: number, macros: DayMacros) => {
+    if (dayIndex < 0 || dayIndex > 6) return;
+
+    setState((prev) => {
+      if (!prev.dailyMacros) return prev;
+
+      const updatedDays = [...prev.dailyMacros.days];
+      updatedDays[dayIndex] = macros;
+
+      return {
+        ...prev,
+        dailyMacros: {
+          ...prev.dailyMacros,
+          days: updatedDays,
+        },
+      };
+    });
+  };
+
+  const checkDay = (dayIndex: number) => {
+    if (dayIndex < 0 || dayIndex > 6) return;
+
+    setState((prev) => {
+      if (!prev.dailyMacros) return prev;
+
+      const updatedChecked = [...prev.dailyMacros.checked];
+      updatedChecked[dayIndex] = true;
+
+      // Controlla se tutti i giorni sono spuntati
+      const allChecked = updatedChecked.every(c => c === true);
+
+      if (allChecked) {
+        // Reset: tutti i giorni tornano a non spuntati
+        return {
+          ...prev,
+          dailyMacros: {
+            ...prev.dailyMacros,
+            checked: Array(7).fill(false),
+          },
+        };
+      }
+
+      return {
+        ...prev,
+        dailyMacros: {
+          ...prev.dailyMacros,
+          checked: updatedChecked,
+        },
+      };
+    });
+  };
+
+  const getCurrentDayIndex = (): number => {
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0=Domenica, 1=Lunedì, ..., 6=Sabato
+    // Converti in 0=Lunedì, ..., 6=Domenica
+    return dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  };
+
+  const getLastCheckedDayIndex = (): number | null => {
+    if (!state.dailyMacros) return null;
+
+    // Trova l'ultimo giorno spuntato (dall'alto verso il basso: da Lunedì a Domenica)
+    for (let i = 6; i >= 0; i--) {
+      if (state.dailyMacros.checked[i]) {
+        return i;
+      }
+    }
+
+    return null;
+  };
+
   const resetAllData = () => {
     if (confirm('Cancellare tutti i dati? Questa azione è irreversibile!')) {
       localStorage.removeItem(STORAGE_KEY);
@@ -762,6 +853,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         loadDemoData,
         clearDemoData,
         hasDemoData,
+        initializeDailyMacros,
+        updateDailyMacros,
+        checkDay,
+        getCurrentDayIndex,
+        getLastCheckedDayIndex,
         getCurrentProgram,
         getCurrentWeeks,
         getCurrentMacros,
