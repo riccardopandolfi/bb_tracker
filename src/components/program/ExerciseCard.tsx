@@ -236,7 +236,7 @@ export function ExerciseCard({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-3 sm:py-4">
-            {blocks.map((block, blockIndex) => {
+            {blocks.map((_, blockIndex) => {
               return (
                 <Button
                   key={blockIndex}
@@ -497,7 +497,7 @@ export function ExerciseCard({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-3 sm:py-4">
-            {blocks.map((block, blockIndex) => {
+            {blocks.map((_, blockIndex) => {
               return (
                 <Button
                   key={blockIndex}

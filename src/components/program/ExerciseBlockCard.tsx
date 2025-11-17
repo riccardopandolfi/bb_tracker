@@ -525,7 +525,7 @@ export function ExerciseBlockCard({
                 </div>
                 <div>
                   <Label className="text-xs text-gray-600 mb-1.5 block">
-                    Reps Base <span className="text-xs text-muted-foreground">(numero o MAX)</span>
+                    Reps Base <span className="text-xs text-muted-foreground"></span>
                     {block.targetReps && block.targetReps.length > 0 && (
                       <span className="text-xs text-orange-600 ml-1">(disabilitato - reps personalizzate attive)</span>
                     )}
