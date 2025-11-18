@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, isSupabaseConfigured } from './supabase';
 import { AppState } from '@/types';
 
 export interface AppStateRow {
@@ -11,6 +11,10 @@ export interface AppStateRow {
  * Carica lo stato dell'app dal database
  */
 export async function loadAppState(): Promise<AppState | null> {
+  if (!supabase || !isSupabaseConfigured) {
+    console.warn('Supabase non configurato: carico solo lo stato locale.');
+    return null;
+  }
   try {
     const { data, error } = await supabase
       .from('app_state')
@@ -34,6 +38,10 @@ export async function loadAppState(): Promise<AppState | null> {
  * Salva lo stato dell'app nel database
  */
 export async function saveAppState(state: AppState): Promise<boolean> {
+  if (!supabase || !isSupabaseConfigured) {
+    console.warn('Supabase non configurato: salto il salvataggio remoto.');
+    return false;
+  }
   try {
     const { error } = await supabase
       .from('app_state')
@@ -58,7 +66,13 @@ export async function saveAppState(state: AppState): Promise<boolean> {
 export function subscribeToAppState(
   callback: (state: AppState) => void
 ) {
-  const channel = supabase
+  const client = supabase;
+
+  if (!client || !isSupabaseConfigured) {
+    console.warn('Supabase non configurato: la sottoscrizione real-time è disattivata.');
+    return () => void 0;
+  }
+  const channel = client
     .channel('app_state_changes')
     .on(
       'postgres_changes',
@@ -79,7 +93,7 @@ export function subscribeToAppState(
 
   // Ritorna funzione per annullare la sottoscrizione
   return () => {
-    supabase.removeChannel(channel);
+    client.removeChannel(channel);
   };
 }
 
@@ -87,6 +101,10 @@ export function subscribeToAppState(
  * Migra dati da localStorage a Supabase (da eseguire una sola volta)
  */
 export async function migrateFromLocalStorage(localData: AppState): Promise<boolean> {
+  if (!supabase || !isSupabaseConfigured) {
+    console.warn('Supabase non configurato: impossibile migrare i dati ora.');
+    return false;
+  }
   try {
     // Prima verifica se il database è vuoto
     const currentState = await loadAppState();
