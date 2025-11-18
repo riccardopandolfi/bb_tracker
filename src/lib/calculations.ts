@@ -1,4 +1,4 @@
-import { ProgramExercise, Week, LoggedSession, VolumeData, Exercise, ExerciseBlock } from '@/types';
+import { ProgramExercise, Week, VolumeData, Exercise, ExerciseBlock } from '@/types';
 import { getExerciseBlocks } from './exerciseUtils';
 
 /**
@@ -213,67 +213,4 @@ export function getRPEColor(rpe: number): string {
   if (rpe < 8) return 'text-yellow-600';
   if (rpe < 9) return 'text-orange-600';
   return 'text-red-600';
-}
-
-/**
- * Export data to CSV
- */
-export function exportToCSV(data: {
-  exercises: Exercise[];
-  weeks: Record<number, Week>;
-  loggedSessions: LoggedSession[];
-}): void {
-  let csv = 'BODYBUILDING TRACKER EXPORT\n\n';
-
-  // Esercizi
-  csv += 'LIBRERIA ESERCIZI\n';
-  csv += 'Nome,Tipo,Muscolo 1,%,Muscolo 2,%,Muscolo 3,%,Attrezzatura Cardio\n';
-  data.exercises.forEach((ex) => {
-    csv += `"${ex.name}","${ex.type}"`;
-    if (ex.type === 'cardio') {
-      csv += ',,,,,,' + (ex.cardioEquipment || '');
-    } else {
-      for (let i = 0; i < 3; i++) {
-        if (ex.muscles && ex.muscles[i]) {
-          csv += `,"${ex.muscles[i].muscle}",${ex.muscles[i].percent}`;
-        } else {
-          csv += ',,';
-        }
-      }
-      csv += ',';
-    }
-    csv += '\n';
-  });
-
-  csv += '\n\nSCHEDA\n';
-  csv += 'Week,Giorno,Esercizio,Tipo,Sets,Reps,Carichi,Tecnica,Schema,Coeff,Rest,Durata,Note\n';
-  Object.keys(data.weeks)
-    .sort((a, b) => Number(a) - Number(b))
-    .forEach((weekNum) => {
-      data.weeks[Number(weekNum)].days.forEach((day) => {
-        day.exercises.forEach((ex) => {
-          if (ex.exerciseType === 'cardio') {
-            csv += `${weekNum},"${day.name}","${ex.exerciseName}","cardio",,,,,,,,"${ex.duration || ''}","${ex.notes}"\n`;
-          } else {
-            const loads = (ex.targetLoads || []).join('-');
-            csv += `${weekNum},"${day.name}","${ex.exerciseName}","resistance",${ex.sets || ''},"${ex.repsBase || ''}","${loads}","${ex.technique || ''}","${ex.techniqueSchema || ''}",${ex.coefficient || ''},${ex.rest || ''},,"${ex.notes}"\n`;
-          }
-        });
-      });
-    });
-
-  csv += '\n\nSESSIONI LOGGATE\n';
-  csv += 'Data,Week,Esercizio,Tecnica,Rep Range,Reps,Target,Completamento,RPE\n';
-  data.loggedSessions.forEach((s) => {
-    // Rep Range solo per tecniche normali, altrimenti N/A
-    const repRange = s.technique === 'Normale' ? s.repRange : 'N/A';
-    csv += `${s.date},${s.weekNum},"${s.exercise}","${s.technique}","${repRange}",${s.totalReps},${s.targetReps},${s.completion}%,${s.avgRPE}\n`;
-  });
-
-  // Download
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `bodybuilding-tracker-${new Date().toISOString().split('T')[0]}.csv`;
-  link.click();
 }

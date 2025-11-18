@@ -1,17 +1,14 @@
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Download, Folder } from 'lucide-react';
-import { exportToCSV } from '@/lib/calculations';
+import { Folder } from 'lucide-react';
 import { LogbookFilters } from './logbook/LogbookFilters';
 import { LogbookTable } from './logbook/LogbookTable';
 import { ChartsSection } from './logbook/ChartsSection';
 
 export function LogbookTab() {
-  const { exercises, getCurrentWeeks, getCurrentProgram, loggedSessions, currentProgramId } = useApp();
+  const { getCurrentProgram, loggedSessions, currentProgramId } = useApp();
 
-  const weeks = getCurrentWeeks();
   const currentProgram = getCurrentProgram();
 
   // Get sessions for current program first
@@ -35,10 +32,6 @@ export function LogbookTab() {
     dayName: lastDay || '',
   });
 
-  const handleExport = () => {
-    exportToCSV({ exercises, weeks, loggedSessions });
-  };
-
   // Filter sessions by current program
   const filteredSessions = currentProgramSessions.filter((session) => {
     // Apply user filters
@@ -59,18 +52,12 @@ export function LogbookTab() {
             <h2 className="text-xl sm:text-2xl font-bold">Logbook e Progressioni</h2>
             <p className="text-sm sm:text-base text-muted-foreground">Analizza i tuoi allenamenti e le tue progressioni</p>
           </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-            {currentProgram && (
-              <Badge variant="secondary" className="gap-2 px-3 py-1.5 justify-center sm:justify-start">
-                <Folder className="w-4 h-4" />
-                <span className="truncate">{currentProgram.name}</span>
-              </Badge>
-            )}
-            <Button onClick={handleExport} variant="outline" className="w-full sm:w-auto">
-              <Download className="w-4 h-4 mr-2" />
-              Esporta CSV
-            </Button>
-          </div>
+          {currentProgram && (
+            <Badge variant="secondary" className="gap-2 px-3 py-1.5 justify-center sm:justify-start">
+              <Folder className="w-4 h-4" />
+              <span className="truncate">{currentProgram.name}</span>
+            </Badge>
+          )}
         </div>
 
         {/* Filters */}
