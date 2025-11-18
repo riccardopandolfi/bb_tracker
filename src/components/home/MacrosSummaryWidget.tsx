@@ -52,36 +52,32 @@ export function MacrosSummaryWidget() {
           </div>
         ) : (
           <div className="space-y-3">
-            <div className={`p-3 rounded-lg border ${
-              currentDayChecked
-                ? 'border-green-200 bg-green-50'
-                : 'border-black'
-            }`}>
-              <div className="text-xs font-semibold mb-2 uppercase tracking-wide text-gray-700">
+            <div className="p-4 rounded-lg border border-gray-200">
+              <div className="text-sm font-semibold mb-3 text-gray-700">
                 {DAY_NAMES[currentDayIndex]}
               </div>
-              <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+              <div className="grid grid-cols-2 gap-3 mb-3">
                 <div>
-                  <span className="text-gray-600">Kcal:</span>
-                  <span className="ml-1 font-semibold text-gray-900">
+                  <span className="text-sm text-gray-600">Kcal:</span>
+                  <span className="ml-1 text-sm font-semibold text-gray-900">
                     {calculatedKcal > 0 ? calculatedKcal : '-'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Proteine:</span>
-                  <span className="ml-1 font-semibold text-gray-900">
+                  <span className="text-sm text-gray-600">Proteine:</span>
+                  <span className="ml-1 text-sm font-semibold text-gray-900">
                     {currentDay.protein || '-'}g
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Carbo:</span>
-                  <span className="ml-1 font-semibold text-gray-900">
+                  <span className="text-sm text-gray-600">Carbo:</span>
+                  <span className="ml-1 text-sm font-semibold text-gray-900">
                     {currentDay.carbs || '-'}g
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Grassi:</span>
-                  <span className="ml-1 font-semibold text-gray-900">
+                  <span className="text-sm text-gray-600">Grassi:</span>
+                  <span className="ml-1 text-sm font-semibold text-gray-900">
                     {currentDay.fat || '-'}g
                   </span>
                 </div>
@@ -89,28 +85,28 @@ export function MacrosSummaryWidget() {
 
               {/* Integratori */}
               {dailyMacros.supplements && dailyMacros.supplements.length > 0 && (
-                <div className="border-t border-gray-200 pt-2">
-                  <div className="text-xs font-semibold mb-1 text-gray-700">Integratori</div>
+                <div className="border-t border-gray-200 pt-3">
+                  <div className="text-sm font-semibold mb-2 text-gray-700">Integratori</div>
                   <div className="space-y-1">
                     {dailyMacros.supplements.map((supp, idx) => (
-                      <div key={idx} className="text-xs text-gray-600">
+                      <div key={idx} className="text-sm text-gray-600">
                         • {supp.name || 'Integratore'}: <span className="font-semibold">{supp.grams}g</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
-            </div>
 
-            <Button
-              onClick={() => setCurrentTab('macros')}
-              variant="outline"
-              size="sm"
-              className="w-full"
-            >
-              Gestisci Macros
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
+              <Button
+                onClick={() => setCurrentTab('macros')}
+                variant="outline"
+                size="sm"
+                className="w-full mt-4"
+              >
+                Gestisci Macros
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
           </div>
         )}
       </CardContent>
