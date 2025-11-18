@@ -18,7 +18,6 @@ export function MacrosSummaryWidget() {
 
   const currentDayIndex = getCurrentDayIndex();
   const currentDay = dailyMacros?.days[currentDayIndex];
-  const currentDayChecked = dailyMacros?.checked[currentDayIndex];
 
   const hasMacros = currentDay && (
     currentDay.protein || currentDay.carbs || currentDay.fat
