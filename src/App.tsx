@@ -43,7 +43,7 @@ function App() {
       <AuroraBackground />
       <div className="relative z-10 flex min-h-screen flex-col">
         <header className="app-hero">
-          <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-10 lg:py-12">
+          <div className="flex w-full flex-col gap-6 px-4 py-8 sm:px-6 lg:px-10 xl:px-14 2xl:px-20">
             <div className="flex flex-col gap-4 text-white">
               <div className="flex items-center gap-3 text-emerald-300">
                 <div className="rounded-full border border-emerald-300/40 bg-emerald-400/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.25em]">
@@ -71,7 +71,7 @@ function App() {
           </div>
         </header>
 
-        <div className="sticky top-4 z-40 w-full px-4 sm:px-6 lg:px-10">
+        <div className="sticky top-4 z-40 w-full px-4 sm:px-6 lg:px-10 xl:px-14 2xl:px-20">
           <FloatingDock
             items={navItems.map((item) => ({
               value: item.value,
@@ -86,8 +86,8 @@ function App() {
         </div>
 
         <main className="w-full flex-1 overflow-x-hidden">
-          <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
-            <div className="animate-in fade-in duration-500 w-full">
+          <div className="tab-panel px-4 py-6 sm:px-6 sm:py-8 lg:px-10 xl:px-14 2xl:px-20">
+            <div className="tab-panel-content animate-in fade-in duration-500 w-full">
               {currentTab === 'home' && <HomeTab />}
               {currentTab === 'library' && <ExerciseLibrary />}
               {currentTab === 'programs' && <ProgramsTab />}

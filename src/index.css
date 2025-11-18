@@ -218,4 +218,16 @@
       transform: translate3d(-3%, 6%, 0) scale(1);
     }
   }
+
+  .tab-panel {
+    min-height: calc(100vh - 320px);
+    width: 100%;
+  }
+
+  .tab-panel-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
 }
