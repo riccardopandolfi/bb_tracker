@@ -224,7 +224,7 @@ export function MacrosTab() {
       )}
 
       {/* Card Integratori Settimanali */}
-      <Card className="border-l-4 border-l-purple-500">
+      <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -331,15 +331,11 @@ export function MacrosTab() {
 
                       {/* Nome giorno */}
                       <h4 className="font-bold flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded text-sm font-medium ${
-                          isToday
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-gray-100 text-gray-700'
-                        }`}>
+                        <span className="px-2 py-0.5 rounded text-sm font-medium bg-gray-100 text-gray-700">
                           {dayName}
                         </span>
                         {isToday && (
-                          <span className="text-xs text-blue-600">(Oggi)</span>
+                          <span className="text-xs text-gray-700">(Oggi)</span>
                         )}
                       </h4>
                     </div>
