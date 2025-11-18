@@ -624,7 +624,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Daily Macros Functions
   const initializeDailyMacros = () => {
-    const emptyDay: DayMacros = { kcal: '', protein: '', carbs: '', fat: '' };
+    const emptyDay: DayMacros = { kcal: '', protein: '', carbs: '', fat: '', supplements: [] };
     const dailyMacros: DailyMacrosWeek = {
       days: Array(7).fill(null).map(() => ({ ...emptyDay })),
       checked: Array(7).fill(false),

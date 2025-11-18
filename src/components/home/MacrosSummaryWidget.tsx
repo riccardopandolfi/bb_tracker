@@ -60,7 +60,7 @@ export function MacrosSummaryWidget() {
               <div className="text-xs font-semibold mb-2 uppercase tracking-wide text-gray-700">
                 {DAY_NAMES[currentDayIndex]}
               </div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="grid grid-cols-2 gap-2 text-sm mb-3">
                 <div>
                   <span className="text-gray-600">Kcal:</span>
                   <span className="ml-1 font-semibold text-gray-900">
@@ -86,6 +86,20 @@ export function MacrosSummaryWidget() {
                   </span>
                 </div>
               </div>
+
+              {/* Integratori */}
+              {currentDay.supplements && currentDay.supplements.length > 0 && (
+                <div className="border-t border-gray-200 pt-2">
+                  <div className="text-xs font-semibold mb-1 text-gray-700">Integratori</div>
+                  <div className="space-y-1">
+                    {currentDay.supplements.map((supp, idx) => (
+                      <div key={idx} className="text-xs text-gray-600">
+                        • {supp.name || 'Integratore'}: <span className="font-semibold">{supp.grams}g</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <Button

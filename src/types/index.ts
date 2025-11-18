@@ -212,11 +212,17 @@ export interface LoggedSession {
 }
 
 // Daily Macros
+export interface Supplement {
+  name: string;
+  grams: string;
+}
+
 export interface DayMacros {
   kcal: string;
   protein: string;
   carbs: string;
   fat: string;
+  supplements: Supplement[];
 }
 
 export interface DailyMacrosWeek {
