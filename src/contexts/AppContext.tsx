@@ -41,6 +41,7 @@ interface AppContextType extends AppState {
   checkDay: (dayIndex: number) => void;
   getCurrentDayIndex: () => number;
   getLastCheckedDayIndex: () => number | null;
+  updateSupplements: (supplements: import('@/types').Supplement[]) => void;
 
   // Helper getters
   getCurrentProgram: () => Program | undefined;
@@ -624,10 +625,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Daily Macros Functions
   const initializeDailyMacros = () => {
-    const emptyDay: DayMacros = { kcal: '', protein: '', carbs: '', fat: '', supplements: [] };
+    const emptyDay: DayMacros = { kcal: '', protein: '', carbs: '', fat: '' };
     const dailyMacros: DailyMacrosWeek = {
       days: Array(7).fill(null).map(() => ({ ...emptyDay })),
       checked: Array(7).fill(false),
+      supplements: [],
     };
     setState((prev) => ({ ...prev, dailyMacros }));
   };
@@ -702,6 +704,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     return null;
+  };
+
+  const updateSupplements = (supplements: import('@/types').Supplement[]) => {
+    setState((prev) => {
+      if (!prev.dailyMacros) return prev;
+      return {
+        ...prev,
+        dailyMacros: {
+          ...prev.dailyMacros,
+          supplements,
+        },
+      };
+    });
   };
 
   const resetAllData = () => {
@@ -824,6 +839,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         checkDay,
         getCurrentDayIndex,
         getLastCheckedDayIndex,
+        updateSupplements,
         getCurrentProgram,
         getCurrentWeeks,
       }}

@@ -55,7 +55,7 @@ export function MacrosSummaryWidget() {
             <div className={`p-3 rounded-lg border ${
               currentDayChecked
                 ? 'border-green-200 bg-green-50'
-                : 'border-blue-200 bg-blue-50'
+                : 'border-black'
             }`}>
               <div className="text-xs font-semibold mb-2 uppercase tracking-wide text-gray-700">
                 {DAY_NAMES[currentDayIndex]}
@@ -88,11 +88,11 @@ export function MacrosSummaryWidget() {
               </div>
 
               {/* Integratori */}
-              {currentDay.supplements && currentDay.supplements.length > 0 && (
+              {dailyMacros.supplements && dailyMacros.supplements.length > 0 && (
                 <div className="border-t border-gray-200 pt-2">
                   <div className="text-xs font-semibold mb-1 text-gray-700">Integratori</div>
                   <div className="space-y-1">
-                    {currentDay.supplements.map((supp, idx) => (
+                    {dailyMacros.supplements.map((supp, idx) => (
                       <div key={idx} className="text-xs text-gray-600">
                         • {supp.name || 'Integratore'}: <span className="font-semibold">{supp.grams}g</span>
                       </div>

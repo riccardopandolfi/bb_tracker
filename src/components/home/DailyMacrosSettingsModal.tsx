@@ -31,7 +31,6 @@ export function DailyMacrosSettingsModal({ open, onOpenChange }: DailyMacrosSett
           protein: '',
           carbs: '',
           fat: '',
-          supplements: [],
         }));
         setTempMacros(emptyDays);
       }

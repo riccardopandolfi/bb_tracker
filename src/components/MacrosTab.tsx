@@ -18,8 +18,9 @@ const calculateKcal = (protein: string, carbs: string, fat: string): number => {
 };
 
 export function MacrosTab() {
-  const { dailyMacros, initializeDailyMacros, updateDailyMacros, checkDay, getCurrentDayIndex } = useApp();
+  const { dailyMacros, initializeDailyMacros, updateDailyMacros, checkDay, getCurrentDayIndex, updateSupplements } = useApp();
   const [localMacros, setLocalMacros] = useState<DayMacros[]>([]);
+  const [localSupplements, setLocalSupplements] = useState<Supplement[]>([]);
 
   // Inizializza dailyMacros se non esiste
   useEffect(() => {
@@ -28,22 +29,18 @@ export function MacrosTab() {
     }
   }, [dailyMacros, initializeDailyMacros]);
 
-  // Sincronizza localMacros con dailyMacros
+  // Sincronizza localMacros e localSupplements con dailyMacros
   useEffect(() => {
     if (dailyMacros) {
-      // Assicura che ogni giorno abbia supplements anche se è undefined (per retrocompatibilità)
-      const migratedDays = dailyMacros.days.map(day => ({
-        ...day,
-        supplements: day.supplements || []
-      }));
-      setLocalMacros(migratedDays);
+      setLocalMacros([...dailyMacros.days]);
+      setLocalSupplements(dailyMacros.supplements || []);
     }
   }, [dailyMacros]);
 
   const currentDayIndex = getCurrentDayIndex();
 
   // Aggiorna un campo e salva automaticamente
-  const handleUpdateDay = (dayIndex: number, field: keyof Omit<DayMacros, 'kcal' | 'supplements'>, value: string) => {
+  const handleUpdateDay = (dayIndex: number, field: keyof DayMacros, value: string) => {
     const updated = [...localMacros];
     const currentDay = updated[dayIndex];
 
@@ -69,51 +66,37 @@ export function MacrosTab() {
   };
 
   // Aggiungi integratore
-  const handleAddSupplement = (dayIndex: number) => {
-    const updated = [...localMacros];
+  const handleAddSupplement = () => {
     const newSupplement: Supplement = { name: '', grams: '' };
-    updated[dayIndex] = {
-      ...updated[dayIndex],
-      supplements: [...(updated[dayIndex].supplements || []), newSupplement]
-    };
-    setLocalMacros(updated);
-    updateDailyMacros(dayIndex, updated[dayIndex]);
+    const updated = [...localSupplements, newSupplement];
+    setLocalSupplements(updated);
+    updateSupplements(updated);
   };
 
   // Rimuovi integratore
-  const handleRemoveSupplement = (dayIndex: number, suppIndex: number) => {
-    const updated = [...localMacros];
-    const supplements = [...(updated[dayIndex].supplements || [])];
-    supplements.splice(suppIndex, 1);
-    updated[dayIndex] = {
-      ...updated[dayIndex],
-      supplements
-    };
-    setLocalMacros(updated);
-    updateDailyMacros(dayIndex, updated[dayIndex]);
+  const handleRemoveSupplement = (suppIndex: number) => {
+    const updated = [...localSupplements];
+    updated.splice(suppIndex, 1);
+    setLocalSupplements(updated);
+    updateSupplements(updated);
   };
 
   // Aggiorna integratore
-  const handleUpdateSupplement = (dayIndex: number, suppIndex: number, field: keyof Supplement, value: string) => {
-    const updated = [...localMacros];
-    const supplements = [...(updated[dayIndex].supplements || [])];
-    supplements[suppIndex] = {
-      ...supplements[suppIndex],
+  const handleUpdateSupplement = (suppIndex: number, field: keyof Supplement, value: string) => {
+    const updated = [...localSupplements];
+    updated[suppIndex] = {
+      ...updated[suppIndex],
       [field]: value
     };
-    updated[dayIndex] = {
-      ...updated[dayIndex],
-      supplements
-    };
-    setLocalMacros(updated);
-    updateDailyMacros(dayIndex, updated[dayIndex]);
+    setLocalSupplements(updated);
+    updateSupplements(updated);
   };
 
   const handleCopyToAll = (dayIndex: number) => {
     if (!confirm('Copiare i macro di questo giorno a tutti gli altri giorni?')) return;
 
     const sourceMacros = localMacros[dayIndex];
-    const updated = localMacros.map(() => ({ ...sourceMacros, supplements: [...(sourceMacros.supplements || [])] }));
+    const updated = localMacros.map(() => ({ ...sourceMacros }));
     setLocalMacros(updated);
 
     // Salva tutti i giorni
@@ -185,7 +168,7 @@ export function MacrosTab() {
 
       {/* Card Riepilogo */}
       {weeklyAverage && (
-        <Card className="border-l-4 border-l-blue-500">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base sm:text-lg">Riepilogo Settimanale</CardTitle>
           </CardHeader>
@@ -240,12 +223,74 @@ export function MacrosTab() {
         </Card>
       )}
 
-      {/* Card Macro Settimanali - Unificata */}
+      {/* Card Integratori Settimanali */}
+      <Card className="border-l-4 border-l-purple-500">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base sm:text-lg">Integratori Settimanali</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                Integratori comuni per tutti i giorni della settimana
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAddSupplement}
+              className="gap-1"
+            >
+              <Plus className="w-4 h-4" />
+              Aggiungi
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {localSupplements.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Nessun integratore configurato. Clicca "Aggiungi" per iniziare.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {localSupplements.map((supp, suppIndex) => (
+                <div key={suppIndex} className="flex items-center gap-2">
+                  <Input
+                    type="text"
+                    value={supp.name}
+                    onChange={(e) => handleUpdateSupplement(suppIndex, 'name', e.target.value)}
+                    placeholder="Nome integratore (es. Creatina)"
+                    className="flex-1"
+                  />
+                  <Input
+                    type="number"
+                    value={supp.grams}
+                    onChange={(e) => handleUpdateSupplement(suppIndex, 'grams', e.target.value)}
+                    placeholder="grammi"
+                    className="w-24"
+                    min="0"
+                    step="0.1"
+                  />
+                  <span className="text-sm text-muted-foreground">g</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemoveSupplement(suppIndex)}
+                    className="h-9 w-9 p-0"
+                  >
+                    <X className="w-4 h-4 text-red-600" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Card Macro Settimanali */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base sm:text-lg">Macro Settimanali</CardTitle>
           <CardDescription className="text-xs sm:text-sm">
-            Configura i macro, gli integratori e spunta i giorni completati. Le calorie vengono calcolate automaticamente.
+            Configura i macro e spunta i giorni completati. Le calorie vengono calcolate automaticamente.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -256,7 +301,6 @@ export function MacrosTab() {
               const isToday = dayIndex === currentDayIndex;
               const hasMacros = day && (day.protein || day.carbs || day.fat);
               const calculatedKcal = day ? calculateKcal(day.protein, day.carbs, day.fat) : 0;
-              const supplements = day?.supplements || [];
 
               return (
                 <Card
@@ -265,7 +309,7 @@ export function MacrosTab() {
                     isChecked
                       ? 'border-green-500 bg-green-50/50'
                       : isToday
-                      ? 'border-blue-500 border-2 bg-blue-50/50'
+                      ? 'border-black border-2'
                       : ''
                   }`}
                 >
@@ -314,7 +358,7 @@ export function MacrosTab() {
                   </div>
 
                   {/* Input macro + calorie calcolate */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div>
                       <Label className="text-xs">Proteine (g)</Label>
                       <Input
@@ -356,59 +400,6 @@ export function MacrosTab() {
                         </span>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Integratori */}
-                  <div className="border-t pt-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <Label className="text-xs font-semibold">Integratori</Label>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleAddSupplement(dayIndex)}
-                        className="h-7 text-xs gap-1"
-                      >
-                        <Plus className="w-3 h-3" />
-                        Aggiungi
-                      </Button>
-                    </div>
-
-                    {supplements.length === 0 ? (
-                      <p className="text-xs text-muted-foreground text-center py-2">
-                        Nessun integratore configurato
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        {supplements.map((supp, suppIndex) => (
-                          <div key={suppIndex} className="flex items-center gap-2">
-                            <Input
-                              type="text"
-                              value={supp.name}
-                              onChange={(e) => handleUpdateSupplement(dayIndex, suppIndex, 'name', e.target.value)}
-                              placeholder="Nome integratore"
-                              className="flex-1"
-                            />
-                            <Input
-                              type="number"
-                              value={supp.grams}
-                              onChange={(e) => handleUpdateSupplement(dayIndex, suppIndex, 'grams', e.target.value)}
-                              placeholder="g"
-                              className="w-20"
-                              min="0"
-                              step="0.1"
-                            />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRemoveSupplement(dayIndex, suppIndex)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <X className="w-4 h-4 text-red-600" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 </Card>
               );

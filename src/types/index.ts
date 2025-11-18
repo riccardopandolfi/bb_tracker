@@ -222,12 +222,12 @@ export interface DayMacros {
   protein: string;
   carbs: string;
   fat: string;
-  supplements: Supplement[];
 }
 
 export interface DailyMacrosWeek {
   days: DayMacros[]; // Array di 7 giorni (0=Lunedì, 6=Domenica)
   checked: boolean[]; // Array di 7 boolean per tracking spunte
+  supplements: Supplement[]; // Integratori comuni per tutta la settimana
 }
 
 // Global State
