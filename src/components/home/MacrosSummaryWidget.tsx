@@ -89,7 +89,7 @@ export function MacrosSummaryWidget() {
                   <div className="space-y-1">
                     {dailyMacros.supplements.map((supp, idx) => (
                       <div key={idx} className="text-sm text-gray-600">
-                        • {supp.name || 'Integratore'}: <span className="font-semibold">{supp.grams}g</span>
+                        • {supp.name || 'Integratore'}: <span className="font-semibold text-gray-900">{supp.grams}g</span>
                       </div>
                     ))}
                   </div>
