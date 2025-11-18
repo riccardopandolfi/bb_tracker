@@ -57,12 +57,11 @@ export function HomeTab() {
   // Empty state when no programs exist
   if (totalPrograms === 0) {
     return (
-      <div className="space-y-6">
-        {/* Empty State */}
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-16 px-4">
-            <div className="self-end mb-4">
-              <div className="flex items-center space-x-2">
+      <div className="space-y-10">
+        <div className="acert-empty">
+          <div className="flex w-full flex-col gap-6 text-center">
+            <div className="mx-auto flex max-w-md flex-col gap-4">
+              <div className="flex items-center justify-center gap-3 text-emerald-300">
                 <Switch
                   id="demo-mode"
                   checked={hasDemoData()}
@@ -74,17 +73,21 @@ export function HomeTab() {
                     }
                   }}
                 />
-                <Label htmlFor="demo-mode">Dati Demo</Label>
+                <Label htmlFor="demo-mode" className="text-sm uppercase tracking-[0.3em]">
+                  Modalità Demo
+                </Label>
+              </div>
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white/10">
+                <Dumbbell className="h-10 w-10 text-white" />
+              </div>
+              <div>
+                <h3 className="text-3xl font-semibold text-white">Benvenuto nella nuova Control Room</h3>
+                <p className="mt-3 text-base text-white/70">
+                  Crea il tuo primo programma o importa i dati demo per esplorare il cockpit Aceternity UI con schede, logbook e macro monitor.
+                </p>
               </div>
             </div>
-            <div className="rounded-full bg-muted p-4 mb-4">
-              <Dumbbell className="h-12 w-12 text-muted-foreground" />
-            </div>
-            <h3 className="text-2xl font-bold mb-2">Nessun Programma Trovato</h3>
-            <p className="text-muted-foreground text-center mb-6 max-w-md">
-              Inizia creando il tuo primo programma di allenamento per sbloccare tutte le funzionalità dell'app.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
               <Button onClick={() => setCurrentTab('programs')} size="lg" className="w-full sm:w-auto">
                 <Dumbbell className="mr-2 h-5 w-5" />
                 Crea il Primo Programma
@@ -98,11 +101,11 @@ export function HomeTab() {
                 }}
                 className="w-full sm:w-auto"
               >
-                Carica Dati Demo
+                Attiva Esperienza Demo
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     );
   }
