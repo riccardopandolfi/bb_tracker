@@ -34,7 +34,7 @@ function App() {
             <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
               <Dumbbell className="h-5 w-5 text-black" />
             </div>
-            <h1 className="text-lg font-bold tracking-tight text-white hidden sm:block">Nobody Cares Work Harder</h1>
+            <h1 className="text-lg font-bold tracking-tight text-white sm:block">Nobody Cares Work Harder</h1>
           </div>
 
           {/* Desktop Navigation */}
@@ -81,8 +81,8 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <main className="w-full py-6 px-4 md:px-6 lg:px-8 pb-24 md:pb-8 relative z-10">
-        <div className="max-w-[1920px] mx-auto">
+      <main className="w-full py-6 pb-24 md:pb-8 relative z-10">
+        <div className="max-w-[1920px] mx-auto px-4 md:px-6 lg:px-8">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentTab}

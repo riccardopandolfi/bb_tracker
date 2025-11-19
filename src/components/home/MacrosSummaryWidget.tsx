@@ -43,7 +43,7 @@ export function MacrosSummaryWidget() {
           Macro di Oggi
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4 pt-6">
         {!dailyMacros || !hasMacros ? (
           <div className="text-center py-8 space-y-4">
             <div className="w-24 h-24 mx-auto rounded-full bg-gray-100 flex items-center justify-center">
@@ -63,11 +63,14 @@ export function MacrosSummaryWidget() {
             </Button>
           </div>
         ) : (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold text-gray-500">
-                {DAY_NAMES[currentDayIndex]}
-              </div>
+          <div className="space-y-4">
+            {/* Title with separator */}
+            <div className="pb-4 border-b">
+              <div className="text-2xl font-bold font-heading">Macro di Oggi</div>
+              <p className="text-sm text-gray-500 mt-1">{DAY_NAMES[currentDayIndex]}</p>
+            </div>
+
+            <div className="flex items-center justify-end">
               <div className="text-2xl font-bold font-heading">
                 {calculatedKcal > 0 ? calculatedKcal : '-'} <span className="text-sm font-normal text-gray-500">kcal</span>
               </div>

@@ -335,11 +335,11 @@ export function ExerciseLibrary() {
             </DialogContent>
           </Dialog>
 
-          <Button onClick={handleAddCardio} variant="secondary" size="sm" className="text-xs sm:text-sm">
+          <Button onClick={handleAddCardio} variant="ghost" size="sm" className="text-gray-500 hover:text-gray-900">
             <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
             Cardio
           </Button>
-          <Button onClick={handleAddExercise} size="sm" className="text-xs sm:text-sm">
+          <Button onClick={handleAddExercise} variant="ghost" size="sm" className="text-gray-500 hover:text-gray-900">
             <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
             Esercizio
           </Button>
@@ -400,12 +400,12 @@ export function ExerciseLibrary() {
             <p className="text-muted-foreground text-center mb-6 sm:mb-8 max-w-lg text-base sm:text-lg px-2">
               Aggiungi i tuoi esercizi preferiti per iniziare a costruire i tuoi programmi di allenamento.
             </p>
-            <div className="flex gap-3">
-              <Button onClick={handleAddExercise} size="lg">
+            <div className="flex flex-col gap-3 w-full">
+              <Button onClick={handleAddExercise} variant="ghost" size="sm" className="w-full text-gray-500 hover:text-gray-900">
                 <Plus className="w-4 h-4 mr-2" />
                 Nuovo Esercizio
               </Button>
-              <Button onClick={handleAddCardio} variant="secondary" size="lg">
+              <Button onClick={handleAddCardio} variant="ghost" size="sm" className="w-full text-gray-500 hover:text-gray-900">
                 <Plus className="w-4 h-4 mr-2" />
                 Nuovo Cardio
               </Button>
