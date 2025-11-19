@@ -184,9 +184,9 @@ export function ProgramsTab() {
                 {isActive ? (
                   <div className="relative w-full">
                     <div className="absolute -inset-[1px] rounded-xl overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-r from-sky-500 via-blue-500 to-purple-500 opacity-75 blur-sm animate-pulse" />
+                      <div className="absolute inset-0 bg-black opacity-100 blur-sm" />
                     </div>
-                    <Card className="relative bg-card border-sky-500/50 shadow-[0_0_30px_-10px_rgba(14,165,233,0.3)]">
+                    <Card className="relative bg-card border-black shadow-[0_0_30px_-10px_rgba(0,0,0,0.3)]">
                       <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10">
                         <Badge variant="default" className="gap-1 text-xs bg-sky-500 hover:bg-sky-600">
                           <CheckCircle2 className="w-3 h-3" />

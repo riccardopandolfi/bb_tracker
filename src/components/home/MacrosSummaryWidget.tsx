@@ -1,7 +1,7 @@
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { Apple, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 const DAY_NAMES = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
 
@@ -29,7 +29,6 @@ export function MacrosSummaryWidget() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-          <Apple className="w-5 h-5" />
           Macro di Oggi
         </CardTitle>
       </CardHeader>

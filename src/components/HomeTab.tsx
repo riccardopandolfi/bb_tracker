@@ -297,14 +297,10 @@ export function HomeTab() {
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 w-full">
         {/* Programma Attivo e Sessioni Recenti Completate */}
         <Card className="min-w-0 w-full">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium">Programma Attivo</CardTitle>
-            <Dumbbell className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             {/* Programma Attivo */}
             <div>
-              <div className="text-2xl font-bold">{currentProgram?.name || 'Nessuno'}</div>
+              <div className="text-base sm:text-lg font-bold">{currentProgram?.name || 'Nessuno'}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 {totalPrograms} {totalPrograms === 1 ? 'programma totale' : 'programmi totali'}
               </p>
@@ -334,9 +330,9 @@ export function HomeTab() {
                             <p className="text-xs text-muted-foreground">
                               {day.date
                                 ? new Date(day.date).toLocaleDateString('it-IT', {
-                                    day: 'numeric',
-                                    month: 'short',
-                                  })
+                                  day: 'numeric',
+                                  month: 'short',
+                                })
                                 : 'Completato'} • Day {day.dayIndex}
                             </p>
                           </div>
