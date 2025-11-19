@@ -305,7 +305,7 @@ export function MacrosTab() {
                 <Card
                   key={dayIndex}
                   className={`p-4 ${isChecked
-                      ? 'border-green-500 bg-green-50/50'
+                      ? 'border-emerald-200 bg-emerald-50'
                       : isToday
                         ? 'border-black border-2'
                         : ''
@@ -321,9 +321,9 @@ export function MacrosTab() {
                         title={hasMacros ? "Segna come completato" : "Configura prima i macro"}
                       >
                         {isChecked ? (
-                          <CheckCircle2 className="w-6 h-6 text-green-600" />
+                          <CheckCircle2 className="w-6 h-6 text-emerald-600" />
                         ) : (
-                          <Circle className={`w-6 h-6 ${hasMacros ? 'text-gray-400 hover:text-blue-600 cursor-pointer' : 'text-gray-300'}`} />
+                          <Circle className={`w-6 h-6 ${hasMacros ? 'text-gray-400 hover:text-sky-600 cursor-pointer' : 'text-gray-300'}`} />
                         )}
                       </button>
 

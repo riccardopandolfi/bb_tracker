@@ -102,11 +102,10 @@ export function ConfigureExerciseModal({
               <Button
                 variant="outline"
                 onClick={onAddBlock}
-                className={`w-full border-2 border-dashed ${
-                  isCardio
+                className={`w-full border-2 border-dashed ${isCardio
                     ? 'border-orange-300 hover:bg-orange-50 hover:border-orange-400'
                     : 'border-blue-300 hover:bg-blue-50 hover:border-blue-400'
-                }`}
+                  }`}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Aggiungi Blocco
@@ -132,7 +131,7 @@ export function ConfigureExerciseModal({
 
         {/* Footer con pulsante chiudi */}
         <div className="flex justify-end pt-4 border-t">
-          <Button onClick={() => onOpenChange(false)} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={() => onOpenChange(false)}>
             ✓ Chiudi
           </Button>
         </div>

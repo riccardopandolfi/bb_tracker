@@ -117,14 +117,14 @@ export function ExerciseBlockCard({
   };
 
   const primaryMuscle = getPrimaryMuscle();
-  
+
   // Inizializza localLoadsByCluster quando il modal si apre
   useEffect(() => {
     if (showLoadModal && !isNormalTechnique) {
       const clusters = parseSchema(block.techniqueSchema || '');
       const numClusters = clusters.length || 1;
       let loadsByCluster = block.targetLoadsByCluster;
-      
+
       if (!loadsByCluster || loadsByCluster.length === 0) {
         if (block.targetLoads && block.targetLoads.length > 0) {
           loadsByCluster = block.targetLoads.map(load => Array(numClusters).fill(load));
@@ -132,7 +132,7 @@ export function ExerciseBlockCard({
           loadsByCluster = Array(block.sets || 1).fill(null).map(() => Array(numClusters).fill('80'));
         }
       }
-      
+
       const numSets = block.sets || 1;
       if (loadsByCluster.length !== numSets) {
         if (loadsByCluster.length < numSets) {
@@ -145,7 +145,7 @@ export function ExerciseBlockCard({
           loadsByCluster = loadsByCluster.slice(0, numSets);
         }
       }
-      
+
       loadsByCluster = loadsByCluster.map((setLoads) => {
         if (setLoads.length !== numClusters) {
           if (setLoads.length < numClusters) {
@@ -157,13 +157,13 @@ export function ExerciseBlockCard({
         }
         return setLoads;
       });
-      
-      loadsByCluster = loadsByCluster.map(setLoads => 
+
+      loadsByCluster = loadsByCluster.map(setLoads =>
         setLoads.map(load => String(load || '80'))
       );
-      
+
       setLocalLoadsByCluster(loadsByCluster);
-      
+
       if (!block.targetLoadsByCluster || block.targetLoadsByCluster.length === 0) {
         onUpdate(blockIndex, 'targetLoadsByCluster', loadsByCluster);
       }
@@ -177,7 +177,7 @@ export function ExerciseBlockCard({
       const customTech = customTechniques.find(t => t.name === newTechnique);
       let defaultParams: Record<string, any> = {};
       let schema = '';
-      
+
       if (customTech) {
         customTech.parameters.forEach((param: any) => {
           defaultParams[param.name] = param.defaultValue;
@@ -193,13 +193,13 @@ export function ExerciseBlockCard({
           schema = generateSchemaFromParams(newTechnique, defaultParams);
         }
       }
-      
+
       const clusters = parseSchema(schema);
       const numClusters = clusters.length || 1;
       const numSets = block.sets || 1;
-      const initialLoadsByCluster = block.targetLoads?.map(load => Array(numClusters).fill(load)) || 
+      const initialLoadsByCluster = block.targetLoads?.map(load => Array(numClusters).fill(load)) ||
         Array(numSets).fill(Array(numClusters).fill('80'));
-      
+
       if (onUpdateBatch) {
         const updates: Partial<ExerciseBlock> = {
           technique: newTechnique,
@@ -220,7 +220,7 @@ export function ExerciseBlockCard({
           const clusters = parseSchema(schema);
           const numClusters = clusters.length || 1;
           const numSets = block.sets || 1;
-          const initialLoadsByCluster = block.targetLoads?.map(load => Array(numClusters).fill(load)) || 
+          const initialLoadsByCluster = block.targetLoads?.map(load => Array(numClusters).fill(load)) ||
             Array(numSets).fill(Array(numClusters).fill('80'));
           onUpdate(blockIndex, 'targetLoadsByCluster', initialLoadsByCluster);
         }
@@ -575,13 +575,54 @@ export function ExerciseBlockCard({
             <div className="space-y-3">
               <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-block">Volume</Label>
               {isNormalTechnique ? (
-              <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs text-gray-600 mb-1.5 block">Sets</Label>
+                    <Input
+                      type="number"
+                      value={getFieldValue('sets', block.sets)}
+                      onFocus={() => handleNumericFocus('sets', block.sets)}
+                      onChange={(e) => handleNumericChange(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      onBlur={(e) => {
+                        const val = e.target.value === '' ? 1 : parseInt(e.target.value) || 1;
+                        handleSetsChange(val);
+                        setEditingField(null);
+                        setTempValue('');
+                      }}
+                      className="h-10"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-600 mb-1.5 block">
+                      Reps Base <span className="text-xs text-muted-foreground"></span>
+                      {block.targetReps && block.targetReps.length > 0 && (
+                        <span className="text-xs text-orange-600 ml-1">(disabilitato - reps personalizzate attive)</span>
+                      )}
+                    </Label>
+                    <Input
+                      type="text"
+                      value={block.repsBase || ''}
+                      onChange={(e) => {
+                        const value = e.target.value.toUpperCase();
+                        // Permetti solo numeri o "MAX"
+                        if (value === '' || value === 'MAX' || /^\d+$/.test(value)) {
+                          onUpdate(blockIndex, 'repsBase', value);
+                        }
+                      }}
+                      placeholder="10 o MAX"
+                      className="h-10"
+                      disabled={block.targetReps && block.targetReps.length > 0}
+                    />
+                  </div>
+                </div>
+              ) : (
                 <div>
-                  <Label className="text-xs text-gray-600 mb-1.5 block">Sets</Label>
+                  <Label className="text-xs text-gray-600 mb-1.5 block">Sets (numero di serie complete)</Label>
                   <Input
                     type="number"
-                    value={getFieldValue('sets', block.sets)}
-                    onFocus={() => handleNumericFocus('sets', block.sets)}
+                    value={getFieldValue('sets-special', block.sets)}
+                    onFocus={() => handleNumericFocus('sets-special', block.sets)}
                     onChange={(e) => handleNumericChange(e.target.value)}
                     onKeyDown={handleKeyDown}
                     onBlur={(e) => {
@@ -593,166 +634,125 @@ export function ExerciseBlockCard({
                     className="h-10"
                   />
                 </div>
-                <div>
-                  <Label className="text-xs text-gray-600 mb-1.5 block">
-                    Reps Base <span className="text-xs text-muted-foreground"></span>
-                    {block.targetReps && block.targetReps.length > 0 && (
-                      <span className="text-xs text-orange-600 ml-1">(disabilitato - reps personalizzate attive)</span>
-                    )}
-                  </Label>
-                  <Input
-                    type="text"
-                    value={block.repsBase || ''}
-                    onChange={(e) => {
-                      const value = e.target.value.toUpperCase();
-                      // Permetti solo numeri o "MAX"
-                      if (value === '' || value === 'MAX' || /^\d+$/.test(value)) {
-                        onUpdate(blockIndex, 'repsBase', value);
-                      }
-                    }}
-                    placeholder="10 o MAX"
-                    className="h-10"
-                    disabled={block.targetReps && block.targetReps.length > 0}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div>
-                <Label className="text-xs text-gray-600 mb-1.5 block">Sets (numero di serie complete)</Label>
-                <Input
-                  type="number"
-                  value={getFieldValue('sets-special', block.sets)}
-                  onFocus={() => handleNumericFocus('sets-special', block.sets)}
-                  onChange={(e) => handleNumericChange(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  onBlur={(e) => {
-                    const val = e.target.value === '' ? 1 : parseInt(e.target.value) || 1;
-                    handleSetsChange(val);
-                    setEditingField(null);
-                    setTempValue('');
-                  }}
-                  className="h-10"
-                />
-              </div>
-            )}
+              )}
 
-            {/* Rep Range */}
-            {isNormalTechnique && (
-              <div className="mt-3">
-                <Label className="text-xs text-gray-600 mb-1.5 block">Rep Range</Label>
-                <Select
-                  value={block.repRange || '8-12'}
-                  onValueChange={(v) => onUpdate(blockIndex, 'repRange', v)}
-                >
-                  <SelectTrigger className="h-10">
-                    <SelectValue placeholder="Seleziona range">
-                      {block.repRange && `${block.repRange} - ${REP_RANGES[block.repRange as keyof typeof REP_RANGES]?.focus || ''}`}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.keys(REP_RANGES).map((range) => (
-                      <SelectItem key={range} value={range}>
-                        {range} - {REP_RANGES[range as keyof typeof REP_RANGES].focus}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Ripetizioni per Set - Solo per tecnica normale */}
-            {isNormalTechnique && (
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="flex items-center justify-between mb-3">
-                  <Label className="text-xs text-gray-600">Ripetizioni per Set</Label>
-                  <span className="text-xs text-muted-foreground">
-                    {block.targetReps && block.targetReps.length > 0
-                      ? 'Personalizzate'
-                      : `Tutte: ${block.repsBase || '10'} reps`}
-                  </span>
-                </div>
-                {block.targetReps && block.targetReps.length > 0 ? (
-                  // Mostra input se targetReps è già configurato
-                  <div className="space-y-2">
-                    {block.targetReps.map((reps, i) => (
-                      <div key={i} className="flex items-center gap-2 p-2 bg-green-50 rounded-lg border border-green-200">
-                        <span className="px-2 py-1 rounded bg-green-600 text-white text-xs font-bold min-w-[3rem] text-center">
-                          Set {i + 1}
-                        </span>
-                        <Input
-                          type="text"
-                          value={reps}
-                          onChange={(e) => {
-                            const value = e.target.value.toUpperCase();
-                            if (value === '' || value === 'MAX' || /^\d+$/.test(value)) {
-                              const newReps = [...(block.targetReps || [])];
-                              newReps[i] = value;
-                              onUpdate(blockIndex, 'targetReps', newReps);
-                            }
-                          }}
-                          className="h-8 flex-1 text-sm"
-                          placeholder="10 o MAX"
-                        />
-                        <span className="text-xs font-medium text-muted-foreground">reps</span>
-                      </div>
-                    ))}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onUpdate(blockIndex, 'targetReps', [])}
-                      className="w-full text-xs text-red-600 hover:text-red-700 hover:bg-red-50 h-8"
-                    >
-                      Rimuovi personalizzazione
-                    </Button>
-                  </div>
-                ) : (
-                  // Pulsante per abilitare reps personalizzate
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const sets = block.sets || 1;
-                      const baseReps = block.repsBase || '10';
-                      onUpdate(blockIndex, 'targetReps', Array(sets).fill(baseReps));
-                    }}
-                    className="w-full border-dashed text-xs h-8"
+              {/* Rep Range */}
+              {isNormalTechnique && (
+                <div className="mt-3">
+                  <Label className="text-xs text-gray-600 mb-1.5 block">Rep Range</Label>
+                  <Select
+                    value={block.repRange || '8-12'}
+                    onValueChange={(v) => onUpdate(blockIndex, 'repRange', v)}
                   >
-                    + Personalizza reps per ogni set
-                  </Button>
-                )}
-              </div>
-            )}
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Seleziona range">
+                        {block.repRange && `${block.repRange} - ${REP_RANGES[block.repRange as keyof typeof REP_RANGES]?.focus || ''}`}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.keys(REP_RANGES).map((range) => (
+                        <SelectItem key={range} value={range}>
+                          {range} - {REP_RANGES[range as keyof typeof REP_RANGES].focus}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Ripetizioni per Set - Solo per tecnica normale */}
+              {isNormalTechnique && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="text-xs text-gray-600">Ripetizioni per Set</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {block.targetReps && block.targetReps.length > 0
+                        ? 'Personalizzate'
+                        : `Tutte: ${block.repsBase || '10'} reps`}
+                    </span>
+                  </div>
+                  {block.targetReps && block.targetReps.length > 0 ? (
+                    // Mostra input se targetReps è già configurato
+                    <div className="space-y-2">
+                      {block.targetReps.map((reps, i) => (
+                        <div key={i} className="flex items-center gap-2 p-2 bg-emerald-50 rounded-lg border border-emerald-200">
+                          <span className="px-2 py-1 rounded bg-emerald-600 text-white text-xs font-bold min-w-[3rem] text-center">
+                            Set {i + 1}
+                          </span>
+                          <Input
+                            type="text"
+                            value={reps}
+                            onChange={(e) => {
+                              const value = e.target.value.toUpperCase();
+                              if (value === '' || value === 'MAX' || /^\d+$/.test(value)) {
+                                const newReps = [...(block.targetReps || [])];
+                                newReps[i] = value;
+                                onUpdate(blockIndex, 'targetReps', newReps);
+                              }
+                            }}
+                            className="h-8 flex-1 text-sm"
+                            placeholder="10 o MAX"
+                          />
+                          <span className="text-xs font-medium text-muted-foreground">reps</span>
+                        </div>
+                      ))}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onUpdate(blockIndex, 'targetReps', [])}
+                        className="w-full text-xs text-red-600 hover:text-red-700 hover:bg-red-50 h-8"
+                      >
+                        Rimuovi personalizzazione
+                      </Button>
+                    </div>
+                  ) : (
+                    // Pulsante per abilitare reps personalizzate
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const sets = block.sets || 1;
+                        const baseReps = block.repsBase || '10';
+                        onUpdate(blockIndex, 'targetReps', Array(sets).fill(baseReps));
+                      }}
+                      className="w-full border-dashed text-xs h-8"
+                    >
+                      + Personalizza reps per ogni set
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
           {/* Carichi - Nascosto per Ramping */}
           {!isRampingTechnique && (
             <div className="space-y-2">
-            <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-flex items-center gap-2">
-              <Dumbbell className="w-3.5 h-3.5" />
-              Carichi per Set
-            </Label>
-            <div className="flex gap-2 items-center">
-              <div className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm font-mono text-gray-700">
-                {(() => {
-                  if (isNormalTechnique) {
-                    return block.targetLoads?.join(' - ') || '-';
-                  } else {
-                    if (block.targetLoadsByCluster && block.targetLoadsByCluster.length > 0) {
-                      return block.targetLoadsByCluster.map(setLoads => setLoads.join('/')).join(' • ');
+              <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-flex items-center gap-2">
+                <Dumbbell className="w-3.5 h-3.5" />
+                Carichi per Set
+              </Label>
+              <div className="flex gap-2 items-center">
+                <div className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm font-mono text-gray-700">
+                  {(() => {
+                    if (isNormalTechnique) {
+                      return block.targetLoads?.join(' - ') || '-';
+                    } else {
+                      if (block.targetLoadsByCluster && block.targetLoadsByCluster.length > 0) {
+                        return block.targetLoadsByCluster.map(setLoads => setLoads.join('/')).join(' • ');
+                      }
+                      return block.targetLoads?.join(' - ') || '-';
                     }
-                    return block.targetLoads?.join(' - ') || '-';
-                  }
-                })()}
+                  })()}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowLoadModal(true)}
+                >
+                  Modifica
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowLoadModal(true)}
-              >
-                Modifica
-              </Button>
-            </div>
             </div>
           )}
 
@@ -872,8 +872,8 @@ export function ExerciseBlockCard({
                 <div className="space-y-3">
                   <h4 className="text-sm font-semibold text-gray-700">💪 Carichi per Set</h4>
                   {block.targetLoads?.map((load, i) => (
-                    <div key={i} className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <span className="px-3 py-1.5 rounded bg-blue-600 text-white text-sm font-bold min-w-[4rem] text-center">
+                    <div key={i} className="flex items-center gap-3 p-3 bg-sky-50 rounded-lg border border-sky-200">
+                      <span className="px-3 py-1.5 rounded bg-gray-900 text-white text-sm font-bold min-w-[4rem] text-center">
                         Set {i + 1}
                       </span>
                       <Input
@@ -921,7 +921,7 @@ export function ExerciseBlockCard({
                                         e.stopPropagation();
                                         const newValue = e.target.value;
                                         setLocalLoadsByCluster(prev => {
-                                          const newLoadsByCluster = prev.map((sl: string[], si: number) => 
+                                          const newLoadsByCluster = prev.map((sl: string[], si: number) =>
                                             si === setIdx ? sl.map((l: string, ci: number) => ci === clusterIdx ? newValue : l) : sl
                                           );
                                           return newLoadsByCluster;
@@ -931,7 +931,7 @@ export function ExerciseBlockCard({
                                         if (!e.target.value || e.target.value === '') {
                                           const newValue = '80';
                                           setLocalLoadsByCluster(prev => {
-                                            const newLoadsByCluster = prev.map((sl: string[], si: number) => 
+                                            const newLoadsByCluster = prev.map((sl: string[], si: number) =>
                                               si === setIdx ? sl.map((l: string, ci: number) => ci === clusterIdx ? newValue : l) : sl
                                             );
                                             onUpdate(blockIndex, 'targetLoadsByCluster', newLoadsByCluster);
@@ -1007,7 +1007,7 @@ export function ExerciseBlockCard({
               Annulla
             </Button>
             <Button
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
+              className="flex-1"
               onClick={() => {
                 if (!isNormalTechnique && localLoadsByCluster.length > 0) {
                   const validLoadsByCluster = localLoadsByCluster.map(setLoads =>

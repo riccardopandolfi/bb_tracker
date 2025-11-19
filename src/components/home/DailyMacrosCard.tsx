@@ -111,16 +111,16 @@ export function DailyMacrosCard({ onOpenSettings }: DailyMacrosCardProps) {
 
         {/* Giorno corrente */}
         <div className={`p-3 rounded-lg border ${currentDayChecked
-            ? 'border-green-200 bg-green-50'
-            : 'border-blue-200 bg-blue-50'
+            ? 'border-emerald-200 bg-emerald-50'
+            : 'border-sky-200 bg-sky-50'
           }`}>
           <div className="flex items-center justify-between mb-2">
-            <span className={`text-xs font-semibold uppercase tracking-wide ${currentDayChecked ? 'text-green-900' : 'text-blue-900'
+            <span className={`text-xs font-semibold uppercase tracking-wide ${currentDayChecked ? 'text-emerald-900' : 'text-sky-900'
               }`}>
               Oggi: {DAY_NAMES[currentDayIndex]}
             </span>
             {currentDayChecked && (
-              <CheckCircle2 className="w-4 h-4 text-green-600" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             )}
           </div>
 
@@ -156,7 +156,7 @@ export function DailyMacrosCard({ onOpenSettings }: DailyMacrosCardProps) {
               {!currentDayChecked && (
                 <Button
                   onClick={handleCheckDay}
-                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  className="w-full"
                   size="sm"
                 >
                   <CheckCircle2 className="w-4 h-4 mr-2" />
