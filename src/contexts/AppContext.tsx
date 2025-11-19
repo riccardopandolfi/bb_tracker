@@ -146,6 +146,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const migrateData = (data: any): AppState => {
     // Check if it's already the new format
     if (data.users && Array.isArray(data.users) && data.userData) {
+      // MIGRATION FIX: Rename "Utente Principale" to "Riccardo" if found
+      const updatedUsers = data.users.map((u: User) => {
+        if (u.id === 'default' && u.name === 'Utente Principale') {
+          return { ...u, name: 'Riccardo' };
+        }
+        return u;
+      });
+
+      if (JSON.stringify(updatedUsers) !== JSON.stringify(data.users)) {
+        console.log('Migrating user name: Utente Principale -> Riccardo');
+        return { ...data, users: updatedUsers };
+      }
+
       return data as AppState;
     }
 
