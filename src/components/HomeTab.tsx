@@ -337,7 +337,7 @@ export function HomeTab() {
                           </div>
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <p className="text-xs font-medium">
+                          <p className="text-sm font-semibold">
                             {day.loggedCount}/{day.exercisesCount}
                           </p>
                           <p className="text-xs text-muted-foreground">esercizi</p>

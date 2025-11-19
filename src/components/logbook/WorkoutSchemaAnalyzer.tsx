@@ -164,18 +164,18 @@ export function WorkoutSchemaAnalyzer() {
         <div className="flex gap-2 mt-3 sm:mt-4">
           <button
             onClick={() => handleModeChange('normal')}
-            className={`flex-1 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${mode === 'normal'
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+            className={`flex-1 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors border-2 ${mode === 'normal'
+                ? 'border-black bg-white text-black'
+                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
               }`}
           >
             Set Normali
           </button>
           <button
             onClick={() => handleModeChange('special')}
-            className={`flex-1 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${mode === 'special'
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+            className={`flex-1 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors border-2 ${mode === 'special'
+                ? 'border-black bg-white text-black'
+                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
               }`}
           >
             Tecniche Speciali

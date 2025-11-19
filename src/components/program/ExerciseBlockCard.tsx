@@ -367,7 +367,7 @@ export function ExerciseBlockCard({
 
   if (exerciseType === 'cardio') {
     return (
-      <Card className="w-full border border-gray-200 shadow-sm">
+      <Card className="w-full shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
         <CardHeader className="pb-3 border-b border-gray-100">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
@@ -442,7 +442,7 @@ export function ExerciseBlockCard({
 
   return (
     <>
-      <Card className="w-full border border-gray-200 shadow-sm">
+      <Card className="w-full shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
         <CardHeader className="pb-3 border-b border-gray-100">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">

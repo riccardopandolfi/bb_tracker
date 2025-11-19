@@ -101,18 +101,18 @@ export function MacrosSummaryWidget() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-blue-50 p-2 rounded-lg text-center">
-                <span className="block text-xs text-blue-600 font-medium">Proteine</span>
-                <span className="block text-lg font-bold text-blue-700">{p}g</span>
+            <div className="grid grid-cols-3 gap-4 mt-4">
+              <div className="text-center">
+                <span className="block text-xs text-sky-600 mb-1">Proteine</span>
+                <span className="block text-sm font-bold text-sky-700">{p}g</span>
               </div>
-              <div className="bg-emerald-50 p-2 rounded-lg text-center">
-                <span className="block text-xs text-emerald-600 font-medium">Carbo</span>
-                <span className="block text-lg font-bold text-emerald-700">{c}g</span>
+              <div className="text-center">
+                <span className="block text-xs text-emerald-600 mb-1">Carbo</span>
+                <span className="block text-sm font-bold text-emerald-700">{c}g</span>
               </div>
-              <div className="bg-amber-50 p-2 rounded-lg text-center">
-                <span className="block text-xs text-amber-600 font-medium">Grassi</span>
-                <span className="block text-lg font-bold text-amber-700">{f}g</span>
+              <div className="text-center">
+                <span className="block text-xs text-amber-600 mb-1">Grassi</span>
+                <span className="block text-sm font-bold text-amber-700">{f}g</span>
               </div>
             </div>
 
@@ -130,16 +130,6 @@ export function MacrosSummaryWidget() {
                 </div>
               </div>
             )}
-
-            <Button
-              onClick={() => setCurrentTab('macros')}
-              variant="ghost"
-              size="sm"
-              className="w-full mt-2 text-gray-500 hover:text-gray-900"
-            >
-              Gestisci Macros
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
           </div>
         )}
       </CardContent>
