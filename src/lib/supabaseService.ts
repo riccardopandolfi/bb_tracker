@@ -92,7 +92,7 @@ export async function migrateFromLocalStorage(localData: AppState): Promise<bool
     const currentState = await loadAppState();
 
     // Se il database ha già dati, non migrare
-    if (currentState && Object.keys(currentState.programs || {}).length > 0) {
+    if (currentState && Object.keys(currentState.userData || {}).length > 0) {
       console.log('Database already has data, skipping migration');
       return true;
     }

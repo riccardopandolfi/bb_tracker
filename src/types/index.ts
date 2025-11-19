@@ -230,8 +230,14 @@ export interface DailyMacrosWeek {
   supplements: Supplement[]; // Integratori comuni per tutta la settimana
 }
 
-// Global State
-export interface AppState {
+// User Management
+export interface User {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface UserData {
   currentTab: 'home' | 'library' | 'programs' | 'program' | 'logbook' | 'macros';
   currentProgramId: number | null;
   currentWeek: number;
@@ -242,6 +248,13 @@ export interface AppState {
   muscleGroupColors: Record<string, string>; // Colori per gruppi muscolari personalizzati
   customTechniques: CustomTechnique[]; // Tecniche personalizzate
   dailyMacros: DailyMacrosWeek | null; // Macro giornalieri settimanali
+}
+
+// Global State
+export interface AppState {
+  users: User[];
+  currentUserId: string;
+  userData: Record<string, UserData>;
 }
 
 // Volume calculations

@@ -15,6 +15,8 @@ import {
 import { Home, BookOpen, Dumbbell, TrendingUp, Folder, Apple } from 'lucide-react';
 import { cn } from './lib/utils';
 
+import { UserSelector } from './components/UserSelector';
+
 function App() {
   const { currentTab, setCurrentTab, programs } = useApp();
 
@@ -42,9 +44,12 @@ function App() {
                 Nobody Cares Work Harder
               </h1>
             </div>
-            <p className="hidden md:block text-sm text-white/80">
-              Il tuo tracker di allenamento professionale
-            </p>
+            <div className="flex items-center gap-4">
+              <p className="hidden md:block text-sm text-white/80">
+                Il tuo tracker di allenamento professionale
+              </p>
+              <UserSelector />
+            </div>
           </div>
         </div>
       </header>
@@ -64,7 +69,7 @@ function App() {
                         navigationMenuTriggerStyle(),
                         'cursor-pointer',
                         currentTab === item.value &&
-                          'bg-accent text-accent-foreground',
+                        'bg-accent text-accent-foreground',
                         isDisabled && 'opacity-50 cursor-not-allowed'
                       )}
                       onClick={() => {
