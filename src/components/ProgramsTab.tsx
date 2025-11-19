@@ -180,96 +180,147 @@ export function ProgramsTab() {
             const createdDate = program.createdAt ? format(new Date(program.createdAt), 'dd MMM yyyy', { locale: it }) : 'Data non disponibile';
 
             return (
-              <Card
-                key={program.id}
-                className={`relative transition-all min-w-0 w-full ${
-                  isActive
-                    ? 'ring-2 ring-primary shadow-lg'
-                    : 'hover:shadow-md'
-                }`}
-              >
-                {isActive && (
-                  <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
-                    <Badge variant="default" className="gap-1 text-xs">
-                      <CheckCircle2 className="w-3 h-3" />
-                      Attivo
-                    </Badge>
+              <div key={program.id} className="relative w-full">
+                {isActive ? (
+                  <div className="relative w-full">
+                    <div className="absolute -inset-[1px] rounded-xl overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-sky-500 via-blue-500 to-purple-500 opacity-75 blur-sm animate-pulse" />
+                    </div>
+                    <Card className="relative bg-card border-sky-500/50 shadow-[0_0_30px_-10px_rgba(14,165,233,0.3)]">
+                      <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10">
+                        <Badge variant="default" className="gap-1 text-xs bg-sky-500 hover:bg-sky-600">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Attivo
+                        </Badge>
+                      </div>
+
+                      <CardHeader className="pb-2 sm:pb-3">
+                        <CardTitle className="text-base sm:text-lg pr-16 sm:pr-20">{program.name}</CardTitle>
+                        {program.description && (
+                          <CardDescription className="text-xs sm:text-sm">{program.description}</CardDescription>
+                        )}
+                      </CardHeader>
+
+                      <CardContent className="space-y-3 sm:space-y-4">
+                        <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
+                          <div className="flex items-center gap-1.5 sm:gap-2 text-muted-foreground">
+                            <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                            <span className="truncate">{createdDate}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 sm:gap-2 text-muted-foreground">
+                            <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                            <span>{weekCount} settimane</span>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-1.5 sm:gap-2 pt-1 sm:pt-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled
+                            className="flex-1 text-xs sm:text-sm border-sky-500/20 text-sky-500"
+                          >
+                            In Uso
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenEditModal(program.id)}
+                            title="Modifica"
+                            className="px-2 sm:px-3"
+                          >
+                            <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDuplicateProgram(program.id)}
+                            title="Duplica"
+                            className="px-2 sm:px-3"
+                          >
+                            <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </Button>
+                          {programList.length > 1 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteProgram(program.id)}
+                              title="Elimina"
+                              className="px-2 sm:px-3"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500" />
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
+                ) : (
+                  <Card
+                    className="relative transition-all min-w-0 w-full hover:shadow-md hover:border-primary/50"
+                  >
+                    <CardHeader className="pb-2 sm:pb-3">
+                      <CardTitle className="text-base sm:text-lg pr-16 sm:pr-20">{program.name}</CardTitle>
+                      {program.description && (
+                        <CardDescription className="text-xs sm:text-sm">{program.description}</CardDescription>
+                      )}
+                    </CardHeader>
+
+                    <CardContent className="space-y-3 sm:space-y-4">
+                      <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-muted-foreground">
+                          <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                          <span className="truncate">{createdDate}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-muted-foreground">
+                          <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                          <span>{weekCount} settimane</span>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-1.5 sm:gap-2 pt-1 sm:pt-2">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => setCurrentProgram(program.id)}
+                          className="flex-1 text-xs sm:text-sm"
+                        >
+                          Seleziona
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenEditModal(program.id)}
+                          title="Modifica"
+                          className="px-2 sm:px-3"
+                        >
+                          <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDuplicateProgram(program.id)}
+                          title="Duplica"
+                          className="px-2 sm:px-3"
+                        >
+                          <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </Button>
+                        {programList.length > 1 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteProgram(program.id)}
+                            title="Elimina"
+                            className="px-2 sm:px-3"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500" />
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
-
-                <CardHeader className="pb-2 sm:pb-3">
-                  <CardTitle className="text-base sm:text-lg pr-16 sm:pr-20">{program.name}</CardTitle>
-                  {program.description && (
-                    <CardDescription className="text-xs sm:text-sm">{program.description}</CardDescription>
-                  )}
-                </CardHeader>
-
-                <CardContent className="space-y-3 sm:space-y-4">
-                  {/* Info */}
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
-                    <div className="flex items-center gap-1.5 sm:gap-2 text-muted-foreground">
-                      <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                      <span className="truncate">{createdDate}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 sm:gap-2 text-muted-foreground">
-                      <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                      <span>{weekCount} settimane</span>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-1.5 sm:gap-2 pt-1 sm:pt-2">
-                    {!isActive ? (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => setCurrentProgram(program.id)}
-                        className="flex-1 text-xs sm:text-sm"
-                      >
-                        Seleziona
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled
-                        className="flex-1 text-xs sm:text-sm"
-                      >
-                        In Uso
-                      </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleOpenEditModal(program.id)}
-                      title="Modifica"
-                      className="px-2 sm:px-3"
-                    >
-                      <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDuplicateProgram(program.id)}
-                      title="Duplica"
-                      className="px-2 sm:px-3"
-                    >
-                      <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    </Button>
-                    {programList.length > 1 && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteProgram(program.id)}
-                        title="Elimina"
-                        className="px-2 sm:px-3"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500" />
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+              </div>
             );
           })}
         </div>
