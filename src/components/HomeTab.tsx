@@ -294,10 +294,10 @@ export function HomeTab() {
       </div>
 
       {/* Top Grid */}
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 w-full">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 w-full lg:h-[600px]">
         {/* Programma Attivo e Sessioni Recenti Completate */}
-        <Card className="min-w-0 w-full shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
-          <CardContent className="space-y-4 pt-6">
+        <Card className="min-w-0 w-full h-full shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+          <CardContent className="flex flex-col pt-6 h-full">
             {/* Programma Attivo */}
             <div>
               <div className="text-2xl font-bold font-heading">{currentProgram?.name || 'Nessuno'}</div>
@@ -307,7 +307,7 @@ export function HomeTab() {
             </div>
 
             {/* Divider */}
-            <div className="border-t pt-4">
+            <div className="border-t pt-4 mt-4 flex flex-col flex-1 min-h-0">
               <div className="mb-3">
                 <h4 className="text-xs font-semibold mb-2 text-gray-400">Sessioni Completate - Week {lastWeekNum}</h4>
               </div>

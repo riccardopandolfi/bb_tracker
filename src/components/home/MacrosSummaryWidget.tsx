@@ -1,5 +1,5 @@
 import { useApp } from '@/contexts/AppContext';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { ArrowRight } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
@@ -38,11 +38,6 @@ export function MacrosSummaryWidget() {
 
   return (
     <Card className="h-full border-none shadow-premium hover:shadow-premium-hover transition-all duration-300">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-heading">
-          Macro di Oggi
-        </CardTitle>
-      </CardHeader>
       <CardContent className="space-y-4 pt-6">
         {!dailyMacros || !hasMacros ? (
           <div className="text-center py-8 space-y-4">
