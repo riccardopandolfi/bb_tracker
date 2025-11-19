@@ -80,7 +80,7 @@ export function HomeTab() {
             <div className="rounded-full bg-muted p-4 mb-4">
               <Dumbbell className="h-12 w-12 text-muted-foreground" />
             </div>
-            <h3 className="text-2xl font-bold mb-2">Nessun Programma Trovato</h3>
+            <h3 className="text-2xl font-bold mb-2 font-heading">Nessun Programma Trovato</h3>
             <p className="text-muted-foreground text-center mb-6 max-w-md">
               Inizia creando il tuo primo programma di allenamento per sbloccare tutte le funzionalità dell'app.
             </p>

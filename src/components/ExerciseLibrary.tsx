@@ -102,7 +102,7 @@ export function ExerciseLibrary() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-2">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold">Libreria Esercizi</h2>
+          <h2 className="text-xl sm:text-2xl font-bold font-heading">Libreria Esercizi</h2>
           <p className="text-sm sm:text-base text-muted-foreground">Gestisci esercizi, cardio e gruppi muscolari</p>
         </div>
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
@@ -190,7 +190,7 @@ export function ExerciseLibrary() {
                       value={newMuscleColor}
                       onChange={(e) => setNewMuscleColor(e.target.value)}
                       placeholder="#6b7280"
-                      className="flex-1 font-mono"
+                      className="flex-1"
                     />
                   </div>
                 </div>
@@ -396,7 +396,7 @@ export function ExerciseLibrary() {
             <div className="rounded-full bg-primary/10 p-4 sm:p-6 mb-4 sm:mb-6">
               <BookOpen className="h-12 w-12 sm:h-16 sm:w-16 text-primary" />
             </div>
-            <h3 className="text-2xl sm:text-3xl font-bold mb-2 sm:mb-3 text-center">Libreria Vuota</h3>
+            <h3 className="text-2xl sm:text-3xl font-bold mb-2 sm:mb-3 text-center font-heading">Libreria Vuota</h3>
             <p className="text-muted-foreground text-center mb-6 sm:mb-8 max-w-lg text-base sm:text-lg px-2">
               Aggiungi i tuoi esercizi preferiti per iniziare a costruire i tuoi programmi di allenamento.
             </p>
