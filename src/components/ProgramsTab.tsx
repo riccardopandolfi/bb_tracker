@@ -105,7 +105,7 @@ export function ProgramsTab() {
             <p className="text-muted-foreground text-center mb-6 sm:mb-8 max-w-lg text-base sm:text-lg px-2">
               Inizia il tuo percorso di allenamento creando un programma personalizzato con settimane, giorni ed esercizi.
             </p>
-            <Button onClick={() => setShowNewProgramModal(true)} variant="ghost" size="sm" className="w-full text-gray-500 hover:text-gray-900">
+            <Button onClick={() => setShowNewProgramModal(true)} size="sm" className="w-full">
               <Plus className="w-4 h-4 mr-2" />
               Crea Nuovo Programma
             </Button>
@@ -168,7 +168,7 @@ export function ProgramsTab() {
             <h2 className="text-xl sm:text-2xl font-bold font-heading">Gestione Programmi</h2>
             <p className="text-sm sm:text-base text-muted-foreground">Crea, gestisci e seleziona i tuoi programmi di allenamento</p>
           </div>
-          <Button onClick={() => setShowNewProgramModal(true)} variant="ghost" size="sm" className="w-full sm:w-auto text-gray-500 hover:text-gray-900">
+          <Button onClick={() => setShowNewProgramModal(true)} size="sm" className="w-full sm:w-auto">
             <Plus className="w-4 h-4 mr-2" />
             Nuovo Programma
           </Button>

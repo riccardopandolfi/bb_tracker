@@ -68,7 +68,7 @@ export function LogbookTable({ sessions }: LogbookTableProps) {
   if (sessions.length === 0) {
     return (
       <Collapsible open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
-        <Card className="shadow-premium">
+        <Card className="shadow-premium border-none">
           <CardHeader className="pb-3 sm:pb-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex-1 min-w-0">
@@ -101,7 +101,7 @@ export function LogbookTable({ sessions }: LogbookTableProps) {
   return (
     <>
       <Collapsible open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
-        <Card className="shadow-premium">
+        <Card className="shadow-premium border-none">
           <CardHeader className="pb-3 sm:pb-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex-1 min-w-0">

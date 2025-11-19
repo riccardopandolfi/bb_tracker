@@ -153,7 +153,7 @@ export function WorkoutSchemaAnalyzer() {
   };
 
   return (
-    <Card>
+    <Card className="shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
       <CardHeader className="pb-3 sm:pb-6">
         <CardTitle className="text-base sm:text-lg">Analisi Schema di Lavoro</CardTitle>
         <CardDescription className="text-xs sm:text-sm">
@@ -165,8 +165,8 @@ export function WorkoutSchemaAnalyzer() {
           <button
             onClick={() => handleModeChange('normal')}
             className={`flex-1 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${mode === 'normal'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
               }`}
           >
             Set Normali
@@ -174,8 +174,8 @@ export function WorkoutSchemaAnalyzer() {
           <button
             onClick={() => handleModeChange('special')}
             className={`flex-1 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${mode === 'special'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
               }`}
           >
             Tecniche Speciali
