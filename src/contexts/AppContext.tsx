@@ -74,7 +74,7 @@ const createDefaultUserData = (): UserData => ({
 
 const defaultUser: User = {
   id: 'default',
-  name: 'Utente Principale',
+  name: 'Riccardo',
   createdAt: new Date().toISOString(),
 };
 

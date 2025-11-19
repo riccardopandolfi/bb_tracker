@@ -40,10 +40,12 @@ export function UserSelector() {
     return (
         <div className="flex items-center gap-2">
             <Select value={currentUserId} onValueChange={switchUser}>
-                <SelectTrigger className="w-[200px] bg-white/10 border-white/20 text-white">
-                    <div className="flex items-center gap-2">
-                        <UserIcon className="h-4 w-4" />
-                        <SelectValue placeholder="Seleziona utente" />
+                <SelectTrigger className="w-10 md:w-[200px] bg-white/10 border-white/20 text-white px-2 md:px-3">
+                    <div className="flex items-center gap-2 justify-center md:justify-start w-full">
+                        <UserIcon className="h-4 w-4 shrink-0" />
+                        <span className="hidden md:inline truncate">
+                            <SelectValue placeholder="Seleziona utente" />
+                        </span>
                     </div>
                 </SelectTrigger>
                 <SelectContent>
