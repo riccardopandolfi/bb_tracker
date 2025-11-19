@@ -14,7 +14,6 @@ import '@fontsource/inter-tight/600.css';
 import '@fontsource/inter-tight/700.css';
 import '@fontsource/plus-jakarta-sans/600.css';
 import '@fontsource/plus-jakarta-sans/700.css';
-import { TextGenerateEffect } from './components/ui/text-generate-effect';
 import { UserSelector } from './components/UserSelector';
 import { MobileNav } from './components/ui/mobile-nav';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -30,12 +29,12 @@ function App() {
 
       {/* Header */}
       <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/80">
-        <div className="container flex h-16 items-center justify-between px-4">
+        <div className="w-full flex h-16 items-center justify-between px-4 md:px-6 lg:px-8 max-w-[1920px] mx-auto">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center">
+            <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
               <Dumbbell className="h-5 w-5 text-black" />
             </div>
-            <TextGenerateEffect words="Nobody Cares Work Harder" className="text-lg font-bold tracking-tight text-white hidden sm:block" />
+            <h1 className="text-lg font-bold tracking-tight text-white hidden sm:block">Nobody Cares Work Harder</h1>
           </div>
 
           {/* Desktop Navigation */}
@@ -82,23 +81,25 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <main className="container py-6 px-4 md:px-8 pb-24 md:pb-8 relative z-10">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
-            {currentTab === 'home' && <HomeTab />}
-            {currentTab === 'library' && <ExerciseLibrary />}
-            {currentTab === 'programs' && <ProgramsTab />}
-            {currentTab === 'program' && <ProgramTab />}
-            {currentTab === 'logbook' && <LogbookTab />}
-            {currentTab === 'macros' && <MacrosTab />}
-          </motion.div>
-        </AnimatePresence>
+      <main className="w-full py-6 px-4 md:px-6 lg:px-8 pb-24 md:pb-8 relative z-10">
+        <div className="max-w-[1920px] mx-auto">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              {currentTab === 'home' && <HomeTab />}
+              {currentTab === 'library' && <ExerciseLibrary />}
+              {currentTab === 'programs' && <ProgramsTab />}
+              {currentTab === 'program' && <ProgramTab />}
+              {currentTab === 'logbook' && <LogbookTab />}
+              {currentTab === 'macros' && <MacrosTab />}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </main>
 
       {/* Mobile Navigation */}
