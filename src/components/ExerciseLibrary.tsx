@@ -339,7 +339,7 @@ export function ExerciseLibrary() {
             <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
             Cardio
           </Button>
-          <Button onClick={handleAddExercise} variant="ghost" size="sm" className="text-gray-500 hover:text-gray-900">
+          <Button onClick={handleAddExercise} size="sm">
             <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
             Esercizio
           </Button>

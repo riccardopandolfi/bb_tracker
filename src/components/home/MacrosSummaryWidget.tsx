@@ -61,7 +61,7 @@ export function MacrosSummaryWidget() {
           <div className="space-y-4">
             {/* Title with separator */}
             <div className="pb-4 border-b">
-              <div className="text-2xl font-bold font-heading">Macro di Oggi</div>
+              <div className="text-base sm:text-lg font-bold font-heading">Macro di Oggi</div>
               <p className="text-sm text-gray-500 mt-1">{DAY_NAMES[currentDayIndex]}</p>
             </div>
 

@@ -308,7 +308,7 @@ export function MacrosTab() {
                       ? 'border-emerald-200 bg-emerald-50'
                       : isToday
                         ? 'border-black border-2'
-                        : ''
+                        : 'border-gray-200'
                     }`}
                 >
                   <div className="flex items-center justify-between mb-3">

@@ -300,7 +300,7 @@ export function HomeTab() {
           <CardContent className="flex flex-col pt-6 h-full">
             {/* Programma Attivo */}
             <div>
-              <div className="text-2xl font-bold font-heading">{currentProgram?.name || 'Nessuno'}</div>
+              <div className="text-base sm:text-lg font-bold font-heading">{currentProgram?.name || 'Nessuno'}</div>
               <p className="text-sm text-gray-500 mt-1">
                 {totalPrograms} {totalPrograms === 1 ? 'programma totale' : 'programmi totali'}
               </p>
@@ -314,7 +314,7 @@ export function HomeTab() {
               {dayStatus.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Nessun giorno configurato</p>
               ) : (
-                <div className="space-y-2 flex-1 overflow-y-auto pr-2">
+                <div className="space-y-2 flex-1 overflow-y-auto pr-2 grid grid-cols-1 gap-2 content-start">
                   {dayStatus
                     .filter((day) => day.isComplete)
                     .map((day) => (
