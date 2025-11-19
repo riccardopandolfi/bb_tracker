@@ -161,16 +161,16 @@ export function MacrosTab() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Macronutrienti Giornalieri</h2>
+          <h2 className="text-2xl font-bold font-heading">Macronutrienti Giornalieri</h2>
           <p className="text-muted-foreground">Configura e traccia i tuoi macro giorno per giorno</p>
         </div>
       </div>
 
       {/* Card Riepilogo */}
       {weeklyAverage && (
-        <Card>
+        <Card className="shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
           <CardHeader>
-            <CardTitle className="text-base sm:text-lg">Riepilogo Settimanale</CardTitle>
+            <CardTitle className="text-base sm:text-lg font-heading">Riepilogo Settimanale</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
@@ -206,9 +206,8 @@ export function MacrosTab() {
                 {dailyMacros.checked.map((checked, idx) => (
                   <div
                     key={idx}
-                    className={`h-2 flex-1 rounded-full ${
-                      checked ? 'bg-green-500' : 'bg-gray-200'
-                    }`}
+                    className={`h-2 flex-1 rounded-full ${checked ? 'bg-green-500' : 'bg-gray-200'
+                      }`}
                     title={`${DAY_NAMES[idx]}${checked ? ' - Completato' : ''}`}
                   />
                 ))}
@@ -224,11 +223,11 @@ export function MacrosTab() {
       )}
 
       {/* Card Integratori Settimanali */}
-      <Card>
+      <Card className="shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-base sm:text-lg">Integratori Settimanali</CardTitle>
+              <CardTitle className="text-base sm:text-lg font-heading">Integratori Settimanali</CardTitle>
               <CardDescription className="text-xs sm:text-sm">
                 Integratori comuni per tutti i giorni della settimana
               </CardDescription>
@@ -286,9 +285,9 @@ export function MacrosTab() {
       </Card>
 
       {/* Card Macro Settimanali */}
-      <Card>
+      <Card className="shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
         <CardHeader>
-          <CardTitle className="text-base sm:text-lg">Macro Settimanali</CardTitle>
+          <CardTitle className="text-base sm:text-lg font-heading">Macro Settimanali</CardTitle>
           <CardDescription className="text-xs sm:text-sm">
             Configura i macro e spunta i giorni completati. Le calorie vengono calcolate automaticamente.
           </CardDescription>
@@ -305,13 +304,12 @@ export function MacrosTab() {
               return (
                 <Card
                   key={dayIndex}
-                  className={`p-4 ${
-                    isChecked
+                  className={`p-4 ${isChecked
                       ? 'border-green-500 bg-green-50/50'
                       : isToday
-                      ? 'border-black border-2'
-                      : ''
-                  }`}
+                        ? 'border-black border-2'
+                        : ''
+                    }`}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">

@@ -18,7 +18,7 @@ export function WeekSelector() {
   };
 
   return (
-    <Card>
+    <Card className="shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
       <CardContent className="pt-6">
         <div className="flex flex-wrap gap-2 items-center">
           <span className="text-sm font-medium mr-2">Settimana:</span>

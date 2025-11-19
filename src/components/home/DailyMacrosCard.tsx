@@ -18,9 +18,9 @@ export function DailyMacrosCard({ onOpenSettings }: DailyMacrosCardProps) {
   // Se non ci sono macro giornalieri configurati
   if (!dailyMacros) {
     return (
-      <Card>
+      <Card className="h-full shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-heading">
             <Calendar className="w-5 h-5" />
             Macro Giornalieri
           </CardTitle>
@@ -53,10 +53,10 @@ export function DailyMacrosCard({ onOpenSettings }: DailyMacrosCardProps) {
   };
 
   return (
-    <Card>
+    <Card className="h-full shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-heading">
             <Calendar className="w-5 h-5" />
             Macro Giornalieri
           </CardTitle>
@@ -110,15 +110,13 @@ export function DailyMacrosCard({ onOpenSettings }: DailyMacrosCardProps) {
         )}
 
         {/* Giorno corrente */}
-        <div className={`p-3 rounded-lg border ${
-          currentDayChecked
+        <div className={`p-3 rounded-lg border ${currentDayChecked
             ? 'border-green-200 bg-green-50'
             : 'border-blue-200 bg-blue-50'
-        }`}>
+          }`}>
           <div className="flex items-center justify-between mb-2">
-            <span className={`text-xs font-semibold uppercase tracking-wide ${
-              currentDayChecked ? 'text-green-900' : 'text-blue-900'
-            }`}>
+            <span className={`text-xs font-semibold uppercase tracking-wide ${currentDayChecked ? 'text-green-900' : 'text-blue-900'
+              }`}>
               Oggi: {DAY_NAMES[currentDayIndex]}
             </span>
             {currentDayChecked && (
@@ -188,9 +186,8 @@ export function DailyMacrosCard({ onOpenSettings }: DailyMacrosCardProps) {
           {dailyMacros.checked.map((checked, idx) => (
             <div
               key={idx}
-              className={`h-2 flex-1 rounded-full ${
-                checked ? 'bg-green-500' : 'bg-gray-200'
-              }`}
+              className={`h-2 flex-1 rounded-full ${checked ? 'bg-green-500' : 'bg-gray-200'
+                }`}
               title={`${DAY_NAMES[idx]}${checked ? ' - Completato' : ''}`}
             />
           ))}

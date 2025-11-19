@@ -59,7 +59,7 @@ export function HomeTab() {
     return (
       <div className="space-y-6">
         {/* Empty State */}
-        <Card className="border-dashed">
+        <Card className="border-dashed shadow-premium">
           <CardContent className="flex flex-col items-center justify-center py-16 px-4">
             <div className="self-end mb-4">
               <div className="flex items-center space-x-2">
@@ -296,11 +296,11 @@ export function HomeTab() {
       {/* Top Grid */}
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 w-full">
         {/* Programma Attivo e Sessioni Recenti Completate */}
-        <Card className="min-w-0 w-full">
+        <Card className="min-w-0 w-full shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
           <CardContent className="space-y-4 pt-6">
             {/* Programma Attivo */}
             <div>
-              <div className="text-base sm:text-lg font-bold">{currentProgram?.name || 'Nessuno'}</div>
+              <div className="text-base sm:text-lg font-bold font-heading">{currentProgram?.name || 'Nessuno'}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 {totalPrograms} {totalPrograms === 1 ? 'programma totale' : 'programmi totali'}
               </p>
@@ -361,10 +361,10 @@ export function HomeTab() {
       </div>
 
       {/* Volume Chart */}
-      <Card className="min-w-0 w-full">
+      <Card className="min-w-0 w-full shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-2 space-y-0 border-b py-4 sm:py-5">
           <div className="grid flex-1 gap-1 w-full sm:w-auto">
-            <CardTitle className="text-base sm:text-lg">Volume per Gruppo Muscolare</CardTitle>
+            <CardTitle className="text-base sm:text-lg font-heading">Volume per Gruppo Muscolare</CardTitle>
             <CardDescription className="text-xs sm:text-sm">
               Progressione del volume nelle settimane (tutti i programmi)
             </CardDescription>
