@@ -314,7 +314,7 @@ export function HomeTab() {
               {dayStatus.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Nessun giorno configurato</p>
               ) : (
-                <div className="space-y-2 flex-1 overflow-y-auto pr-2 grid grid-cols-1 gap-2 content-start">
+                <div className="space-y-2 flex-1 overflow-y-auto pr-2 grid grid-cols-1 gap-2 auto-rows-fr">
                   {dayStatus
                     .filter((day) => day.isComplete)
                     .map((day) => (
