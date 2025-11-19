@@ -2,6 +2,7 @@ import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { ArrowRight } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 const DAY_NAMES = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
 
@@ -25,18 +26,31 @@ export function MacrosSummaryWidget() {
 
   const calculatedKcal = currentDay ? calculateKcal(currentDay.protein, currentDay.carbs, currentDay.fat) : 0;
 
+  const p = parseFloat(currentDay?.protein || '0');
+  const c = parseFloat(currentDay?.carbs || '0');
+  const f = parseFloat(currentDay?.fat || '0');
+
+  const data = [
+    { name: 'Proteine', value: p, color: '#3b82f6' }, // blue-500
+    { name: 'Carbo', value: c, color: '#10b981' }, // emerald-500
+    { name: 'Grassi', value: f, color: '#f59e0b' }, // amber-500
+  ];
+
   return (
-    <Card>
+    <Card className="h-full border-none shadow-premium hover:shadow-premium-hover transition-all duration-300">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-heading">
           Macro di Oggi
         </CardTitle>
       </CardHeader>
       <CardContent>
         {!dailyMacros || !hasMacros ? (
-          <div className="text-center py-4 space-y-3">
+          <div className="text-center py-8 space-y-4">
+            <div className="w-24 h-24 mx-auto rounded-full bg-gray-100 flex items-center justify-center">
+              <span className="text-2xl">🍎</span>
+            </div>
             <p className="text-sm text-muted-foreground">
-              Nessun macro configurato
+              Nessun macro configurato per oggi
             </p>
             <Button
               onClick={() => setCurrentTab('macros')}
@@ -49,62 +63,85 @@ export function MacrosSummaryWidget() {
             </Button>
           </div>
         ) : (
-          <div className="space-y-3">
-            <div className="p-4 rounded-lg border border-gray-200">
-              <div className="text-sm font-semibold mb-3 text-gray-700">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
                 {DAY_NAMES[currentDayIndex]}
               </div>
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                <div>
-                  <span className="text-sm text-gray-600">Kcal:</span>
-                  <span className="ml-1 text-sm font-semibold text-gray-900">
-                    {calculatedKcal > 0 ? calculatedKcal : '-'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-sm text-gray-600">Proteine:</span>
-                  <span className="ml-1 text-sm font-semibold text-gray-900">
-                    {currentDay.protein || '-'}g
-                  </span>
-                </div>
-                <div>
-                  <span className="text-sm text-gray-600">Carbo:</span>
-                  <span className="ml-1 text-sm font-semibold text-gray-900">
-                    {currentDay.carbs || '-'}g
-                  </span>
-                </div>
-                <div>
-                  <span className="text-sm text-gray-600">Grassi:</span>
-                  <span className="ml-1 text-sm font-semibold text-gray-900">
-                    {currentDay.fat || '-'}g
-                  </span>
+              <div className="text-2xl font-bold font-heading">
+                {calculatedKcal > 0 ? calculatedKcal : '-'} <span className="text-sm font-normal text-gray-500">kcal</span>
+              </div>
+            </div>
+
+            <div className="h-[180px] w-full relative">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={data}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {data.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              {/* Center Text */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="text-center">
+                  <span className="text-xs text-gray-400">Totale</span>
                 </div>
               </div>
-
-              {/* Integratori */}
-              {dailyMacros.supplements && dailyMacros.supplements.length > 0 && (
-                <div className="border-t border-gray-200 pt-3">
-                  <div className="text-sm font-semibold mb-2 text-gray-700">Integratori</div>
-                  <div className="space-y-1">
-                    {dailyMacros.supplements.map((supp, idx) => (
-                      <div key={idx} className="text-sm text-gray-600">
-                        • {supp.name || 'Integratore'}: <span className="font-semibold text-gray-900">{supp.grams}g</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <Button
-                onClick={() => setCurrentTab('macros')}
-                variant="outline"
-                size="sm"
-                className="w-full mt-4"
-              >
-                Gestisci Macros
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
             </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-blue-50 p-2 rounded-lg text-center">
+                <span className="block text-xs text-blue-600 font-medium">Proteine</span>
+                <span className="block text-lg font-bold text-blue-700">{p}g</span>
+              </div>
+              <div className="bg-emerald-50 p-2 rounded-lg text-center">
+                <span className="block text-xs text-emerald-600 font-medium">Carbo</span>
+                <span className="block text-lg font-bold text-emerald-700">{c}g</span>
+              </div>
+              <div className="bg-amber-50 p-2 rounded-lg text-center">
+                <span className="block text-xs text-amber-600 font-medium">Grassi</span>
+                <span className="block text-lg font-bold text-amber-700">{f}g</span>
+              </div>
+            </div>
+
+            {/* Integratori */}
+            {dailyMacros.supplements && dailyMacros.supplements.length > 0 && (
+              <div className="border-t border-gray-100 pt-4">
+                <div className="text-xs font-semibold mb-2 text-gray-400 uppercase">Integratori</div>
+                <div className="space-y-2">
+                  {dailyMacros.supplements.map((supp, idx) => (
+                    <div key={idx} className="flex justify-between items-center text-sm">
+                      <span className="text-gray-600">{supp.name || 'Integratore'}</span>
+                      <span className="font-semibold text-gray-900 bg-gray-100 px-2 py-0.5 rounded-md">{supp.grams}g</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <Button
+              onClick={() => setCurrentTab('macros')}
+              variant="ghost"
+              size="sm"
+              className="w-full mt-2 text-gray-500 hover:text-gray-900"
+            >
+              Gestisci Macros
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
           </div>
         )}
       </CardContent>

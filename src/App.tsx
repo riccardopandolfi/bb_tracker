@@ -5,114 +5,129 @@ import { ProgramsTab } from './components/ProgramsTab';
 import { ProgramTab } from './components/ProgramTab';
 import { LogbookTab } from './components/LogbookTab';
 import { MacrosTab } from './components/MacrosTab';
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  navigationMenuTriggerStyle,
-} from './components/ui/navigation-menu';
-import { Home, BookOpen, Dumbbell, TrendingUp, Folder, Apple } from 'lucide-react';
+import { Home, BookOpen, Dumbbell, Folder, Apple } from 'lucide-react';
 import { cn } from './lib/utils';
 import { BackgroundBeams } from './components/ui/background-beams';
+import '@fontsource/inter-tight/400.css';
+import '@fontsource/inter-tight/500.css';
+import '@fontsource/inter-tight/600.css';
+import '@fontsource/inter-tight/700.css';
+import '@fontsource/plus-jakarta-sans/600.css';
+import '@fontsource/plus-jakarta-sans/700.css';
 import { TextGenerateEffect } from './components/ui/text-generate-effect';
-
 import { UserSelector } from './components/UserSelector';
+import { MobileNav } from './components/ui/mobile-nav';
+import { AnimatePresence, motion } from 'framer-motion';
 
 function App() {
-  const { currentTab, setCurrentTab, programs } = useApp();
-
-  // Check if there are any programs
-  const hasPrograms = Object.keys(programs).length > 0;
-
-  const navItems = [
-    { value: 'home', label: 'Home', icon: Home, requiresProgram: false },
-    { value: 'library', label: 'Libreria', icon: BookOpen, requiresProgram: false },
-    { value: 'programs', label: 'Programmi', icon: Folder, requiresProgram: false },
-    { value: 'program', label: 'Scheda', icon: Dumbbell, requiresProgram: true },
-    { value: 'logbook', label: 'Logbook', icon: TrendingUp, requiresProgram: true },
-    { value: 'macros', label: 'Macros', icon: Apple, requiresProgram: true },
-  ] as const;
+  const { currentTab, setCurrentTab } = useApp();
 
   return (
-    <div className="min-h-screen bg-white relative w-full overflow-hidden flex flex-col">
-      <div className="absolute inset-0 w-full h-full z-0 pointer-events-none">
-        <BackgroundBeams />
+    <div className="min-h-screen w-full bg-white text-foreground relative overflow-x-hidden font-sans selection:bg-primary/20">
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <BackgroundBeams className="opacity-10" />
       </div>
-      <div className="relative z-10 flex flex-col min-h-screen">
-        {/* Header */}
-        <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-black text-white">
-          <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8">
-            <div className="flex h-14 sm:h-16 items-center justify-between">
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <Dumbbell className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                <div className="text-base sm:text-xl font-bold tracking-wide text-white brand-font">
-                  <TextGenerateEffect words="Nobody Cares Work Harder" className="text-white" />
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <p className="hidden md:block text-sm text-white/80">
-                  Il tuo tracker di allenamento professionale
-                </p>
-                <UserSelector />
-              </div>
-            </div>
-          </div>
-        </header>
 
-        {/* Navigation */}
-        <div className="border-b border-white/10 bg-black text-white overflow-x-auto">
-          <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8">
-            <NavigationMenu className="max-w-full justify-start py-1.5 sm:py-2">
-              <NavigationMenuList className="flex-wrap gap-0.5 sm:gap-1">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  const isDisabled = item.requiresProgram && !hasPrograms;
-                  return (
-                    <NavigationMenuItem key={item.value}>
-                      <NavigationMenuLink
-                        className={cn(
-                          navigationMenuTriggerStyle(),
-                          'cursor-pointer bg-transparent text-white hover:bg-white/20 hover:text-white focus:bg-white/20 focus:text-white',
-                          currentTab === item.value &&
-                          'bg-white text-black hover:bg-white/90 hover:text-black focus:bg-white/90 focus:text-black',
-                          isDisabled && 'opacity-50 cursor-not-allowed hover:bg-transparent'
-                        )}
-                        onClick={() => {
-                          if (!isDisabled) {
-                            setCurrentTab(item.value as any);
-                          }
-                        }}
-                      >
-                        <Icon className="mr-2 h-4 w-4" />
-                        <span className="hidden sm:inline">{item.label}</span>
-                        <span className="sm:hidden">
-                          {item.label === 'Libreria' ? 'Lib' : item.label}
-                        </span>
-                      </NavigationMenuLink>
-                    </NavigationMenuItem>
-                  );
-                })}
-              </NavigationMenuList>
-            </NavigationMenu>
+      {/* Header */}
+      <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/80">
+        <div className="container flex h-16 items-center justify-between px-4">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center">
+              <Dumbbell className="h-5 w-5 text-black" />
+            </div>
+            <TextGenerateEffect words="Nobody Cares Work Harder" className="text-lg font-bold tracking-tight text-white hidden sm:block" />
           </div>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/10">
+            <NavigationMenuLink
+              active={currentTab === 'home'}
+              onClick={() => setCurrentTab('home')}
+              icon={<Home className="w-4 h-4" />}
+            >
+              Home
+            </NavigationMenuLink>
+            <NavigationMenuLink
+              active={currentTab === 'programs'}
+              onClick={() => setCurrentTab('programs')}
+              icon={<Folder className="w-4 h-4" />}
+            >
+              Programmi
+            </NavigationMenuLink>
+            <NavigationMenuLink
+              active={currentTab === 'library'}
+              onClick={() => setCurrentTab('library')}
+              icon={<BookOpen className="w-4 h-4" />}
+            >
+              Libreria
+            </NavigationMenuLink>
+            <NavigationMenuLink
+              active={currentTab === 'logbook'}
+              onClick={() => setCurrentTab('logbook')}
+              icon={<Dumbbell className="w-4 h-4" />}
+            >
+              Logbook
+            </NavigationMenuLink>
+            <NavigationMenuLink
+              active={currentTab === 'macros'}
+              onClick={() => setCurrentTab('macros')}
+              icon={<Apple className="w-4 h-4" />}
+            >
+              Macros
+            </NavigationMenuLink>
+          </div>
+
+          <UserSelector />
         </div>
+      </header>
 
-        {/* Main Content */}
-        <main className="w-full overflow-x-hidden">
-          <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6">
-            <div className="animate-in fade-in duration-500 w-full">
-              {currentTab === 'home' && <HomeTab />}
-              {currentTab === 'library' && <ExerciseLibrary />}
-              {currentTab === 'programs' && <ProgramsTab />}
-              {currentTab === 'program' && <ProgramTab />}
-              {currentTab === 'logbook' && <LogbookTab />}
-              {currentTab === 'macros' && <MacrosTab />}
-            </div>
-          </div>
-        </main>
-      </div>
+      {/* Main Content */}
+      <main className="container py-6 px-4 md:px-8 pb-24 md:pb-8 relative z-10">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {currentTab === 'home' && <HomeTab />}
+            {currentTab === 'library' && <ExerciseLibrary />}
+            {currentTab === 'programs' && <ProgramsTab />}
+            {currentTab === 'program' && <ProgramTab />}
+            {currentTab === 'logbook' && <LogbookTab />}
+            {currentTab === 'macros' && <MacrosTab />}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+
+      {/* Mobile Navigation */}
+      <MobileNav currentTab={currentTab} setCurrentTab={setCurrentTab} />
     </div>
+  );
+}
+
+function NavigationMenuLink({ active, onClick, children, icon }: { active: boolean; onClick: () => void; children: React.ReactNode; icon?: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "relative px-4 py-2 text-sm font-medium transition-all duration-200 rounded-full flex items-center gap-2",
+        active ? "text-black" : "text-white/60 hover:text-white hover:bg-white/10"
+      )}
+    >
+      {active && (
+        <motion.div
+          layoutId="desktop-nav-pill"
+          className="absolute inset-0 bg-white rounded-full shadow-sm"
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        />
+      )}
+      <span className="relative z-10 flex items-center gap-2">
+        {icon}
+        {children}
+      </span>
+    </button>
   );
 }
 

@@ -10,6 +10,8 @@ import { Plus, Trash2, AlertCircle, Settings2 } from 'lucide-react';
 import { Alert, AlertDescription } from './ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Textarea } from './ui/textarea';
+import { AnimatePresence, motion } from 'framer-motion';
+import { BookOpen } from 'lucide-react';
 
 export function ExerciseLibrary() {
   const { exercises, addExercise, updateExercise, deleteExercise, muscleGroups, addMuscleGroup, updateMuscleGroupColor, deleteMuscleGroup, getMuscleColor, customTechniques, addCustomTechnique, deleteCustomTechnique } = useApp();
@@ -388,18 +390,52 @@ export function ExerciseLibrary() {
       )}
 
       {/* Exercise Cards */}
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full">
-        {exercises.map((exercise, index) => (
-          <ExerciseCard
-            key={index}
-            exercise={exercise}
-            index={index}
-            onUpdate={updateExercise}
-            onDelete={deleteExercise}
-            muscleGroups={muscleGroups}
-          />
-        ))}
-      </div>
+      {exercises.length === 0 ? (
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-12 sm:py-20 px-4">
+            <div className="rounded-full bg-primary/10 p-4 sm:p-6 mb-4 sm:mb-6">
+              <BookOpen className="h-12 w-12 sm:h-16 sm:w-16 text-primary" />
+            </div>
+            <h3 className="text-2xl sm:text-3xl font-bold mb-2 sm:mb-3 text-center">Libreria Vuota</h3>
+            <p className="text-muted-foreground text-center mb-6 sm:mb-8 max-w-lg text-base sm:text-lg px-2">
+              Aggiungi i tuoi esercizi preferiti per iniziare a costruire i tuoi programmi di allenamento.
+            </p>
+            <div className="flex gap-3">
+              <Button onClick={handleAddExercise} size="lg">
+                <Plus className="w-4 h-4 mr-2" />
+                Nuovo Esercizio
+              </Button>
+              <Button onClick={handleAddCardio} variant="secondary" size="lg">
+                <Plus className="w-4 h-4 mr-2" />
+                Nuovo Cardio
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full">
+          <AnimatePresence mode="popLayout">
+            {exercises.map((exercise, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                layout
+                className="min-w-0 w-full"
+              >
+                <ExerciseCard
+                  exercise={exercise}
+                  index={index}
+                  onUpdate={updateExercise}
+                  onDelete={deleteExercise}
+                  muscleGroups={muscleGroups}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 }
@@ -463,7 +499,7 @@ function ExerciseCard({ exercise, index, onUpdate, onDelete, muscleGroups }: Exe
   };
 
   return (
-    <Card className={`${!isValid ? 'border-red-500 border-2' : ''} min-w-0 w-full`}>
+    <Card className={`${!isValid ? 'border-red-500 border-2' : 'border-transparent'} min-w-0 w-full shadow-premium hover:shadow-premium-hover transition-all duration-300`}>
       <CardHeader className="pb-3 sm:pb-6">
         <CardTitle className="min-w-0">
           <Input
@@ -556,9 +592,8 @@ function ExerciseCard({ exercise, index, onUpdate, onDelete, muscleGroups }: Exe
             <div className="flex justify-between items-center pt-1.5 sm:pt-2 border-t">
               <span className="text-xs sm:text-sm font-medium">Totale:</span>
               <span
-                className={`text-xs sm:text-sm font-bold ${
-                  isValid ? 'text-green-600' : 'text-red-600'
-                }`}
+                className={`text-xs sm:text-sm font-bold ${isValid ? 'text-green-600' : 'text-red-600'
+                  }`}
               >
                 {totalPercent}%
               </span>

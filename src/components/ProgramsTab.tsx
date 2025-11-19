@@ -6,9 +6,11 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
 import { Badge } from './ui/badge';
-import { Plus, Copy, Trash2, Calendar, Layers, CheckCircle2, Pencil } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { Plus, Copy, Trash2, Calendar, Layers, CheckCircle2, Pencil, MoreVertical } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export function ProgramsTab() {
   const { programs, currentProgramId, setCurrentProgram, addProgram, updateProgram, duplicateProgram, deleteProgram } = useApp();
@@ -297,8 +299,6 @@ export function ProgramsTab() {
   );
 }
 
-import { AnimatePresence, motion } from 'framer-motion';
-
 function ProgramCard({
   program,
   isActive,
@@ -353,17 +353,23 @@ function ProgramCard({
               <div className="absolute inset-0 bg-black opacity-100 blur-sm" />
             </div>
             <Card className="relative bg-card border-black shadow-[0_0_30px_-10px_rgba(0,0,0,0.3)] h-full">
-              <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10">
+              <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 flex items-center gap-2">
                 <Badge variant="default" className="gap-1 text-xs bg-sky-500 hover:bg-sky-600">
                   <CheckCircle2 className="w-3 h-3" />
                   Attivo
                 </Badge>
+                <ProgramActionsMenu
+                  onEdit={onEdit}
+                  onDuplicate={onDuplicate}
+                  onDelete={onDelete}
+                  canDelete={programListLength > 1}
+                />
               </div>
 
               <CardHeader className="pb-2 sm:pb-3">
-                <CardTitle className="text-base sm:text-lg pr-16 sm:pr-20">{program.name}</CardTitle>
+                <CardTitle className="text-base sm:text-lg pr-24 sm:pr-28 font-heading">{program.name}</CardTitle>
                 {program.description && (
-                  <CardDescription className="text-xs sm:text-sm">{program.description}</CardDescription>
+                  <CardDescription className="text-xs sm:text-sm line-clamp-2">{program.description}</CardDescription>
                 )}
               </CardHeader>
 
@@ -379,44 +385,15 @@ function ProgramCard({
                   </div>
                 </div>
 
-                <div className="flex gap-1.5 sm:gap-2 pt-1 sm:pt-2">
+                <div className="pt-1 sm:pt-2">
                   <Button
                     variant="outline"
                     size="sm"
                     disabled
-                    className="flex-1 text-xs sm:text-sm border-sky-500/20 text-sky-500"
+                    className="w-full text-xs sm:text-sm border-sky-500/20 text-sky-500 bg-sky-50"
                   >
                     In Uso
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => { e.stopPropagation(); onEdit(); }}
-                    title="Modifica"
-                    className="px-2 sm:px-3"
-                  >
-                    <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
-                    title="Duplica"
-                    className="px-2 sm:px-3"
-                  >
-                    <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </Button>
-                  {programListLength > 1 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                      title="Elimina"
-                      className="px-2 sm:px-3"
-                    >
-                      <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500" />
-                    </Button>
-                  )}
                 </div>
               </CardContent>
             </Card>
@@ -425,10 +402,19 @@ function ProgramCard({
           <Card
             className="relative transition-all min-w-0 w-full h-full bg-card border-black/10 hover:border-transparent"
           >
+            <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10">
+              <ProgramActionsMenu
+                onEdit={onEdit}
+                onDuplicate={onDuplicate}
+                onDelete={onDelete}
+                canDelete={programListLength > 1}
+              />
+            </div>
+
             <CardHeader className="pb-2 sm:pb-3">
-              <CardTitle className="text-base sm:text-lg pr-16 sm:pr-20">{program.name}</CardTitle>
+              <CardTitle className="text-base sm:text-lg pr-10 sm:pr-12 font-heading">{program.name}</CardTitle>
               {program.description && (
-                <CardDescription className="text-xs sm:text-sm">{program.description}</CardDescription>
+                <CardDescription className="text-xs sm:text-sm line-clamp-2">{program.description}</CardDescription>
               )}
             </CardHeader>
 
@@ -444,49 +430,62 @@ function ProgramCard({
                 </div>
               </div>
 
-              <div className="flex gap-1.5 sm:gap-2 pt-1 sm:pt-2">
+              <div className="pt-1 sm:pt-2">
                 <Button
                   variant="default"
                   size="sm"
                   onClick={onSelect}
-                  className="flex-1 text-xs sm:text-sm"
+                  className="w-full text-xs sm:text-sm shadow-sm hover:shadow-md transition-all"
                 >
                   Seleziona
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => { e.stopPropagation(); onEdit(); }}
-                  title="Modifica"
-                  className="px-2 sm:px-3"
-                >
-                  <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
-                  title="Duplica"
-                  className="px-2 sm:px-3"
-                >
-                  <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                </Button>
-                {programListLength > 1 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                    title="Elimina"
-                    className="px-2 sm:px-3"
-                  >
-                    <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500" />
-                  </Button>
-                )}
               </div>
             </CardContent>
           </Card>
         )}
       </div>
     </div>
+  );
+}
+
+function ProgramActionsMenu({
+  onEdit,
+  onDuplicate,
+  onDelete,
+  canDelete
+}: {
+  onEdit: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
+  canDelete: boolean;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-black/5">
+          <MoreVertical className="h-4 w-4" />
+          <span className="sr-only">Azioni</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-40">
+        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+          <Pencil className="mr-2 h-4 w-4" />
+          Modifica
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDuplicate(); }}>
+          <Copy className="mr-2 h-4 w-4" />
+          Duplica
+        </DropdownMenuItem>
+        {canDelete && (
+          <DropdownMenuItem
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="text-red-600 focus:text-red-600"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Elimina
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
