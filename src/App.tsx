@@ -35,13 +35,13 @@ function App() {
   ] as const;
 
   return (
-    <div className="min-h-screen bg-neutral-950 relative w-full overflow-hidden flex flex-col">
+    <div className="min-h-screen bg-white relative w-full overflow-hidden flex flex-col">
       <div className="absolute inset-0 w-full h-full z-0 pointer-events-none">
         <BackgroundBeams />
       </div>
       <div className="relative z-10 flex flex-col min-h-screen">
         {/* Header */}
-        <header className="sticky top-0 z-50 w-full border-b border-black/40 bg-black text-white">
+        <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-black text-white">
           <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8">
             <div className="flex h-14 sm:h-16 items-center justify-between">
               <div className="flex items-center gap-1.5 sm:gap-2">
@@ -61,7 +61,7 @@ function App() {
         </header>
 
         {/* Navigation */}
-        <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 overflow-x-auto">
+        <div className="border-b border-white/10 bg-black text-white overflow-x-auto">
           <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8">
             <NavigationMenu className="max-w-full justify-start py-1.5 sm:py-2">
               <NavigationMenuList className="flex-wrap gap-0.5 sm:gap-1">
@@ -73,10 +73,10 @@ function App() {
                       <NavigationMenuLink
                         className={cn(
                           navigationMenuTriggerStyle(),
-                          'cursor-pointer',
+                          'cursor-pointer bg-transparent text-white hover:bg-white/20 hover:text-white focus:bg-white/20 focus:text-white',
                           currentTab === item.value &&
-                          'bg-accent text-accent-foreground',
-                          isDisabled && 'opacity-50 cursor-not-allowed'
+                          'bg-white text-black hover:bg-white/90 hover:text-black focus:bg-white/90 focus:text-black',
+                          isDisabled && 'opacity-50 cursor-not-allowed hover:bg-transparent'
                         )}
                         onClick={() => {
                           if (!isDisabled) {
