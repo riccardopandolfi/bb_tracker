@@ -114,7 +114,7 @@ export function TechniqueParamsForm({ technique, params, onChange }: TechniquePa
     };
 
     return (
-      <Card className="mt-4 shadow-premium border-none">
+      <Card className="mt-4">
         <CardHeader>
           <CardTitle className="text-sm">{customTechnique.name}</CardTitle>
           <CardDescription className="text-xs">{customTechnique.description}</CardDescription>
@@ -228,7 +228,7 @@ export function TechniqueParamsForm({ technique, params, onChange }: TechniquePa
   };
 
   return (
-    <Card className="mt-4 shadow-premium border-none">
+    <Card className="mt-4">
       <CardHeader>
         <CardTitle className="text-sm">{definition.label}</CardTitle>
         <CardDescription className="text-xs">{definition.description}</CardDescription>

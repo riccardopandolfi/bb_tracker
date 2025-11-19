@@ -45,35 +45,35 @@ export function LogbookTab() {
   });
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold font-heading">Logbook e Progressioni</h2>
-          <p className="text-sm sm:text-base text-muted-foreground">Analizza i tuoi allenamenti e le tue progressioni</p>
+      <div className="space-y-4 sm:space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold">Logbook e Progressioni</h2>
+            <p className="text-sm sm:text-base text-muted-foreground">Analizza i tuoi allenamenti e le tue progressioni</p>
+          </div>
+          {currentProgram && (
+            <Badge variant="secondary" className="gap-2 px-3 py-1.5 justify-center sm:justify-start">
+              <Folder className="w-4 h-4" />
+              <span className="truncate">{currentProgram.name}</span>
+            </Badge>
+          )}
         </div>
-        {currentProgram && (
-          <Badge variant="secondary" className="gap-2 px-3 py-1.5 justify-center sm:justify-start">
-            <Folder className="w-4 h-4" />
-            <span className="truncate">{currentProgram.name}</span>
-          </Badge>
-        )}
+
+        {/* Filters */}
+        <LogbookFilters
+          filters={filters}
+          setFilters={setFilters}
+          totalSessions={filteredSessions.length}
+          availableWeeks={availableWeeks}
+          availableDays={availableDays}
+        />
+
+        {/* Table */}
+        <LogbookTable sessions={filteredSessions} />
+
+        {/* Charts */}
+        <ChartsSection />
       </div>
-
-      {/* Filters */}
-      <LogbookFilters
-        filters={filters}
-        setFilters={setFilters}
-        totalSessions={filteredSessions.length}
-        availableWeeks={availableWeeks}
-        availableDays={availableDays}
-      />
-
-      {/* Table */}
-      <LogbookTable sessions={filteredSessions} />
-
-      {/* Charts */}
-      <ChartsSection />
-    </div>
-  );
+    );
 }

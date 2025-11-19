@@ -153,9 +153,9 @@ export function WorkoutSchemaAnalyzer() {
   };
 
   return (
-    <Card className="shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+    <Card>
       <CardHeader className="pb-3 sm:pb-6">
-        <CardTitle className="text-base sm:text-lg">Analisi Schema di Lavoro</CardTitle>
+        <CardTitle className="text-base sm:text-lg">📊 Analisi Schema di Lavoro</CardTitle>
         <CardDescription className="text-xs sm:text-sm">
           Analizza le tue progressioni per schemi di lavoro specifici
         </CardDescription>
@@ -164,19 +164,21 @@ export function WorkoutSchemaAnalyzer() {
         <div className="flex gap-2 mt-3 sm:mt-4">
           <button
             onClick={() => handleModeChange('normal')}
-            className={`flex-1 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors border-2 ${mode === 'normal'
-                ? 'border-black bg-white text-black'
-                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-              }`}
+            className={`flex-1 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
+              mode === 'normal'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+            }`}
           >
             Set Normali
           </button>
           <button
             onClick={() => handleModeChange('special')}
-            className={`flex-1 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors border-2 ${mode === 'special'
-                ? 'border-black bg-white text-black'
-                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-              }`}
+            className={`flex-1 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
+              mode === 'special'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+            }`}
           >
             Tecniche Speciali
           </button>
@@ -193,37 +195,37 @@ export function WorkoutSchemaAnalyzer() {
 
         {/* Risultati */}
         {filters.exercise &&
-          ((mode === 'normal' && filters.normalConfig?.sets && filters.normalConfig?.reps) ||
-            (mode === 'special' && filters.specialConfig?.technique && filters.specialConfig?.totalSets)) && (
-            <>
-              {filteredSessions.length > 0 ? (
-                <>
-                  <SchemaProgressionChart sessions={filteredSessions} filters={filters} mode={mode} />
-                  <SchemaDetailTable sessions={filteredSessions} mode={mode} />
-                </>
-              ) : (
-                <div className="text-center py-8 sm:py-12 text-muted-foreground">
-                  <p className="text-sm sm:text-base">
-                    Nessuna sessione trovata con questi criteri.
-                  </p>
-                  <p className="text-xs sm:text-sm mt-2">
-                    Verifica di aver selezionato almeno una settimana.
-                  </p>
-                </div>
-              )}
-            </>
-          )}
+         ((mode === 'normal' && filters.normalConfig?.sets && filters.normalConfig?.reps) ||
+          (mode === 'special' && filters.specialConfig?.technique && filters.specialConfig?.totalSets)) && (
+          <>
+            {filteredSessions.length > 0 ? (
+              <>
+                <SchemaProgressionChart sessions={filteredSessions} filters={filters} mode={mode} />
+                <SchemaDetailTable sessions={filteredSessions} mode={mode} />
+              </>
+            ) : (
+              <div className="text-center py-8 sm:py-12 text-muted-foreground">
+                <p className="text-sm sm:text-base">
+                  Nessuna sessione trovata con questi criteri.
+                </p>
+                <p className="text-xs sm:text-sm mt-2">
+                  Verifica di aver selezionato almeno una settimana.
+                </p>
+              </div>
+            )}
+          </>
+        )}
 
         {/* Messaggio quando i filtri non sono completi */}
         {filters.exercise &&
-          !((mode === 'normal' && filters.normalConfig?.sets && filters.normalConfig?.reps) ||
-            (mode === 'special' && filters.specialConfig?.technique && filters.specialConfig?.totalSets)) && (
-            <div className="text-center py-8 sm:py-12 text-muted-foreground">
-              <p className="text-sm sm:text-base">
-                Compila tutti i filtri per vedere i risultati
-              </p>
-            </div>
-          )}
+         !((mode === 'normal' && filters.normalConfig?.sets && filters.normalConfig?.reps) ||
+           (mode === 'special' && filters.specialConfig?.technique && filters.specialConfig?.totalSets)) && (
+          <div className="text-center py-8 sm:py-12 text-muted-foreground">
+            <p className="text-sm sm:text-base">
+              Compila tutti i filtri per vedere i risultati
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

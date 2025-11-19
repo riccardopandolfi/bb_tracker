@@ -6,7 +6,7 @@ export function ChartsSection() {
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
         <div>
-          <h3 className="text-lg sm:text-xl font-bold font-heading">Grafici e Progressioni</h3>
+          <h3 className="text-lg sm:text-xl font-bold">Grafici e Progressioni</h3>
           <p className="text-xs sm:text-sm text-muted-foreground">Analisi visiva dei tuoi allenamenti</p>
         </div>
       </div>

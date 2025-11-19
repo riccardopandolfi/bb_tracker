@@ -59,7 +59,7 @@ export function HomeTab() {
     return (
       <div className="space-y-6">
         {/* Empty State */}
-        <Card className="border-dashed shadow-premium">
+        <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-16 px-4">
             <div className="self-end mb-4">
               <div className="flex items-center space-x-2">
@@ -80,7 +80,7 @@ export function HomeTab() {
             <div className="rounded-full bg-muted p-4 mb-4">
               <Dumbbell className="h-12 w-12 text-muted-foreground" />
             </div>
-            <h3 className="text-2xl font-bold mb-2 font-heading">Nessun Programma Trovato</h3>
+            <h3 className="text-2xl font-bold mb-2">Nessun Programma Trovato</h3>
             <p className="text-muted-foreground text-center mb-6 max-w-md">
               Inizia creando il tuo primo programma di allenamento per sbloccare tutte le funzionalità dell'app.
             </p>
@@ -294,27 +294,32 @@ export function HomeTab() {
       </div>
 
       {/* Top Grid */}
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 w-full lg:h-[600px]">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 w-full">
         {/* Programma Attivo e Sessioni Recenti Completate */}
-        <Card className="min-w-0 w-full h-full shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
-          <CardContent className="flex flex-col pt-6 h-full">
+        <Card className="min-w-0 w-full">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium">Programma Attivo</CardTitle>
+            <Dumbbell className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="space-y-4">
             {/* Programma Attivo */}
             <div>
-              <div className="text-base sm:text-lg font-bold font-heading">{currentProgram?.name || 'Nessuno'}</div>
-              <p className="text-sm text-gray-500 mt-1">
+              <div className="text-2xl font-bold">{currentProgram?.name || 'Nessuno'}</div>
+              <p className="text-xs text-muted-foreground mt-1">
                 {totalPrograms} {totalPrograms === 1 ? 'programma totale' : 'programmi totali'}
               </p>
             </div>
 
             {/* Divider */}
-            <div className="border-t pt-4 mt-4 flex flex-col flex-1 min-h-0">
+            <div className="border-t pt-4">
               <div className="mb-3">
-                <h4 className="text-xs font-semibold mb-2 text-gray-400">Sessioni Completate - Week {lastWeekNum}</h4>
+                <h4 className="text-sm font-medium mb-1">Sessioni Completate - Week {lastWeekNum}</h4>
+                <p className="text-xs text-muted-foreground">Giorni completati della settimana corrente</p>
               </div>
               {dayStatus.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Nessun giorno configurato</p>
               ) : (
-                <div className="space-y-2 flex-1 overflow-y-auto pr-2 grid grid-cols-1 gap-2 auto-rows-fr">
+                <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
                   {dayStatus
                     .filter((day) => day.isComplete)
                     .map((day) => (
@@ -329,15 +334,15 @@ export function HomeTab() {
                             <p className="text-xs text-muted-foreground">
                               {day.date
                                 ? new Date(day.date).toLocaleDateString('it-IT', {
-                                  day: 'numeric',
-                                  month: 'short',
-                                })
+                                    day: 'numeric',
+                                    month: 'short',
+                                  })
                                 : 'Completato'} • Day {day.dayIndex}
                             </p>
                           </div>
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <p className="text-sm font-semibold">
+                          <p className="text-xs font-medium">
                             {day.loggedCount}/{day.exercisesCount}
                           </p>
                           <p className="text-xs text-muted-foreground">esercizi</p>
@@ -360,10 +365,10 @@ export function HomeTab() {
       </div>
 
       {/* Volume Chart */}
-      <Card className="min-w-0 w-full shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+      <Card className="min-w-0 w-full">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-2 space-y-0 border-b py-4 sm:py-5">
           <div className="grid flex-1 gap-1 w-full sm:w-auto">
-            <CardTitle className="text-base sm:text-lg font-heading">Volume per Gruppo Muscolare</CardTitle>
+            <CardTitle className="text-base sm:text-lg">Volume per Gruppo Muscolare</CardTitle>
             <CardDescription className="text-xs sm:text-sm">
               Progressione del volume nelle settimane (tutti i programmi)
             </CardDescription>

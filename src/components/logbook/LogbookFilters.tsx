@@ -25,7 +25,7 @@ export function LogbookFilters({ filters, setFilters, totalSessions, availableWe
   const allTechniques = [...DEFAULT_TECHNIQUES, ...customTechniques.map(t => t.name)];
 
   return (
-    <Card className="shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+    <Card>
       <CardContent className="pt-4 sm:pt-6">
         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
           <div className="space-y-1.5 sm:space-y-2">

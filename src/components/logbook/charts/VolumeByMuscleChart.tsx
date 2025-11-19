@@ -39,7 +39,7 @@ export function VolumeByMuscleChart() {
   };
 
   return (
-    <Card className="shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+    <Card>
       <CardHeader className="pb-3 sm:pb-6">
         <CardTitle className="text-base sm:text-lg">Volume per Gruppo Muscolare</CardTitle>
         <CardDescription className="text-xs sm:text-sm">Distribuzione del volume per muscolo</CardDescription>

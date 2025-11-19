@@ -71,15 +71,6 @@ export default {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
-      fontFamily: {
-        sans: ['"Inter Tight"', 'sans-serif'],
-        heading: ['"Plus Jakarta Sans"', 'sans-serif'],
-      },
-      boxShadow: {
-        'premium': '0 8px 30px rgba(0,0,0,0.04)',
-        'premium-hover': '0 20px 40px rgba(0,0,0,0.08)',
-        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
-      },
     },
   },
   plugins: [require("tailwindcss-animate")],
