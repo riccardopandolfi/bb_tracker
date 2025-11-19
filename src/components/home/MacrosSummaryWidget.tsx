@@ -65,7 +65,7 @@ export function MacrosSummaryWidget() {
         ) : (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+              <div className="text-sm font-semibold text-gray-500">
                 {DAY_NAMES[currentDayIndex]}
               </div>
               <div className="text-2xl font-bold font-heading">
@@ -121,7 +121,7 @@ export function MacrosSummaryWidget() {
             {/* Integratori */}
             {dailyMacros.supplements && dailyMacros.supplements.length > 0 && (
               <div className="border-t border-gray-100 pt-4">
-                <div className="text-xs font-semibold mb-2 text-gray-400 uppercase">Integratori</div>
+                <div className="text-xs font-semibold mb-2 text-gray-400">Integratori</div>
                 <div className="space-y-2">
                   {dailyMacros.supplements.map((supp, idx) => (
                     <div key={idx} className="flex justify-between items-center text-sm">

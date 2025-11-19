@@ -300,8 +300,8 @@ export function HomeTab() {
           <CardContent className="space-y-4 pt-6">
             {/* Programma Attivo */}
             <div>
-              <div className="text-base sm:text-lg font-bold font-heading">{currentProgram?.name || 'Nessuno'}</div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <div className="text-2xl font-bold font-heading">{currentProgram?.name || 'Nessuno'}</div>
+              <p className="text-sm text-gray-500 mt-1">
                 {totalPrograms} {totalPrograms === 1 ? 'programma totale' : 'programmi totali'}
               </p>
             </div>
@@ -309,8 +309,7 @@ export function HomeTab() {
             {/* Divider */}
             <div className="border-t pt-4">
               <div className="mb-3">
-                <h4 className="text-sm font-medium mb-1">Sessioni Completate - Week {lastWeekNum}</h4>
-                <p className="text-xs text-muted-foreground">Giorni completati della settimana corrente</p>
+                <h4 className="text-xs font-semibold mb-2 text-gray-400">Sessioni Completate - Week {lastWeekNum}</h4>
               </div>
               {dayStatus.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Nessun giorno configurato</p>
