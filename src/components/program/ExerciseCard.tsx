@@ -106,7 +106,7 @@ export function ExerciseCard({
   if (exercise.exerciseType === 'cardio') {
     return (
       <>
-        <Card className="shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+        <Card className="hover:shadow-md transition-shadow">
           <CardContent className="pt-6">
             <div className="flex flex-col gap-4 mb-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex-1 min-w-0">
@@ -117,91 +117,91 @@ export function ExerciseCard({
                   <span className="text-sm text-muted-foreground">#{exerciseIndex + 1}</span>
                 </div>
                 <h3 className="text-lg font-semibold mb-3">{exercise.exerciseName}</h3>
-                <div className="space-y-3">
-                  {blocks.map((block, idx) => {
-                    const duration = block.duration || 0;
-                    const restGlobal = block.rest ? `${block.rest}s` : null;
-                    const restBetweenBlocks = idx < blocks.length - 1 && block.blockRest ? `${block.blockRest}s` : null;
-
-                    return (
-                      <div key={idx}>
-                        <div className="w-full border border-gray-200 rounded-lg p-3 bg-white hover:border-gray-300 transition-colors">
-                          {/* Header blocco */}
-                          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
-                            <span
-                              className="px-2 py-0.5 text-xs font-medium rounded"
-                              style={getBlockStyle(idx)}
-                            >
-                              B{idx + 1}
-                            </span>
-                            <span className="px-2 py-0.5 bg-orange-700 text-white text-xs font-medium rounded">
-                              Cardio
-                            </span>
-                            {/* Pulsante log blocco */}
+              <div className="space-y-3">
+                {blocks.map((block, idx) => {
+                  const duration = block.duration || 0;
+                  const restGlobal = block.rest ? `${block.rest}s` : null;
+                  const restBetweenBlocks = idx < blocks.length - 1 && block.blockRest ? `${block.blockRest}s` : null;
+                  
+                  return (
+                    <div key={idx}>
+                      <div className="w-full border border-gray-200 rounded-lg p-3 bg-white hover:border-gray-300 transition-colors">
+                        {/* Header blocco */}
+                        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
+                          <span
+                            className="px-2 py-0.5 text-xs font-medium rounded"
+                            style={getBlockStyle(idx)}
+                          >
+                            B{idx + 1}
+                          </span>
+                          <span className="px-2 py-0.5 bg-orange-700 text-white text-xs font-medium rounded">
+                            Cardio
+                          </span>
+                          {/* Pulsante log blocco */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onLog(idx);
+                            }}
+                            className="ml-auto p-1 hover:bg-orange-50 rounded transition-colors"
+                            title="Log blocco"
+                          >
+                            <ClipboardList className="w-3.5 h-3.5 text-gray-400 hover:text-orange-600" />
+                          </button>
+                          {/* Pulsante elimina blocco - solo se ci sono più blocchi */}
+                          {blocks.length > 1 && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                onLog(idx);
+                                if (window.confirm(`Eliminare il Blocco ${idx + 1}?`)) {
+                                  onDeleteBlock(idx);
+                                }
                               }}
-                              className="ml-auto p-1 hover:bg-orange-50 rounded transition-colors"
-                              title="Log blocco"
+                              className="p-1 hover:bg-red-50 rounded transition-colors"
+                              title="Elimina blocco"
                             >
-                              <ClipboardList className="w-3.5 h-3.5 text-gray-400 hover:text-orange-600" />
+                              <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-600" />
                             </button>
-                            {/* Pulsante elimina blocco - solo se ci sono più blocchi */}
-                            {blocks.length > 1 && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (window.confirm(`Eliminare il Blocco ${idx + 1}?`)) {
-                                    onDeleteBlock(idx);
-                                  }
-                                }}
-                                className="p-1 hover:bg-red-50 rounded transition-colors"
-                                title="Elimina blocco"
-                              >
-                                <Trash2 className="w-3.5 h-3.5 text-gray-400 hover:text-red-600" />
-                              </button>
-                            )}
-                          </div>
-
-                          {/* Contenuto blocco */}
-                          <div className="space-y-2">
-                            <div className="text-sm font-semibold text-gray-900">
-                              {duration} minuti
-                            </div>
-
-                            {/* Rest globale */}
-                            {restGlobal && (
-                              <div className="flex items-center gap-1.5 text-xs text-gray-600 pt-1.5 border-t border-gray-100">
-                                <Clock className="w-3 h-3" />
-                                <span>rest: {restGlobal}</span>
-                              </div>
-                            )}
-
-                            {/* Note del blocco */}
-                            {block.notes && (
-                              <div className="text-xs text-gray-600 pt-1.5 border-t border-gray-100 italic">
-                                {block.notes}
-                              </div>
-                            )}
-                          </div>
+                          )}
                         </div>
-
-                        {/* Rest blocco: mostrato TRA i blocchi */}
-                        {restBetweenBlocks && (
-                          <div className="flex items-center justify-center py-2">
-                            <div className="flex-1 border-t border-gray-200"></div>
-                            <span className="px-3 text-xs text-gray-500 bg-gray-50 mx-2">
-                              rest blocco: {restBetweenBlocks}
-                            </span>
-                            <div className="flex-1 border-t border-gray-200"></div>
+                        
+                        {/* Contenuto blocco */}
+                        <div className="space-y-2">
+                          <div className="text-sm font-semibold text-gray-900">
+                            {duration} minuti
                           </div>
-                        )}
+                          
+                          {/* Rest globale */}
+                          {restGlobal && (
+                            <div className="flex items-center gap-1.5 text-xs text-gray-600 pt-1.5 border-t border-gray-100">
+                              <Clock className="w-3 h-3" />
+                              <span>rest: {restGlobal}</span>
+                            </div>
+                          )}
+                          
+                          {/* Note del blocco */}
+                          {block.notes && (
+                            <div className="text-xs text-gray-600 pt-1.5 border-t border-gray-100 italic">
+                              {block.notes}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    );
-                  })}
-                </div>
+                      
+                      {/* Rest blocco: mostrato TRA i blocchi */}
+                      {restBetweenBlocks && (
+                        <div className="flex items-center justify-center py-2">
+                          <div className="flex-1 border-t border-gray-200"></div>
+                          <span className="px-3 text-xs text-gray-500 bg-gray-50 mx-2">
+                            rest blocco: {restBetweenBlocks}
+                          </span>
+                          <div className="flex-1 border-t border-gray-200"></div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
               </div>
               <div className="flex gap-1 self-end sm:self-start">
                 <Button
@@ -254,41 +254,41 @@ export function ExerciseCard({
 
         {/* Block Selector Dialog per Cardio */}
         <Dialog open={showBlockSelector} onOpenChange={setShowBlockSelector}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-base sm:text-lg">Seleziona Blocco da Loggare</DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm">
-                Scegli quale blocco dell'esercizio <strong>{exercise.exerciseName}</strong> vuoi loggare.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-2 py-3 sm:py-4">
-              {blocks.map((_, blockIndex) => {
-                return (
-                  <Button
-                    key={blockIndex}
-                    variant="outline"
-                    className="w-full justify-center h-auto p-4"
-                    onClick={() => handleSelectBlock(blockIndex)}
-                  >
-                    <span className="px-3 py-1 rounded bg-orange-50 text-orange-700 text-sm font-medium">
-                      Blocco {blockIndex + 1}
-                    </span>
-                  </Button>
-                );
-              })}
-            </div>
-          </DialogContent>
-        </Dialog>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-base sm:text-lg">Seleziona Blocco da Loggare</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
+              Scegli quale blocco dell'esercizio <strong>{exercise.exerciseName}</strong> vuoi loggare.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-3 sm:py-4">
+            {blocks.map((_, blockIndex) => {
+              return (
+                <Button
+                  key={blockIndex}
+                  variant="outline"
+                  className="w-full justify-center h-auto p-4"
+                  onClick={() => handleSelectBlock(blockIndex)}
+                >
+                  <span className="px-3 py-1 rounded bg-orange-50 text-orange-700 text-sm font-medium">
+                    Blocco {blockIndex + 1}
+                  </span>
+                </Button>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
 
-        {/* Exercise History Dialog */}
-        {currentProgramId && (
-          <ExerciseHistoryDialog
-            open={showHistoryDialog}
-            onOpenChange={setShowHistoryDialog}
-            exerciseName={exercise.exerciseName}
-            programId={currentProgramId}
-          />
-        )}
+      {/* Exercise History Dialog */}
+      {currentProgramId && (
+        <ExerciseHistoryDialog
+          open={showHistoryDialog}
+          onOpenChange={setShowHistoryDialog}
+          exerciseName={exercise.exerciseName}
+          programId={currentProgramId}
+        />
+      )}
       </>
     );
   }
@@ -296,7 +296,7 @@ export function ExerciseCard({
   // Resistance view
   return (
     <>
-      <Card className="shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+      <Card className="hover:shadow-md transition-shadow">
         <CardContent className="pt-6">
           <div className="flex flex-col gap-4 mb-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex-1 min-w-0">
@@ -312,18 +312,18 @@ export function ExerciseCard({
                 <span className="text-sm text-muted-foreground">#{exerciseIndex + 1}</span>
               </div>
               <h3 className="text-lg font-semibold mb-3">{exercise.exerciseName}</h3>
-
+              
               {/* Blocchi organizzati verticalmente */}
               <div className="space-y-3">
                 {blocks.map((block, idx) => {
                   const isNormal = block.technique === 'Normale';
                   const sets = block.sets || 0;
                   const restGlobal = block.rest ? `${block.rest}s` : null;
-                  const restIntraSet = !isNormal && block.techniqueParams?.pause
-                    ? `${block.techniqueParams.pause}s`
+                  const restIntraSet = !isNormal && block.techniqueParams?.pause 
+                    ? `${block.techniqueParams.pause}s` 
                     : null;
                   const restBetweenBlocks = idx < blocks.length - 1 && block.blockRest ? `${block.blockRest}s` : null;
-
+                  
                   const hasDifferentLoadsByCluster = !isNormal &&
                     block.targetLoadsByCluster &&
                     block.targetLoadsByCluster.length > 0;
@@ -393,7 +393,7 @@ export function ExerciseCard({
                             <div className="space-y-1.5">
                               {block.targetLoadsByCluster!.map((setLoads, setIdx) => {
                                 const loadsDisplay = `${setLoads.join('-')}kg`;
-
+                                
                                 return (
                                   <div key={setIdx} className="flex w-full flex-wrap items-center gap-2 text-sm p-2">
                                     <span className="px-1.5 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded min-w-[3rem] text-center">
@@ -440,8 +440,8 @@ export function ExerciseCard({
                                   } else {
                                     if (block.targetLoadsByCluster && block.targetLoadsByCluster.length > 0) {
                                       const firstSetLoads = block.targetLoadsByCluster[0];
-                                      const allSetsSame = block.targetLoadsByCluster.every(setLoads =>
-                                        setLoads.length === firstSetLoads.length &&
+                                      const allSetsSame = block.targetLoadsByCluster.every(setLoads => 
+                                        setLoads.length === firstSetLoads.length && 
                                         setLoads.every((load, i) => load === firstSetLoads[i])
                                       );
                                       if (allSetsSame && firstSetLoads.length > 0) {
@@ -470,7 +470,7 @@ export function ExerciseCard({
                               )}
                             </div>
                           )}
-
+                          
                           {/* Rest globale */}
                           {restGlobal && (
                             <div className="flex items-center gap-1.5 text-xs text-gray-600 pt-1.5 border-t border-gray-100">
@@ -478,7 +478,7 @@ export function ExerciseCard({
                               <span>rest globale: {restGlobal}</span>
                             </div>
                           )}
-
+                          
                           {/* Note del blocco */}
                           {block.notes && (
                             <div className="text-xs text-gray-600 pt-1.5 border-t border-gray-100 italic">
@@ -487,7 +487,7 @@ export function ExerciseCard({
                           )}
                         </div>
                       </div>
-
+                      
                       {/* Rest blocco: mostrato TRA i blocchi */}
                       {restBetweenBlocks && (
                         <div className="flex items-center justify-center py-2">

@@ -54,9 +54,9 @@ export function VolumeSummary() {
       {/* Volume by Muscle */}
       {musclesSorted.length > 0 && (
         <>
-          <Card className="hidden sm:block shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+          <Card className="hidden sm:block">
             <CardHeader>
-              <CardTitle className="font-heading">Volume per Gruppo Muscolare</CardTitle>
+              <CardTitle>Volume per Gruppo Muscolare</CardTitle>
               <CardDescription>
                 Distribuzione del volume nella settimana corrente
               </CardDescription>
@@ -69,10 +69,10 @@ export function VolumeSummary() {
             open={isMobileOpen}
             onOpenChange={setIsMobileOpen}
           >
-            <Card className="shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+            <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0">
                 <div>
-                  <CardTitle className="text-base font-heading">
+                  <CardTitle className="text-base">
                     Volume per Gruppo Muscolare
                   </CardTitle>
                   <CardDescription>

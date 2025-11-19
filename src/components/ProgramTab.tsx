@@ -15,9 +15,9 @@ export function ProgramTab() {
   if (!currentProgram) {
     return (
       <div className="space-y-6">
-        <Card className="shadow-premium border-none">
+        <Card>
           <CardHeader>
-            <CardTitle className="font-heading">Nessun programma selezionato</CardTitle>
+            <CardTitle>Nessun programma selezionato</CardTitle>
             <CardDescription>
               Crea o seleziona un programma per iniziare a costruire la tua scheda di allenamento.
             </CardDescription>
@@ -42,7 +42,7 @@ export function ProgramTab() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold font-heading">Scheda Allenamento</h2>
+          <h2 className="text-2xl font-bold">Scheda Allenamento</h2>
           <p className="text-muted-foreground">Pianifica le tue settimane di training</p>
         </div>
         {currentProgram && (
@@ -60,9 +60,9 @@ export function ProgramTab() {
       <VolumeSummary />
 
       {/* Days & Exercises */}
-      <Card className="shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+      <Card>
         <CardHeader>
-          <CardTitle className="font-heading">Giorni e Esercizi</CardTitle>
+          <CardTitle>Giorni e Esercizi</CardTitle>
           <CardDescription>Organizza i tuoi allenamenti per giorno</CardDescription>
         </CardHeader>
         <CardContent>

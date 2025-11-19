@@ -7,8 +7,6 @@ import { LoggedSessionCard } from './LoggedSessionCard';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '../ui/button';
-import { AnimatePresence, motion } from 'framer-motion';
-import { History } from 'lucide-react';
 
 interface LogbookTableProps {
   sessions: LoggedSession[];
@@ -68,7 +66,7 @@ export function LogbookTable({ sessions }: LogbookTableProps) {
   if (sessions.length === 0) {
     return (
       <Collapsible open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
-        <Card className="shadow-premium border-none">
+        <Card>
           <CardHeader className="pb-3 sm:pb-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex-1 min-w-0">
@@ -84,13 +82,9 @@ export function LogbookTable({ sessions }: LogbookTableProps) {
           </CardHeader>
           <CollapsibleContent>
             <CardContent className="px-3 sm:px-6">
-              <div className="flex flex-col items-center justify-center py-8 sm:py-12 text-center">
-                <div className="rounded-full bg-muted p-4 mb-4">
-                  <History className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <p className="text-sm font-medium text-foreground">Nessuna sessione trovata</p>
-                <p className="text-xs text-muted-foreground mt-1">Prova a modificare i filtri di ricerca</p>
-              </div>
+              <p className="text-center py-6 sm:py-8 text-xs sm:text-sm text-muted-foreground">
+                Nessuna sessione trovata con questi filtri
+              </p>
             </CardContent>
           </CollapsibleContent>
         </Card>
@@ -101,7 +95,7 @@ export function LogbookTable({ sessions }: LogbookTableProps) {
   return (
     <>
       <Collapsible open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
-        <Card className="shadow-premium border-none">
+        <Card>
           <CardHeader className="pb-3 sm:pb-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex-1 min-w-0">
@@ -121,40 +115,31 @@ export function LogbookTable({ sessions }: LogbookTableProps) {
           <CollapsibleContent>
             <CardContent className="px-3 sm:px-6">
               <div className="space-y-2 sm:space-y-3">
-                <AnimatePresence mode="popLayout">
-                  {sortedGroups.map(([groupId, groupSessions]) => {
-                    // Ordina i blocchi per blockIndex
-                    const sortedGroupSessions = [...groupSessions].sort((a, b) =>
-                      (a.blockIndex ?? 0) - (b.blockIndex ?? 0)
-                    );
-                    const mainSession = sortedGroupSessions[0];
-                    const hasMultipleBlocks = sortedGroupSessions.length > 1;
+                {sortedGroups.map(([groupId, groupSessions]) => {
+                  // Ordina i blocchi per blockIndex
+                  const sortedGroupSessions = [...groupSessions].sort((a, b) =>
+                    (a.blockIndex ?? 0) - (b.blockIndex ?? 0)
+                  );
+                  const mainSession = sortedGroupSessions[0];
+                  const hasMultipleBlocks = sortedGroupSessions.length > 1;
 
-                    return (
-                      <motion.div
-                        key={groupId}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        layout
-                      >
-                        <LoggedSessionCard
-                          session={mainSession}
-                          groupedSessions={hasMultipleBlocks ? sortedGroupSessions : undefined}
-                          isExpanded={expandedSessions.has(groupId)}
-                          onToggleExpand={() => toggleExpanded(groupId)}
-                          onEdit={(selectedSession) => {
-                            handleEdit(selectedSession || mainSession);
-                          }}
-                          onDelete={() => {
-                            // Elimina tutte le sessioni del gruppo
-                            sortedGroupSessions.forEach(s => deleteLoggedSession(s.id));
-                          }}
-                        />
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
+                  return (
+                    <LoggedSessionCard
+                      key={groupId}
+                      session={mainSession}
+                      groupedSessions={hasMultipleBlocks ? sortedGroupSessions : undefined}
+                      isExpanded={expandedSessions.has(groupId)}
+                      onToggleExpand={() => toggleExpanded(groupId)}
+                      onEdit={(selectedSession) => {
+                        handleEdit(selectedSession || mainSession);
+                      }}
+                      onDelete={() => {
+                        // Elimina tutte le sessioni del gruppo
+                        sortedGroupSessions.forEach(s => deleteLoggedSession(s.id));
+                      }}
+                    />
+                  );
+                })}
               </div>
             </CardContent>
           </CollapsibleContent>

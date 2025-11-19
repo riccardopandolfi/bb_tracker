@@ -84,11 +84,4 @@
       transform: translateY(0);
     }
   }
-  .glass {
-    @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-glass;
-  }
-  
-  .glass-dark {
-    @apply bg-black/60 backdrop-blur-md border border-white/10 shadow-glass;
-  }
 }

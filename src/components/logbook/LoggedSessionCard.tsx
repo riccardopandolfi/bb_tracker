@@ -32,7 +32,7 @@ export function LoggedSessionCard({
   const { getCurrentWeeks, exercises, getMuscleColor: resolveMuscleColor } = useApp();
   const weeks = getCurrentWeeks();
   const week = weeks[session.weekNum];
-
+  
   // Funzione per ottenere il blocco originale dalla scheda di allenamento
   const getOriginalBlock = (blockSession: LoggedSession) => {
     if (!week) return null;
@@ -119,7 +119,7 @@ export function LoggedSessionCard({
     getTechniqueStyleForMuscle(primaryMuscle?.muscle || null, technique);
 
   const hasMultipleBlocks = groupedSessions && groupedSessions.length > 1;
-
+  
   const handleEditClick = () => {
     if (hasMultipleBlocks && groupedSessions) {
       // Mostra dialog per scegliere il blocco
@@ -129,7 +129,7 @@ export function LoggedSessionCard({
       onEdit();
     }
   };
-
+  
   const handleBlockSelect = (selectedSession: LoggedSession) => {
     setShowBlockSelector(false);
     // Crea una funzione per modificare la sessione selezionata
@@ -144,7 +144,7 @@ export function LoggedSessionCard({
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
-      <Card className="w-full shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+      <Card className="w-full border border-gray-200 hover:border-gray-300 transition-colors">
         <CardContent className="pt-3 sm:pt-6 px-3 sm:px-6">
           {/* Header - Always Visible */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -195,12 +195,12 @@ export function LoggedSessionCard({
                     const targetRepsPerSet = blockSession.technique === 'Normale'
                       ? getTargetReps(blockSession) / numSets
                       : 0;
-
+                    
                     // Carichi pianificati
                     const targetLoadsStr = blockSession.targetLoads && blockSession.targetLoads.length > 0
                       ? blockSession.targetLoads.join('-')
                       : '-';
-
+                    
                     // Carichi effettivi per ogni set e cluster
                     const actualDataBySet = blockUniqueSets.map(setNum => {
                       const setData = blockSession.sets.filter(s => s.setNum === setNum);
@@ -212,19 +212,19 @@ export function LoggedSessionCard({
                         : [parseFloat(setData[0]?.load || '0').toFixed(0)];
                       return { reps, loads: loads, setNum };
                     });
-
+                    
                     // Carichi pianificati per set e cluster - prendili dal blocco originale della scheda
                     const originalBlock = getOriginalBlock(blockSession);
                     const targetLoadsBySet: string[][] = [];
-
+                    
                     if (originalBlock) {
                       // Usa i carichi dal blocco originale della scheda
                       if (originalBlock.targetLoadsByCluster && originalBlock.targetLoadsByCluster.length > 0) {
                         // Carichi per cluster disponibili
                         blockUniqueSets.forEach(setNum => {
-                          const setLoads = originalBlock.targetLoadsByCluster![setNum - 1] ||
-                            originalBlock.targetLoadsByCluster![originalBlock.targetLoadsByCluster!.length - 1] ||
-                            [];
+                          const setLoads = originalBlock.targetLoadsByCluster![setNum - 1] || 
+                                          originalBlock.targetLoadsByCluster![originalBlock.targetLoadsByCluster!.length - 1] || 
+                                          [];
                           targetLoadsBySet.push(setLoads.length > 0 ? setLoads : ['0']);
                         });
                       } else if (originalBlock.targetLoads && originalBlock.targetLoads.length > 0) {
@@ -252,13 +252,13 @@ export function LoggedSessionCard({
                         blockUniqueSets.forEach(() => targetLoadsBySet.push(['0']));
                       }
                     }
-
+                    
                     // Verifica se ci sono carichi diversi tra i set o all'interno degli stessi set
                     const hasDifferentLoads = actualDataBySet.some((set, i) => {
                       const uniqueLoads = [...new Set(set.loads)];
                       return uniqueLoads.length > 1 ||
                         (targetLoadsBySet[i] && targetLoadsBySet[i].length > 0 &&
-                          set.loads.some((load, idx) => load !== (targetLoadsBySet[i][idx] || targetLoadsBySet[i][0] || '0')));
+                         set.loads.some((load, idx) => load !== (targetLoadsBySet[i][idx] || targetLoadsBySet[i][0] || '0')));
                     });
 
                     const hasDifferentBetweenSets = actualDataBySet.length > 1 && (
@@ -296,10 +296,10 @@ export function LoggedSessionCard({
                           <div className="flex flex-col gap-1.5">
                             {actualDataBySet.map((setData, setIdx) => {
                               const setDisplay = setIdx + 1;
-
+                              
                               // Target: carichi e reps dal programma originale
                               const targetLoadsForSet = targetLoadsBySet[setIdx] || [];
-
+                              
                               // Calcola reps target dal programma
                               let targetRepsStr = '';
                               if (originalBlock) {
@@ -314,7 +314,7 @@ export function LoggedSessionCard({
                                 // Fallback
                                 targetRepsStr = blockIsSpecial ? blockSession.techniqueSchema || '' : targetRepsPerSet.toFixed(0);
                               }
-
+                              
                               // Formato carichi target per display
                               let targetLoadsStr = '-';
                               if (targetLoadsForSet.length > 0) {
@@ -331,11 +331,11 @@ export function LoggedSessionCard({
                                   targetLoadsStr = targetLoadsForSet[0] || '0';
                                 }
                               }
-
+                              
                               // Eseguito: carichi e reps dal logbook (sessione effettiva)
                               const actualLoadsStr = setData.loads.join('-');
                               const actualRepsStr = setData.reps;
-
+                              
                               return (
                                 <div
                                   key={setIdx}
@@ -369,23 +369,23 @@ export function LoggedSessionCard({
                         </div>
                       );
                     }
-
+                    
                     // Altrimenti mostra la visualizzazione compatta originale
                     const actualLoadsBySet = actualDataBySet.map(set => set.loads[0]);
                     const actualRepsBySet = actualDataBySet.map(set => set.reps);
-
+                    
                     // Ottieni il muscolo per questo specifico blocco
                     const blockMuscle = getPrimaryMuscleForExercise(blockSession.exercise);
-
+                    
                     // Funzioni colore specifiche per questo blocco
                     const getBlockStyleForThis = (blockIdx: number) => {
                       return getBlockStyleForMuscle(blockMuscle?.muscle || null, blockIdx);
                     };
-
+                    
                     const getTechniqueStyleForThis = (technique: string) => {
                       return getTechniqueStyleForMuscle(blockMuscle?.muscle || null, technique);
                     };
-
+                    
                     return (
                       <div key={idx} className="w-full border border-gray-200 rounded-md p-3 bg-white">
                         <div className="flex items-center gap-2 text-xs mb-2 pb-2 border-b border-gray-100">
@@ -638,7 +638,7 @@ export function LoggedSessionCard({
                   const blockUniqueSets = Array.from(new Set(blockSession.sets.map(s => s.setNum)));
                   const blockIsSpecial = blockSession.technique !== 'Normale';
                   const isLastBlock = blockIdx === groupedSessions.length - 1;
-
+                  
                   return (
                     <div key={blockIdx} className="space-y-3 pb-3 border-b last:border-b-0">
                       <div className="flex items-center justify-between mb-2">
@@ -651,7 +651,7 @@ export function LoggedSessionCard({
                           </span>
                         )}
                       </div>
-
+                      
                       {/* Session Details per blocco */}
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                         {blockSession.technique === 'Normale' && (
@@ -750,12 +750,12 @@ export function LoggedSessionCard({
                 <>
                   {/* Session Details */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                    {session.technique === 'Normale' && (
-                      <div>
-                        <div className="text-xs text-muted-foreground">Range</div>
-                        <div className="font-medium">{session.repRange}</div>
-                      </div>
-                    )}
+                      {session.technique === 'Normale' && (
+                        <div>
+                          <div className="text-xs text-muted-foreground">Range</div>
+                          <div className="font-medium">{session.repRange}</div>
+                        </div>
+                      )}
                     <div>
                       <div className="text-xs text-muted-foreground">Reps Totali</div>
                       <div className="font-medium">
@@ -865,7 +865,7 @@ export function LoggedSessionCard({
                 const targetLoadsStr = blockSession.targetLoads && blockSession.targetLoads.length > 0
                   ? blockSession.targetLoads.join('-')
                   : '-';
-
+                
                 return (
                   <Button
                     key={idx}

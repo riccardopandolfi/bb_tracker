@@ -10,8 +10,6 @@ import { Plus, Trash2, AlertCircle, Settings2 } from 'lucide-react';
 import { Alert, AlertDescription } from './ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Textarea } from './ui/textarea';
-import { AnimatePresence, motion } from 'framer-motion';
-import { BookOpen } from 'lucide-react';
 
 export function ExerciseLibrary() {
   const { exercises, addExercise, updateExercise, deleteExercise, muscleGroups, addMuscleGroup, updateMuscleGroupColor, deleteMuscleGroup, getMuscleColor, customTechniques, addCustomTechnique, deleteCustomTechnique } = useApp();
@@ -102,7 +100,7 @@ export function ExerciseLibrary() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-2">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold font-heading">Libreria Esercizi</h2>
+          <h2 className="text-xl sm:text-2xl font-bold">Libreria Esercizi</h2>
           <p className="text-sm sm:text-base text-muted-foreground">Gestisci esercizi, cardio e gruppi muscolari</p>
         </div>
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
@@ -190,7 +188,7 @@ export function ExerciseLibrary() {
                       value={newMuscleColor}
                       onChange={(e) => setNewMuscleColor(e.target.value)}
                       placeholder="#6b7280"
-                      className="flex-1"
+                      className="flex-1 font-mono"
                     />
                   </div>
                 </div>
@@ -335,11 +333,11 @@ export function ExerciseLibrary() {
             </DialogContent>
           </Dialog>
 
-          <Button onClick={handleAddCardio} variant="ghost" size="sm" className="text-gray-500 hover:text-gray-900">
+          <Button onClick={handleAddCardio} variant="secondary" size="sm" className="text-xs sm:text-sm">
             <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
             Cardio
           </Button>
-          <Button onClick={handleAddExercise} size="sm">
+          <Button onClick={handleAddExercise} size="sm" className="text-xs sm:text-sm">
             <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
             Esercizio
           </Button>
@@ -390,52 +388,18 @@ export function ExerciseLibrary() {
       )}
 
       {/* Exercise Cards */}
-      {exercises.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12 sm:py-20 px-4">
-            <div className="rounded-full bg-primary/10 p-4 sm:p-6 mb-4 sm:mb-6">
-              <BookOpen className="h-12 w-12 sm:h-16 sm:w-16 text-primary" />
-            </div>
-            <h3 className="text-2xl sm:text-3xl font-bold mb-2 sm:mb-3 text-center font-heading">Libreria Vuota</h3>
-            <p className="text-muted-foreground text-center mb-6 sm:mb-8 max-w-lg text-base sm:text-lg px-2">
-              Aggiungi i tuoi esercizi preferiti per iniziare a costruire i tuoi programmi di allenamento.
-            </p>
-            <div className="flex flex-col gap-3 w-full">
-              <Button onClick={handleAddExercise} variant="ghost" size="sm" className="w-full text-gray-500 hover:text-gray-900">
-                <Plus className="w-4 h-4 mr-2" />
-                Nuovo Esercizio
-              </Button>
-              <Button onClick={handleAddCardio} variant="ghost" size="sm" className="w-full text-gray-500 hover:text-gray-900">
-                <Plus className="w-4 h-4 mr-2" />
-                Nuovo Cardio
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full">
-          <AnimatePresence mode="popLayout">
-            {exercises.map((exercise, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                layout
-                className="min-w-0 w-full"
-              >
-                <ExerciseCard
-                  exercise={exercise}
-                  index={index}
-                  onUpdate={updateExercise}
-                  onDelete={deleteExercise}
-                  muscleGroups={muscleGroups}
-                />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      )}
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full">
+        {exercises.map((exercise, index) => (
+          <ExerciseCard
+            key={index}
+            exercise={exercise}
+            index={index}
+            onUpdate={updateExercise}
+            onDelete={deleteExercise}
+            muscleGroups={muscleGroups}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -499,7 +463,7 @@ function ExerciseCard({ exercise, index, onUpdate, onDelete, muscleGroups }: Exe
   };
 
   return (
-    <Card className={`${!isValid ? 'border-red-500 border-2' : 'border-transparent'} min-w-0 w-full shadow-premium hover:shadow-premium-hover transition-all duration-300`}>
+    <Card className={`${!isValid ? 'border-red-500 border-2' : ''} min-w-0 w-full`}>
       <CardHeader className="pb-3 sm:pb-6">
         <CardTitle className="min-w-0">
           <Input
@@ -592,8 +556,9 @@ function ExerciseCard({ exercise, index, onUpdate, onDelete, muscleGroups }: Exe
             <div className="flex justify-between items-center pt-1.5 sm:pt-2 border-t">
               <span className="text-xs sm:text-sm font-medium">Totale:</span>
               <span
-                className={`text-xs sm:text-sm font-bold ${isValid ? 'text-green-600' : 'text-red-600'
-                  }`}
+                className={`text-xs sm:text-sm font-bold ${
+                  isValid ? 'text-green-600' : 'text-red-600'
+                }`}
               >
                 {totalPercent}%
               </span>
