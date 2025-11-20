@@ -325,7 +325,7 @@ export function HomeTab() {
                         <div className="flex items-center gap-3">
                           <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
                           <div className="min-w-0">
-                            <p className="text-sm font-medium truncate">{day.name}</p>
+                            <p className="text-sm text-gray-600 truncate">{day.name}</p>
                             <p className="text-xs text-muted-foreground">
                               {day.date
                                 ? new Date(day.date).toLocaleDateString('it-IT', {
@@ -337,7 +337,7 @@ export function HomeTab() {
                           </div>
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <p className="text-sm font-semibold">
+                          <p className="text-sm font-semibold text-gray-900">
                             {day.loggedCount}/{day.exercisesCount}
                           </p>
                           <p className="text-xs text-muted-foreground">esercizi</p>

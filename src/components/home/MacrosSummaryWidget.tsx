@@ -2,7 +2,6 @@ import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { ArrowRight } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 const DAY_NAMES = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
 
@@ -29,12 +28,6 @@ export function MacrosSummaryWidget() {
   const p = parseFloat(currentDay?.protein || '0');
   const c = parseFloat(currentDay?.carbs || '0');
   const f = parseFloat(currentDay?.fat || '0');
-
-  const data = [
-    { name: 'Proteine', value: p, color: '#3b82f6' }, // blue-500
-    { name: 'Carbo', value: c, color: '#10b981' }, // emerald-500
-    { name: 'Grassi', value: f, color: '#f59e0b' }, // amber-500
-  ];
 
   return (
     <Card className="h-full border-none shadow-premium hover:shadow-premium-hover transition-all duration-300">
@@ -65,54 +58,38 @@ export function MacrosSummaryWidget() {
               <p className="text-sm text-gray-500 mt-1">{DAY_NAMES[currentDayIndex]}</p>
             </div>
 
+            {/* Calorie */}
             <div className="flex items-center justify-end">
-              <div className="text-2xl font-bold font-heading">
+              <div className="text-sm font-bold font-heading text-gray-900">
                 {calculatedKcal > 0 ? calculatedKcal : '-'} <span className="text-xs font-normal text-gray-500">kcal</span>
               </div>
             </div>
 
-            <div className="h-[180px] w-full relative">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={data}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {data.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              {/* Center Text */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="text-center">
-                  <span className="text-xs text-gray-400">Totale</span>
+            {/* Nutrienti Section */}
+            <div>
+              <div className="text-xs font-semibold mb-3 text-gray-400">Nutrienti</div>
+              <div className="grid grid-cols-3 gap-3">
+                {/* Proteine Box */}
+                <div className="p-3 rounded-lg bg-gradient-to-br from-sky-500/10 to-sky-500/5 border border-sky-500/20">
+                  <div className="text-center">
+                    <span className="block text-xs text-sky-600 mb-1">Proteine</span>
+                    <span className="block text-sm font-bold text-sky-700">{p}g</span>
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4 mt-4">
-              <div className="text-center">
-                <span className="block text-xs text-sky-600 mb-1">Proteine</span>
-                <span className="block text-sm font-bold text-sky-700">{p}g</span>
-              </div>
-              <div className="text-center">
-                <span className="block text-xs text-emerald-600 mb-1">Carbo</span>
-                <span className="block text-sm font-bold text-emerald-700">{c}g</span>
-              </div>
-              <div className="text-center">
-                <span className="block text-xs text-amber-600 mb-1">Grassi</span>
-                <span className="block text-sm font-bold text-amber-700">{f}g</span>
+                {/* Carbo Box */}
+                <div className="p-3 rounded-lg bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-500/20">
+                  <div className="text-center">
+                    <span className="block text-xs text-emerald-600 mb-1">Carbo</span>
+                    <span className="block text-sm font-bold text-emerald-700">{c}g</span>
+                  </div>
+                </div>
+                {/* Grassi Box */}
+                <div className="p-3 rounded-lg bg-gradient-to-br from-amber-500/10 to-amber-500/5 border border-amber-500/20">
+                  <div className="text-center">
+                    <span className="block text-xs text-amber-600 mb-1">Grassi</span>
+                    <span className="block text-sm font-bold text-amber-700">{f}g</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -124,7 +101,7 @@ export function MacrosSummaryWidget() {
                   {dailyMacros.supplements.map((supp, idx) => (
                     <div key={idx} className="flex justify-between items-center text-sm">
                       <span className="text-gray-600">{supp.name || 'Integratore'}</span>
-                      <span className="font-semibold text-gray-900 bg-gray-100 px-2 py-0.5 rounded-md">{supp.grams}g</span>
+                      <span className="font-semibold text-gray-900">{supp.grams}g</span>
                     </div>
                   ))}
                 </div>
