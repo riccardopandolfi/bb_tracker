@@ -59,7 +59,7 @@ export function HomeTab() {
   // Empty state when no programs exist
   if (totalPrograms === 0) {
     return (
-      <div className="w-full h-[calc(100vh-8rem)] rounded-2xl overflow-hidden">
+      <div className="w-full h-screen overflow-hidden fixed inset-0">
         <Vortex
           backgroundColor="black"
           baseHue={76}

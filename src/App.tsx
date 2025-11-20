@@ -34,7 +34,8 @@ function App() {
 
   return (
     <div className="min-h-screen w-full bg-background text-foreground relative overflow-x-hidden font-sans selection:bg-primary/20">
-      {/* Header - Monetra Style */}
+      {/* Header - Monetra Style - Only show if programs exist */}
+      {hasPrograms && (
       <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-black">
         <div className="w-full flex h-16 items-center justify-between px-4 md:px-6 lg:px-8">
           <div className="flex items-center gap-3">
@@ -96,10 +97,11 @@ function App() {
           <UserSelector />
         </div>
       </header>
+      )}
 
       {/* Main Content */}
-      <main className="w-full py-6 pb-24 md:pb-8 relative z-10">
-        <div className="w-full px-4 md:px-6 lg:px-8">
+      <main className={hasPrograms ? "w-full py-6 pb-24 md:pb-8 relative z-10" : "w-full h-screen relative z-10"}>
+        <div className={hasPrograms ? "w-full px-4 md:px-6 lg:px-8" : "w-full h-full"}>
           <AnimatePresence mode="wait">
             <motion.div
               key={currentTab}
@@ -119,8 +121,8 @@ function App() {
         </div>
       </main>
 
-      {/* Mobile Navigation */}
-      <MobileNav currentTab={currentTab} setCurrentTab={setCurrentTab} hasPrograms={hasPrograms} />
+      {/* Mobile Navigation - Only show if programs exist */}
+      {hasPrograms && <MobileNav currentTab={currentTab} setCurrentTab={setCurrentTab} hasPrograms={hasPrograms} />}
     </div>
   );
 }
