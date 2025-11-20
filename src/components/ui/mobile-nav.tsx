@@ -11,9 +11,9 @@ interface MobileNavProps {
 export function MobileNav({ currentTab, setCurrentTab, hasPrograms }: MobileNavProps) {
     const tabs = [
         { id: 'home', icon: Home, label: 'Home' },
+        { id: 'library', icon: BookOpen, label: 'Libreria' },
         { id: 'programs', icon: Folder, label: 'Programmi' },
         { id: 'program', icon: Dumbbell, label: 'Scheda' },
-        { id: 'library', icon: BookOpen, label: 'Libreria' },
         { id: 'logbook', icon: Dumbbell, label: 'Logbook' },
         { id: 'macros', icon: Apple, label: 'Macros' },
     ];

@@ -54,6 +54,13 @@ function App() {
               Home
             </NavigationMenuLink>
             <NavigationMenuLink
+              active={currentTab === 'library'}
+              onClick={() => setCurrentTab('library')}
+              icon={<BookOpen className="w-4 h-4" />}
+            >
+              Libreria
+            </NavigationMenuLink>
+            <NavigationMenuLink
               active={currentTab === 'programs'}
               onClick={() => setCurrentTab('programs')}
               icon={<Folder className="w-4 h-4" />}
@@ -67,13 +74,6 @@ function App() {
               icon={<Dumbbell className="w-4 h-4" />}
             >
               Scheda
-            </NavigationMenuLink>
-            <NavigationMenuLink
-              active={currentTab === 'library'}
-              onClick={() => setCurrentTab('library')}
-              icon={<BookOpen className="w-4 h-4" />}
-            >
-              Libreria
             </NavigationMenuLink>
             <NavigationMenuLink
               active={currentTab === 'logbook'}
