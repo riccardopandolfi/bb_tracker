@@ -41,7 +41,7 @@ function App() {
             <div className="h-10 w-10 rounded-xl lime-gradient flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
               <Dumbbell className="h-5 w-5 text-black" />
             </div>
-            <h1 className="hidden md:block text-lg font-bold tracking-widest text-white font-brand uppercase">Nobody Cares Work Harder</h1>
+            <h1 className="hidden md:block text-lg font-bold tracking-widest text-white font-brand uppercase whitespace-nowrap">NOBODY CARES WORK HARDER</h1>
           </div>
 
           {/* Desktop Navigation - Monetra Style */}
@@ -49,21 +49,21 @@ function App() {
             <NavigationMenuLink
               active={currentTab === 'home'}
               onClick={() => setCurrentTab('home')}
-              icon={<Home className="w-4 h-4" />}
+              icon={<Home className={cn("w-4 h-4", currentTab === 'home' ? "text-black" : "text-white")} />}
             >
               Home
             </NavigationMenuLink>
             <NavigationMenuLink
               active={currentTab === 'library'}
               onClick={() => setCurrentTab('library')}
-              icon={<BookOpen className="w-4 h-4" />}
+              icon={<BookOpen className={cn("w-4 h-4", currentTab === 'library' ? "text-black" : "text-white")} />}
             >
               Libreria
             </NavigationMenuLink>
             <NavigationMenuLink
               active={currentTab === 'programs'}
               onClick={() => setCurrentTab('programs')}
-              icon={<Folder className="w-4 h-4" />}
+              icon={<Folder className={cn("w-4 h-4", currentTab === 'programs' ? "text-black" : "text-white")} />}
             >
               Programmi
             </NavigationMenuLink>
@@ -71,7 +71,7 @@ function App() {
               active={currentTab === 'program'}
               onClick={() => hasPrograms && setCurrentTab('program')}
               disabled={!hasPrograms}
-              icon={<Dumbbell className="w-4 h-4" />}
+              icon={<Dumbbell className={cn("w-4 h-4", currentTab === 'program' ? "text-black" : "text-white")} />}
             >
               Scheda
             </NavigationMenuLink>
@@ -79,7 +79,7 @@ function App() {
               active={currentTab === 'logbook'}
               onClick={() => hasPrograms && setCurrentTab('logbook')}
               disabled={!hasPrograms}
-              icon={<Dumbbell className="w-4 h-4" />}
+              icon={<Dumbbell className={cn("w-4 h-4", currentTab === 'logbook' ? "text-black" : "text-white")} />}
             >
               Logbook
             </NavigationMenuLink>
@@ -87,7 +87,7 @@ function App() {
               active={currentTab === 'macros'}
               onClick={() => hasPrograms && setCurrentTab('macros')}
               disabled={!hasPrograms}
-              icon={<Apple className="w-4 h-4" />}
+              icon={<Apple className={cn("w-4 h-4", currentTab === 'macros' ? "text-black" : "text-white")} />}
             >
               Macros
             </NavigationMenuLink>
@@ -132,8 +132,8 @@ function NavigationMenuLink({ active, onClick, children, icon, disabled }: { act
       disabled={disabled}
       className={cn(
         "relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-full flex items-center gap-2",
-        active ? "text-black" : "text-gray-400 hover:text-white hover:bg-white/10",
-        disabled && "opacity-50 cursor-not-allowed hover:text-gray-500 hover:bg-transparent"
+        active ? "text-black" : "text-white hover:text-white hover:bg-white/10",
+        disabled && "opacity-50 cursor-not-allowed hover:text-white/50 hover:bg-transparent"
       )}
     >
       {active && (
@@ -143,7 +143,7 @@ function NavigationMenuLink({ active, onClick, children, icon, disabled }: { act
           transition={{ type: "spring", stiffness: 400, damping: 35 }}
         />
       )}
-      <span className="relative z-10 flex items-center gap-2 font-heading">
+      <span className="relative z-10 flex items-center gap-2 font-heading text-white">
         {icon}
         {children}
       </span>
