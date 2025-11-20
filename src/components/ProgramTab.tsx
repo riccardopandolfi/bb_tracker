@@ -17,18 +17,18 @@ export function ProgramTab() {
       <div className="space-y-6">
         <Card className="card-monetra">
           <CardHeader>
-            <CardTitle className="font-heading">Nessun programma selezionato</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-xl sm:text-2xl font-bold font-heading">Nessun programma selezionato</CardTitle>
+            <CardDescription className="text-sm sm:text-base">
               Crea o seleziona un programma per iniziare a costruire la tua scheda di allenamento.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               {hasPrograms
                 ? 'Seleziona un programma esistente oppure crea un nuovo programma dalla sezione Programmi.'
                 : 'Non hai ancora creato nessun programma. Premi il pulsante qui sotto per iniziare.'}
             </p>
-            <Button onClick={() => setCurrentTab('programs')} className="w-full sm:w-auto">
+            <Button onClick={() => setCurrentTab('programs')} size="sm" className="w-full sm:w-auto">
               Vai alla gestione programmi
             </Button>
           </CardContent>

@@ -23,11 +23,11 @@ export function ProgramSelector() {
         <CardContent className="py-8">
           <div className="flex flex-col items-center gap-3 text-center">
             <Folder className="w-8 h-8 text-muted-foreground" />
-            <h3 className="text-lg font-semibold">Nessun programma disponibile</h3>
-            <p className="text-sm text-muted-foreground">
+            <h3 className="text-xl sm:text-2xl font-bold font-heading">Nessun programma disponibile</h3>
+            <p className="text-sm sm:text-base text-muted-foreground">
               Crea il tuo primo programma per iniziare a pianificare le settimane di allenamento.
             </p>
-            <Button onClick={() => setShowNewProgramModal(true)}>
+            <Button onClick={() => setShowNewProgramModal(true)} size="sm">
               <Plus className="w-4 h-4 mr-1" />
               Nuovo Programma
             </Button>

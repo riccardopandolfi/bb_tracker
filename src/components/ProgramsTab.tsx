@@ -100,8 +100,8 @@ export function ProgramsTab() {
             <div className="rounded-full bg-primary/10 p-4 sm:p-6 mb-4 sm:mb-6">
               <Layers className="h-12 w-12 sm:h-16 sm:w-16 text-primary" />
             </div>
-            <h3 className="text-2xl sm:text-3xl font-bold mb-2 sm:mb-3 text-center font-heading">Crea il Tuo Primo Programma</h3>
-            <p className="text-muted-foreground text-center mb-6 sm:mb-8 max-w-lg text-base sm:text-lg px-2">
+            <h3 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3 text-center font-heading">Crea il Tuo Primo Programma</h3>
+            <p className="text-sm sm:text-base text-muted-foreground text-center mb-6 sm:mb-8 max-w-lg px-2">
               Inizia il tuo percorso di allenamento creando un programma personalizzato con settimane, giorni ed esercizi.
             </p>
             <Button onClick={() => setShowNewProgramModal(true)} size="sm" className="w-full">
@@ -202,7 +202,7 @@ export function ProgramsTab() {
           <Card>
             <CardContent className="py-8 sm:py-12 text-center px-4">
               <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">Nessun programma disponibile</p>
-              <Button onClick={() => setShowNewProgramModal(true)} className="w-full sm:w-auto">
+              <Button onClick={() => setShowNewProgramModal(true)} size="sm" className="w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
                 Crea il Primo Programma
               </Button>
