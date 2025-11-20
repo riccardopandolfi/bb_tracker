@@ -1,7 +1,6 @@
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { Button } from './ui/button';
 import { WeekSelector } from './program/WeekSelector';
 import { VolumeSummary } from './program/VolumeSummary';
 import { DaysTabs } from './program/DaysTabs';
