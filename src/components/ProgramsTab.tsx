@@ -175,7 +175,7 @@ export function ProgramsTab() {
         </div>
 
         {/* Programs Grid */}
-        <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full">
+        <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full">
           {programList.map((program) => {
             const isActive = currentProgramId === program.id;
             const weekCount = Object.keys(program.weeks || {}).length;
@@ -328,31 +328,10 @@ function ProgramCard({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <AnimatePresence>
-        {isHovered && !isActive && (
-          <motion.span
-            className="absolute inset-0 h-full w-full bg-neutral-200 dark:bg-slate-800/[0.8] block rounded-xl"
-            layoutId="hoverBackground"
-            initial={{ opacity: 0 }}
-            animate={{
-              opacity: 1,
-              transition: { duration: 0.15 },
-            }}
-            exit={{
-              opacity: 0,
-              transition: { duration: 0.15, delay: 0.2 },
-            }}
-          />
-        )}
-      </AnimatePresence>
-
       <div className="relative z-20 h-full">
         {isActive ? (
           <div className="relative w-full h-full">
-            <div className="absolute -inset-[1px] rounded-xl overflow-hidden">
-              <div className="absolute inset-0 bg-black opacity-100 blur-sm" />
-            </div>
-            <Card className="relative bg-card border-black shadow-[0_0_30px_-10px_rgba(0,0,0,0.3)] h-full">
+            <Card className="relative bg-card border-primary/40 shadow-monetra-xl ring-2 ring-primary/20 h-full">
               <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 flex items-center gap-2">
                 <Badge variant="default" className="gap-1 text-xs bg-black hover:bg-black/90">
                   <CheckCircle2 className="w-3 h-3" />
@@ -390,7 +369,7 @@ function ProgramCard({
                     variant="outline"
                     size="sm"
                     disabled
-                    className="w-full text-xs sm:text-sm border-sky-500/20 text-sky-500 bg-sky-50"
+                    className="w-full text-xs sm:text-sm border-primary/30 text-foreground bg-primary/10 font-semibold"
                   >
                     In Uso
                   </Button>
@@ -399,9 +378,7 @@ function ProgramCard({
             </Card>
           </div>
         ) : (
-          <Card
-            className="relative transition-all min-w-0 w-full h-full bg-card border-black/10 hover:border-transparent"
-          >
+          <Card className="relative min-w-0 w-full h-full">
             <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10">
               <ProgramActionsMenu
                 onEdit={onEdit}

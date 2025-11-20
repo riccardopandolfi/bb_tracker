@@ -12,26 +12,40 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Monetra-inspired color palette */
+    --background: 0 0% 98%; /* Soft off-white instead of pure white */
+    --foreground: 0 0% 4%; /* Deep black for text */
+    --card: 0 0% 100%; /* Pure white for cards */
+    --card-foreground: 0 0% 4%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 0 0% 0%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 262.1 83.3% 57.8%;
-    --radius: 0.5rem;
+    --popover-foreground: 0 0% 4%;
+
+    /* Lime/Neon green primary (Monetra signature) */
+    --primary: 76 100% 61%; /* #C4FF39 - Bright lime green */
+    --primary-foreground: 0 0% 4%;
+
+    /* Subtle gray secondary */
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 4%;
+
+    /* Muted grays */
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 45%;
+
+    /* Accent remains lime green */
+    --accent: 76 100% 61%;
+    --accent-foreground: 0 0% 4%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Softer borders */
+    --border: 0 0% 92%;
+    --input: 0 0% 92%;
+    --ring: 76 100% 61%; /* Lime focus ring */
+
+    /* Increased radius for Monetra-like cards */
+    --radius: 1rem;
   }
 
   .dark {
@@ -84,10 +98,49 @@
       transform: translateY(0);
     }
   }
+
+  /* Stagger animations for page elements */
+  .stagger-1 {
+    animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
+  }
+
+  .stagger-2 {
+    animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
+  }
+
+  .stagger-3 {
+    animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+  }
+
+  .stagger-4 {
+    animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.4s both;
+  }
+
+  /* Monetra-inspired card shadow */
+  .card-monetra {
+    @apply bg-card rounded-2xl shadow-[0_2px_20px_rgba(0,0,0,0.06)] border border-gray-100/50;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-monetra:hover {
+    @apply shadow-[0_8px_30px_rgba(0,0,0,0.1)];
+    transform: translateY(-2px);
+  }
+
+  /* Lime accent gradient */
+  .lime-gradient {
+    background: linear-gradient(135deg, #C4FF39 0%, #A5D430 100%);
+  }
+
+  /* Smooth transitions for all interactive elements */
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
   .glass {
     @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-glass;
   }
-  
+
   .glass-dark {
     @apply bg-black/60 backdrop-blur-md border border-white/10 shadow-glass;
   }

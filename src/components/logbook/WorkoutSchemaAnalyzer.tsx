@@ -153,7 +153,7 @@ export function WorkoutSchemaAnalyzer() {
   };
 
   return (
-    <Card className="shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+    <Card className="card-monetra">
       <CardHeader className="pb-3 sm:pb-6">
         <CardTitle className="text-base sm:text-lg">Analisi Schema di Lavoro</CardTitle>
         <CardDescription className="text-xs sm:text-sm">
@@ -165,7 +165,7 @@ export function WorkoutSchemaAnalyzer() {
           <button
             onClick={() => handleModeChange('normal')}
             className={`flex-1 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors border-2 ${mode === 'normal'
-                ? 'border-black bg-white text-black'
+                ? 'border-primary/40 bg-primary/5 text-black'
                 : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
               }`}
           >
@@ -174,7 +174,7 @@ export function WorkoutSchemaAnalyzer() {
           <button
             onClick={() => handleModeChange('special')}
             className={`flex-1 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors border-2 ${mode === 'special'
-                ? 'border-black bg-white text-black'
+                ? 'border-primary/40 bg-primary/5 text-black'
                 : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
               }`}
           >

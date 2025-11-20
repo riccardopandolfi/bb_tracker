@@ -30,8 +30,8 @@ export function MacrosSummaryWidget() {
   const f = parseFloat(currentDay?.fat || '0');
 
   return (
-    <Card className="h-full border-none shadow-premium hover:shadow-premium-hover transition-all duration-300">
-      <CardContent className="space-y-4 pt-6">
+    <Card className="h-full card-monetra">
+      <CardContent className="space-y-5 pt-6">
         {!dailyMacros || !hasMacros ? (
           <div className="text-center py-8 space-y-4">
             <div className="w-24 h-24 mx-auto rounded-full bg-gray-100 flex items-center justify-center">
@@ -67,27 +67,27 @@ export function MacrosSummaryWidget() {
 
             {/* Nutrienti Section */}
             <div>
-              <div className="text-xs font-semibold mb-3 text-gray-400">Nutrienti</div>
+              <div className="text-xs font-semibold mb-3 text-muted-foreground font-heading">Nutrienti</div>
               <div className="grid grid-cols-3 gap-3">
-                {/* Proteine Box */}
-                <div className="p-3 rounded-lg bg-gradient-to-br from-sky-500/10 to-sky-500/5 border border-sky-500/20">
+                {/* Proteine Box - Lime Green (Monetra accent) */}
+                <div className="p-4 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/30 hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-default">
                   <div className="text-center">
-                    <span className="block text-xs text-sky-600 mb-1">Proteine</span>
-                    <span className="block text-sm font-bold text-sky-700">{p}g</span>
+                    <span className="block text-xs text-primary/80 mb-1.5 font-medium">Proteine</span>
+                    <span className="block text-base font-bold text-foreground font-heading">{p}g</span>
                   </div>
                 </div>
-                {/* Carbo Box */}
-                <div className="p-3 rounded-lg bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-500/20">
+                {/* Carbo Box - Emerald */}
+                <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 border border-emerald-500/30 hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-default">
                   <div className="text-center">
-                    <span className="block text-xs text-emerald-600 mb-1">Carbo</span>
-                    <span className="block text-sm font-bold text-emerald-700">{c}g</span>
+                    <span className="block text-xs text-emerald-600 mb-1.5 font-medium">Carbo</span>
+                    <span className="block text-base font-bold text-foreground font-heading">{c}g</span>
                   </div>
                 </div>
-                {/* Grassi Box */}
-                <div className="p-3 rounded-lg bg-gradient-to-br from-amber-500/10 to-amber-500/5 border border-amber-500/20">
+                {/* Grassi Box - Amber */}
+                <div className="p-4 rounded-xl bg-gradient-to-br from-amber-500/15 to-amber-500/5 border border-amber-500/30 hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-default">
                   <div className="text-center">
-                    <span className="block text-xs text-amber-600 mb-1">Grassi</span>
-                    <span className="block text-sm font-bold text-amber-700">{f}g</span>
+                    <span className="block text-xs text-amber-600 mb-1.5 font-medium">Grassi</span>
+                    <span className="block text-base font-bold text-foreground font-heading">{f}g</span>
                   </div>
                 </div>
               </div>

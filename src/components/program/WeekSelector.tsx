@@ -18,14 +18,14 @@ export function WeekSelector() {
   };
 
   return (
-    <Card className="shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+    <Card className="card-monetra">
       <CardContent className="pt-6">
         <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-sm font-medium mr-2">Settimana:</span>
+          <span className="text-sm font-medium mr-2 font-heading">Settimana:</span>
           {weekNumbers.map((weekNum) => {
             const isActive = currentWeek === weekNum;
-            const activeClasses = 'bg-black text-white';
-            const inactiveClasses = 'bg-black/5 border border-black/40 text-black hover:bg-black/15';
+            const activeClasses = 'lime-gradient text-black shadow-md';
+            const inactiveClasses = 'bg-muted/50 border border-border text-foreground hover:bg-muted';
 
             return (
               <Button
@@ -46,7 +46,6 @@ export function WeekSelector() {
             variant="outline"
             size="sm"
             onClick={handleAddWeek}
-            className="border border-black/40 text-black hover:bg-black/10"
           >
             <Plus className="w-4 h-4 mr-1" />
             Nuova
@@ -56,7 +55,6 @@ export function WeekSelector() {
               variant="outline"
               size="sm"
               onClick={() => duplicateWeek(currentWeek)}
-              className="border border-black/40 text-black hover:bg-black/10"
             >
               <Copy className="w-4 h-4 mr-1" />
               Duplica

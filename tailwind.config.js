@@ -72,12 +72,14 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
       },
       fontFamily: {
-        sans: ['"Inter Tight"', 'sans-serif'],
-        heading: ['"Plus Jakarta Sans"', 'sans-serif'],
+        sans: ['"Outfit"', 'system-ui', 'sans-serif'],
+        heading: ['"DM Sans"', 'system-ui', 'sans-serif'],
+        brand: ['"Race Sport"', 'Impact', 'sans-serif'],
       },
       boxShadow: {
-        'premium': '0 8px 30px rgba(0,0,0,0.04)',
-        'premium-hover': '0 20px 40px rgba(0,0,0,0.08)',
+        'monetra': '0 2px 20px rgba(0,0,0,0.06)',
+        'monetra-hover': '0 8px 30px rgba(0,0,0,0.1)',
+        'monetra-xl': '0 12px 40px rgba(0,0,0,0.12)',
         'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
       },
     },

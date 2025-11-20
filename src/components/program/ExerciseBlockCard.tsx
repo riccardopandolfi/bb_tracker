@@ -367,7 +367,7 @@ export function ExerciseBlockCard({
 
   if (exerciseType === 'cardio') {
     return (
-      <Card className="w-full shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+      <Card className="w-full card-monetra">
         <CardHeader className="pb-3 border-b border-gray-100">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
@@ -442,7 +442,7 @@ export function ExerciseBlockCard({
 
   return (
     <>
-      <Card className="w-full shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+      <Card className="w-full card-monetra">
         <CardHeader className="pb-3 border-b border-gray-100">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
@@ -898,7 +898,7 @@ export function ExerciseBlockCard({
                     {localLoadsByCluster.map((setLoads, setIdx) => {
                       const clusters = parseSchema(block.techniqueSchema || '');
                       return (
-                        <Card key={setIdx} className="border-2 border-black/30 shadow-sm">
+                        <Card key={setIdx} className="border border-gray-200 shadow-sm">
                           <CardHeader className="pb-3 bg-gradient-to-r from-neutral-100 to-neutral-200">
                             <h4 className="text-sm font-bold flex items-center gap-2">
                               <span className="px-2.5 py-1 rounded bg-black text-white">Set {setIdx + 1}</span>

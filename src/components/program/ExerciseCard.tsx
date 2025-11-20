@@ -106,7 +106,7 @@ export function ExerciseCard({
   if (exercise.exerciseType === 'cardio') {
     return (
       <>
-        <Card className="shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+        <Card className="card-monetra">
           <CardContent className="pt-6">
             <div className="flex flex-col gap-4 mb-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex-1 min-w-0">
@@ -296,7 +296,7 @@ export function ExerciseCard({
   // Resistance view
   return (
     <>
-      <Card className="shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+      <Card className="card-monetra">
         <CardContent className="pt-6">
           <div className="flex flex-col gap-4 mb-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex-1 min-w-0">

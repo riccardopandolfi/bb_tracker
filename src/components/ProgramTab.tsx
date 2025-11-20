@@ -15,7 +15,7 @@ export function ProgramTab() {
   if (!currentProgram) {
     return (
       <div className="space-y-6">
-        <Card className="shadow-premium border-none">
+        <Card className="card-monetra">
           <CardHeader>
             <CardTitle className="font-heading">Nessun programma selezionato</CardTitle>
             <CardDescription>
@@ -60,7 +60,7 @@ export function ProgramTab() {
       <VolumeSummary />
 
       {/* Days & Exercises */}
-      <Card className="shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+      <Card className="card-monetra">
         <CardHeader>
           <CardTitle className="font-heading">Giorni e Esercizi</CardTitle>
           <CardDescription>Organizza i tuoi allenamenti per giorno</CardDescription>

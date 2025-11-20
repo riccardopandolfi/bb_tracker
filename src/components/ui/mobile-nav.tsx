@@ -19,7 +19,7 @@ export function MobileNav({ currentTab, setCurrentTab }: MobileNavProps) {
 
     return (
         <div className="fixed bottom-4 left-4 right-4 z-50 md:hidden">
-            <div className="glass-dark rounded-2xl p-2 flex justify-between items-center shadow-premium-hover">
+            <div className="bg-card/95 backdrop-blur-xl rounded-2xl p-2 flex justify-between items-center shadow-monetra-xl border border-border/50">
                 {tabs.map((tab) => {
                     const isActive = currentTab === tab.id;
                     const Icon = tab.icon;
@@ -30,19 +30,19 @@ export function MobileNav({ currentTab, setCurrentTab }: MobileNavProps) {
                             onClick={() => setCurrentTab(tab.id)}
                             className={cn(
                                 "relative flex flex-col items-center justify-center w-full h-12 rounded-xl transition-all duration-300",
-                                isActive ? "text-white" : "text-white/50 hover:text-white/80"
+                                isActive ? "text-black" : "text-muted-foreground hover:text-foreground"
                             )}
                         >
                             {isActive && (
                                 <motion.div
                                     layoutId="mobile-nav-pill"
-                                    className="absolute inset-0 bg-white/10 rounded-xl"
-                                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                    className="absolute inset-0 lime-gradient rounded-xl shadow-md"
+                                    transition={{ type: "spring", stiffness: 400, damping: 35 }}
                                 />
                             )}
                             <Icon className={cn("w-5 h-5 relative z-10", isActive && "stroke-[2.5px]")} />
                             {isActive && (
-                                <span className="text-[10px] font-medium mt-1 relative z-10 animate-in fade-in zoom-in duration-200">
+                                <span className="text-[10px] font-semibold mt-1 relative z-10 animate-in fade-in zoom-in duration-200 font-heading">
                                     {tab.label}
                                 </span>
                             )}

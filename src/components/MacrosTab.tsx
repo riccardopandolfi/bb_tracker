@@ -168,7 +168,7 @@ export function MacrosTab() {
 
       {/* Card Riepilogo */}
       {weeklyAverage && (
-        <Card className="shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+        <Card className="card-monetra">
           <CardHeader>
             <CardTitle className="text-base sm:text-lg font-heading">Riepilogo Settimanale</CardTitle>
           </CardHeader>
@@ -223,7 +223,7 @@ export function MacrosTab() {
       )}
 
       {/* Card Integratori Settimanali */}
-      <Card className="shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+      <Card className="card-monetra">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -285,7 +285,7 @@ export function MacrosTab() {
       </Card>
 
       {/* Card Macro Settimanali */}
-      <Card className="shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+      <Card className="card-monetra">
         <CardHeader>
           <CardTitle className="text-base sm:text-lg font-heading">Macro Settimanali</CardTitle>
           <CardDescription className="text-xs sm:text-sm">
@@ -307,7 +307,7 @@ export function MacrosTab() {
                   className={`p-4 ${isChecked
                       ? 'border-emerald-200 bg-emerald-50'
                       : isToday
-                        ? 'border-black border-2'
+                        ? 'border-primary/40 border-2 ring-2 ring-primary/10'
                         : 'border-gray-200'
                     }`}
                 >

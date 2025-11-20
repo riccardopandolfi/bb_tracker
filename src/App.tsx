@@ -8,12 +8,15 @@ import { MacrosTab } from './components/MacrosTab';
 import { Home, BookOpen, Dumbbell, Folder, Apple } from 'lucide-react';
 import { cn } from './lib/utils';
 import { BackgroundBeams } from './components/ui/background-beams';
-import '@fontsource/inter-tight/400.css';
-import '@fontsource/inter-tight/500.css';
-import '@fontsource/inter-tight/600.css';
-import '@fontsource/inter-tight/700.css';
-import '@fontsource/plus-jakarta-sans/600.css';
-import '@fontsource/plus-jakarta-sans/700.css';
+import '@fontsource/outfit/300.css';
+import '@fontsource/outfit/400.css';
+import '@fontsource/outfit/500.css';
+import '@fontsource/outfit/600.css';
+import '@fontsource/outfit/700.css';
+import '@fontsource/dm-sans/400.css';
+import '@fontsource/dm-sans/500.css';
+import '@fontsource/dm-sans/600.css';
+import '@fontsource/dm-sans/700.css';
 import { UserSelector } from './components/UserSelector';
 import { MobileNav } from './components/ui/mobile-nav';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -22,23 +25,19 @@ function App() {
   const { currentTab, setCurrentTab } = useApp();
 
   return (
-    <div className="min-h-screen w-full bg-white text-foreground relative overflow-x-hidden font-sans selection:bg-primary/20">
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <BackgroundBeams className="opacity-10" />
-      </div>
-
-      {/* Header */}
-      <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/80">
+    <div className="min-h-screen w-full bg-background text-foreground relative overflow-x-hidden font-sans selection:bg-primary/20">
+      {/* Header - Monetra Style */}
+      <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-white/80 backdrop-blur-xl">
         <div className="w-full flex h-16 items-center justify-between px-4 md:px-6 lg:px-8">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl lime-gradient flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
               <Dumbbell className="h-5 w-5 text-black" />
             </div>
-            <h1 className="text-lg font-bold tracking-tight text-white sm:block">Nobody Cares Work Harder</h1>
+            <h1 className="text-lg font-bold tracking-tight text-foreground font-heading sm:block">Nobody Cares Work Harder</h1>
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/10">
+          {/* Desktop Navigation - Monetra Style */}
+          <div className="hidden md:flex items-center gap-1 bg-muted/50 p-1.5 rounded-full border border-border/50">
             <NavigationMenuLink
               active={currentTab === 'home'}
               onClick={() => setCurrentTab('home')}
@@ -120,18 +119,18 @@ function NavigationMenuLink({ active, onClick, children, icon }: { active: boole
     <button
       onClick={onClick}
       className={cn(
-        "relative px-4 py-2 text-sm font-medium transition-all duration-200 rounded-full flex items-center gap-2",
-        active ? "text-black" : "text-white/60 hover:text-white hover:bg-white/10"
+        "relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-full flex items-center gap-2",
+        active ? "text-black" : "text-muted-foreground hover:text-foreground hover:bg-white/50"
       )}
     >
       {active && (
         <motion.div
           layoutId="desktop-nav-pill"
-          className="absolute inset-0 bg-white rounded-full shadow-sm"
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          className="absolute inset-0 lime-gradient rounded-full shadow-md shadow-primary/20"
+          transition={{ type: "spring", stiffness: 400, damping: 35 }}
         />
       )}
-      <span className="relative z-10 flex items-center gap-2">
+      <span className="relative z-10 flex items-center gap-2 font-heading">
         {icon}
         {children}
       </span>

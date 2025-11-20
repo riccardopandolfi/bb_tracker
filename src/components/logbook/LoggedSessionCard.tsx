@@ -144,7 +144,7 @@ export function LoggedSessionCard({
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
-      <Card className="w-full shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+      <Card className="w-full card-monetra">
         <CardContent className="pt-3 sm:pt-6 px-3 sm:px-6">
           {/* Header - Always Visible */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

@@ -18,7 +18,7 @@ export function DailyMacrosCard({ onOpenSettings }: DailyMacrosCardProps) {
   // Se non ci sono macro giornalieri configurati
   if (!dailyMacros) {
     return (
-      <Card className="h-full shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+      <Card className="h-full card-monetra">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-heading">
             <Calendar className="w-5 h-5" />
@@ -53,7 +53,7 @@ export function DailyMacrosCard({ onOpenSettings }: DailyMacrosCardProps) {
   };
 
   return (
-    <Card className="h-full shadow-premium hover:shadow-premium-hover transition-all duration-300 border-none">
+    <Card className="h-full card-monetra">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-heading">
