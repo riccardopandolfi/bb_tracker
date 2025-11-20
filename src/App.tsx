@@ -35,7 +35,7 @@ function App() {
   return (
     <div className="min-h-screen w-full bg-background text-foreground relative overflow-x-hidden font-sans selection:bg-primary/20">
       {/* Header - Monetra Style */}
-      <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-black/95 backdrop-blur-xl supports-[backdrop-filter]:bg-black/60">
+      <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-black">
         <div className="w-full flex h-16 items-center justify-between px-4 md:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl lime-gradient flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
@@ -45,25 +45,25 @@ function App() {
           </div>
 
           {/* Desktop Navigation - Monetra Style */}
-          <div className="hidden md:flex items-center gap-1 bg-white/5 p-1.5 rounded-full border border-white/10">
+          <div className="hidden md:flex items-center gap-1 bg-white p-1.5 rounded-full border border-white">
             <NavigationMenuLink
               active={currentTab === 'home'}
               onClick={() => setCurrentTab('home')}
-              icon={<Home className={cn("w-4 h-4", currentTab === 'home' ? "text-black" : "text-white")} />}
+              icon={<Home className="w-4 h-4" />}
             >
               Home
             </NavigationMenuLink>
             <NavigationMenuLink
               active={currentTab === 'library'}
               onClick={() => setCurrentTab('library')}
-              icon={<BookOpen className={cn("w-4 h-4", currentTab === 'library' ? "text-black" : "text-white")} />}
+              icon={<BookOpen className="w-4 h-4" />}
             >
               Libreria
             </NavigationMenuLink>
             <NavigationMenuLink
               active={currentTab === 'programs'}
               onClick={() => setCurrentTab('programs')}
-              icon={<Folder className={cn("w-4 h-4", currentTab === 'programs' ? "text-black" : "text-white")} />}
+              icon={<Folder className="w-4 h-4" />}
             >
               Programmi
             </NavigationMenuLink>
@@ -71,7 +71,7 @@ function App() {
               active={currentTab === 'program'}
               onClick={() => hasPrograms && setCurrentTab('program')}
               disabled={!hasPrograms}
-              icon={<Dumbbell className={cn("w-4 h-4", currentTab === 'program' ? "text-black" : "text-white")} />}
+              icon={<Dumbbell className="w-4 h-4" />}
             >
               Scheda
             </NavigationMenuLink>
@@ -79,7 +79,7 @@ function App() {
               active={currentTab === 'logbook'}
               onClick={() => hasPrograms && setCurrentTab('logbook')}
               disabled={!hasPrograms}
-              icon={<Dumbbell className={cn("w-4 h-4", currentTab === 'logbook' ? "text-black" : "text-white")} />}
+              icon={<Dumbbell className="w-4 h-4" />}
             >
               Logbook
             </NavigationMenuLink>
@@ -87,7 +87,7 @@ function App() {
               active={currentTab === 'macros'}
               onClick={() => hasPrograms && setCurrentTab('macros')}
               disabled={!hasPrograms}
-              icon={<Apple className={cn("w-4 h-4", currentTab === 'macros' ? "text-black" : "text-white")} />}
+              icon={<Apple className="w-4 h-4" />}
             >
               Macros
             </NavigationMenuLink>
@@ -132,8 +132,8 @@ function NavigationMenuLink({ active, onClick, children, icon, disabled }: { act
       disabled={disabled}
       className={cn(
         "relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-full flex items-center gap-2",
-        active ? "text-black" : "text-white hover:text-white hover:bg-white/10",
-        disabled && "opacity-50 cursor-not-allowed hover:text-white/50 hover:bg-transparent"
+        active ? "text-black" : "text-black hover:text-black hover:bg-gray-100",
+        disabled && "opacity-50 cursor-not-allowed hover:text-black/50 hover:bg-transparent"
       )}
     >
       {active && (
@@ -143,7 +143,7 @@ function NavigationMenuLink({ active, onClick, children, icon, disabled }: { act
           transition={{ type: "spring", stiffness: 400, damping: 35 }}
         />
       )}
-      <span className="relative z-10 flex items-center gap-2 font-heading text-white">
+      <span className="relative z-10 flex items-center gap-2 font-heading">
         {icon}
         {children}
       </span>
