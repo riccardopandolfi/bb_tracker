@@ -45,7 +45,7 @@ function App() {
           </div>
 
           {/* Desktop Navigation - Monetra Style */}
-          <div className="hidden md:flex items-center gap-1 bg-white p-1.5 rounded-full border border-white">
+          <div className="hidden md:flex items-center gap-1 bg-transparent p-1.5 rounded-full border border-white">
             <NavigationMenuLink
               active={currentTab === 'home'}
               onClick={() => setCurrentTab('home')}
@@ -132,8 +132,8 @@ function NavigationMenuLink({ active, onClick, children, icon, disabled }: { act
       disabled={disabled}
       className={cn(
         "relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-full flex items-center gap-2",
-        active ? "text-black" : "text-black hover:text-black hover:bg-gray-100",
-        disabled && "opacity-50 cursor-not-allowed hover:text-black/50 hover:bg-transparent"
+        active ? "text-black" : "text-white hover:text-white hover:bg-white/10",
+        disabled && "opacity-50 cursor-not-allowed hover:text-white/50 hover:bg-transparent"
       )}
     >
       {active && (
