@@ -67,7 +67,7 @@ export function MacrosSummaryWidget() {
 
             <div className="flex items-center justify-end">
               <div className="text-2xl font-bold font-heading">
-                {calculatedKcal > 0 ? calculatedKcal : '-'} <span className="text-sm font-normal text-gray-500">kcal</span>
+                {calculatedKcal > 0 ? calculatedKcal : '-'} <span className="text-xs font-normal text-gray-500">kcal</span>
               </div>
             </div>
 
