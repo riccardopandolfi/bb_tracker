@@ -59,7 +59,7 @@ export function HomeTab() {
   // Empty state when no programs exist
   if (totalPrograms === 0) {
     return (
-      <div className="w-full h-screen overflow-hidden fixed inset-0">
+      <div className="w-full h-[100dvh] overflow-hidden fixed inset-0 bg-black m-0 p-0" style={{ height: '100dvh', width: '100vw' }}>
         <Vortex
           backgroundColor="black"
           baseHue={76}
@@ -70,7 +70,7 @@ export function HomeTab() {
             <TextGenerateEffect 
               words="NOBODY CARES WORK HARDER" 
               className="text-4xl md:text-6xl lg:text-7xl font-bold text-center font-brand tracking-widest"
-              duration={1.5}
+              duration={3}
               filter={true}
               textColor="#C4FF39"
             />

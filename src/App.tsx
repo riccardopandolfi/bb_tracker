@@ -33,7 +33,7 @@ function App() {
   }, [hasPrograms, currentTab, setCurrentTab]);
 
   return (
-    <div className="min-h-screen w-full bg-background text-foreground relative overflow-x-hidden font-sans selection:bg-primary/20">
+    <div className={cn("min-h-screen w-full relative overflow-x-hidden font-sans selection:bg-primary/20", hasPrograms ? "bg-background text-foreground" : "bg-black")}>
       {/* Header - Monetra Style - Only show if programs exist */}
       {hasPrograms && (
       <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-black">
@@ -100,7 +100,7 @@ function App() {
       )}
 
       {/* Main Content */}
-      <main className={hasPrograms ? "w-full py-6 pb-24 md:pb-8 relative z-10" : "w-full h-screen relative z-10"}>
+      <main className={hasPrograms ? "w-full py-6 pb-24 md:pb-8 relative z-10" : "w-full h-[100dvh] relative z-10"}>
         <div className={hasPrograms ? "w-full px-4 md:px-6 lg:px-8" : "w-full h-full"}>
           <AnimatePresence mode="wait">
             <motion.div
