@@ -321,7 +321,7 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
       {day.exercises.length === 0 ? (
         <div className="text-center py-8">
           <p className="text-muted-foreground mb-4">Nessun esercizio in questo giorno</p>
-          <Button onClick={handleAddExercise}>
+          <Button onClick={handleAddExercise} className="lime-gradient text-black hover:opacity-90">
             <Plus className="w-4 h-4 mr-2" />
             Aggiungi Esercizio
           </Button>
@@ -350,7 +350,7 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
           </div>
 
           {/* Add Exercise Button */}
-          <Button onClick={handleAddExercise} variant="outline" className="w-full">
+          <Button onClick={handleAddExercise} variant="outline" className="w-full lime-gradient text-black hover:opacity-90 border-primary">
             <Plus className="w-4 h-4 mr-2" />
             Aggiungi Esercizio
           </Button>
@@ -409,7 +409,7 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
             <Button variant="outline" onClick={() => setShowAddExerciseModal(false)}>
               Annulla
             </Button>
-            <Button onClick={handleConfirmAddExercise} disabled={exercises.length === 0 || !selectedExerciseName}>
+            <Button onClick={handleConfirmAddExercise} disabled={exercises.length === 0 || !selectedExerciseName} className="lime-gradient text-black hover:opacity-90">
               Aggiungi Esercizio
             </Button>
           </DialogFooter>

@@ -314,7 +314,7 @@ function ProgramCard({
           <div className="relative w-full h-full">
             <Card className="relative bg-card border-primary/40 shadow-monetra-xl ring-2 ring-primary/20 h-full">
               <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 flex items-center gap-2">
-                <Badge variant="default" className="gap-1 text-xs bg-black hover:bg-black/90">
+                <Badge variant="default" className="gap-1 text-xs lime-gradient text-black hover:opacity-90">
                   <CheckCircle2 className="w-3 h-3" />
                   Attivo
                 </Badge>

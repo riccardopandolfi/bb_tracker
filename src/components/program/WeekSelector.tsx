@@ -46,6 +46,7 @@ export function WeekSelector() {
             variant="outline"
             size="sm"
             onClick={handleAddWeek}
+            className="bg-black text-white border-black hover:bg-black/90"
           >
             <Plus className="w-4 h-4 mr-1" />
             Nuova

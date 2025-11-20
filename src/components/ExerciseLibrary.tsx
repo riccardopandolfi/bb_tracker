@@ -108,7 +108,7 @@ export function ExerciseLibrary() {
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
           <Dialog open={showMuscleGroupsManager} onOpenChange={setShowMuscleGroupsManager}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm bg-black text-white border-black hover:bg-black/90">
                 <Settings2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Gestisci Gruppi</span>
                 <span className="sm:hidden">Gruppi</span>
@@ -153,7 +153,7 @@ export function ExerciseLibrary() {
 
           <Dialog open={showMuscleDialog} onOpenChange={setShowMuscleDialog}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm bg-black text-white border-black hover:bg-black/90">
                 <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Gruppo Muscolare</span>
                 <span className="sm:hidden">Gruppo M.</span>
@@ -203,7 +203,7 @@ export function ExerciseLibrary() {
 
           <Dialog open={showTechniqueDialog} onOpenChange={setShowTechniqueDialog}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm bg-black text-white border-black hover:bg-black/90">
                 <Settings2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Tecnica Personalizzata</span>
                 <span className="sm:hidden">Tecnica</span>
@@ -582,7 +582,7 @@ function ExerciseCard({ exercise, index, onUpdate, onDelete, muscleGroups }: Exe
 
             {/* Add Muscle Button */}
             {(localExercise.muscles?.length || 0) < 3 && (
-              <Button variant="outline" size="sm" onClick={handleAddMuscle} className="w-full text-xs sm:text-sm">
+              <Button variant="outline" size="sm" onClick={handleAddMuscle} className="w-full text-xs sm:text-sm lime-gradient text-black hover:opacity-90 border-primary">
                 <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 Aggiungi Muscolo
               </Button>
