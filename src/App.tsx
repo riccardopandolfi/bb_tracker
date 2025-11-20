@@ -25,12 +25,12 @@ function App() {
   const { currentTab, setCurrentTab, programs } = useApp();
   const hasPrograms = Object.keys(programs).length > 0;
 
-  // Redirect to home tab if no programs exist
+  // On initial mount, redirect to home if no programs exist (except home/library)
   useEffect(() => {
-    if (!hasPrograms && currentTab !== 'home') {
+    if (!hasPrograms && currentTab !== 'home' && currentTab !== 'library') {
       setCurrentTab('home');
     }
-  }, [hasPrograms, currentTab, setCurrentTab]);
+  }, [hasPrograms]); // Run only when hasPrograms changes, not on every tab change
 
   return (
     <div className={cn("min-h-screen w-full relative overflow-x-hidden font-sans selection:bg-primary/20", hasPrograms ? "bg-background text-foreground" : "bg-black")}>
