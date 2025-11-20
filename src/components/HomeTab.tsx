@@ -12,6 +12,8 @@ import { Button } from './ui/button';
 import { useState } from 'react';
 import { MacrosSummaryWidget } from './home/MacrosSummaryWidget';
 import { adjustColor } from '@/lib/colorUtils';
+import { Vortex } from './ui/vortex';
+import { TextGenerateEffect } from './ui/text-generate-effect';
 
 export function HomeTab() {
   const {
@@ -57,52 +59,62 @@ export function HomeTab() {
   // Empty state when no programs exist
   if (totalPrograms === 0) {
     return (
-      <div className="space-y-6">
-        {/* Empty State */}
-        <Card className="border-dashed card-monetra">
-          <CardContent className="flex flex-col items-center justify-center py-16 px-4">
-            <div className="self-end mb-4">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="demo-mode"
-                  checked={hasDemoData()}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      loadDemoData();
-                    } else {
-                      clearDemoData();
-                    }
-                  }}
-                />
-                <Label htmlFor="demo-mode">Dati Demo</Label>
-              </div>
-            </div>
-            <div className="rounded-full bg-primary/10 p-4 sm:p-6 mb-4 sm:mb-6">
-              <Dumbbell className="h-12 w-12 sm:h-16 sm:w-16 text-primary" />
-            </div>
-            <h3 className="text-xl sm:text-2xl font-bold mb-2 font-heading">Nessun Programma Trovato</h3>
-            <p className="text-sm sm:text-base text-muted-foreground text-center mb-6 max-w-md">
-              Inizia creando il tuo primo programma di allenamento per sbloccare tutte le funzionalità dell'app.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-              <Button onClick={() => setCurrentTab('programs')} size="sm" className="w-full sm:w-auto">
-                <Dumbbell className="mr-2 h-5 w-5" />
-                Crea il Primo Programma
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  loadDemoData();
-                  setCurrentTab('program');
+      <div className="w-full h-[calc(100vh-8rem)] rounded-2xl overflow-hidden">
+        <Vortex
+          backgroundColor="black"
+          baseHue={76}
+          rangeHue={20}
+          className="flex items-center flex-col justify-center px-4 md:px-10 py-4 w-full h-full"
+        >
+          <div className="absolute top-4 right-4 z-20">
+            <div className="flex items-center space-x-2 bg-black/50 backdrop-blur-sm rounded-full px-3 py-2 border border-white/10">
+              <Switch
+                id="demo-mode"
+                checked={hasDemoData()}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    loadDemoData();
+                  } else {
+                    clearDemoData();
+                  }
                 }}
-                className="w-full sm:w-auto"
-              >
-                Carica Dati Demo
-              </Button>
+              />
+              <Label htmlFor="demo-mode" className="text-white text-sm">Dati Demo</Label>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          
+          <TextGenerateEffect 
+            words="NOBODY CARES WORK HARDER" 
+            className="text-4xl md:text-6xl lg:text-7xl font-bold text-center font-brand tracking-widest mb-6"
+            style={{ color: '#C4FF39' }}
+          />
+          
+          <p className="text-white text-base md:text-xl max-w-2xl mt-6 text-center mb-8 font-heading">
+            Inizia creando il tuo primo programma di allenamento per sbloccare tutte le funzionalità dell'app.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row items-center gap-4 mt-6">
+            <Button 
+              onClick={() => setCurrentTab('programs')} 
+              size="lg"
+              className="lime-gradient text-black font-bold hover:opacity-90 transition-opacity shadow-lg shadow-primary/50"
+            >
+              <Dumbbell className="mr-2 h-5 w-5" />
+              Inizia Ora
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => {
+                loadDemoData();
+                setCurrentTab('program');
+              }}
+              className="text-white border-white/30 hover:bg-white/10"
+            >
+              Carica Dati Demo
+            </Button>
+          </div>
+        </Vortex>
       </div>
     );
   }
