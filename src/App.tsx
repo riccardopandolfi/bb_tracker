@@ -25,10 +25,10 @@ function App() {
   const { currentTab, setCurrentTab, programs } = useApp();
   const hasPrograms = Object.keys(programs).length > 0;
 
-  // Redirect to programs tab if user is on a disabled tab and no programs exist
+  // Redirect to home tab if no programs exist
   useEffect(() => {
-    if (!hasPrograms && (currentTab === 'program' || currentTab === 'logbook' || currentTab === 'macros')) {
-      setCurrentTab('programs');
+    if (!hasPrograms && currentTab !== 'home') {
+      setCurrentTab('home');
     }
   }, [hasPrograms, currentTab, setCurrentTab]);
 

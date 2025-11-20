@@ -85,9 +85,9 @@ export function ProgramsTab() {
 
   if (!hasProgramms) {
     return (
-      <div className="space-y-6">
+      <div className="flex items-center justify-center min-h-[calc(100vh-8rem)] px-4 md:px-6 lg:px-8">
         {/* Empty State - Large */}
-        <Card className="border-dashed">
+        <Card className="border-dashed max-w-2xl w-full shadow-xl">
           <CardContent className="flex flex-col items-center justify-center py-12 sm:py-20 px-4">
             <div className="rounded-full bg-primary/10 p-4 sm:p-6 mb-4 sm:mb-6">
               <Layers className="h-12 w-12 sm:h-16 sm:w-16 text-primary" />
