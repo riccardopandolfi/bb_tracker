@@ -7,7 +7,6 @@ import { LogbookTab } from './components/LogbookTab';
 import { MacrosTab } from './components/MacrosTab';
 import { Home, BookOpen, Dumbbell, Folder, Apple } from 'lucide-react';
 import { cn } from './lib/utils';
-import { BackgroundBeams } from './components/ui/background-beams';
 import '@fontsource/outfit/300.css';
 import '@fontsource/outfit/400.css';
 import '@fontsource/outfit/500.css';

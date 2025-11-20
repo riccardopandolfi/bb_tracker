@@ -10,7 +10,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Plus, Copy, Trash2, Calendar, Layers, CheckCircle2, Pencil, MoreVertical } from 'lucide-react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
-import { AnimatePresence, motion } from 'framer-motion';
 
 export function ProgramsTab() {
   const { programs, currentProgramId, setCurrentProgram, addProgram, updateProgram, duplicateProgram, deleteProgram } = useApp();
@@ -320,14 +319,8 @@ function ProgramCard({
   onDuplicate: () => void;
   onDelete: () => void;
 }) {
-  const [isHovered, setIsHovered] = useState(false);
-
   return (
-    <div
-      className="relative group block h-full w-full"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+    <div className="relative group block h-full w-full">
       <div className="relative z-20 h-full">
         {isActive ? (
           <div className="relative w-full h-full">
