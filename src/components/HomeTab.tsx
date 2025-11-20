@@ -66,11 +66,15 @@ export function HomeTab() {
           rangeHue={20}
           className="flex items-center flex-col justify-center px-4 md:px-10 py-4 w-full h-full"
         >
-          <TextGenerateEffect 
-            words="NOBODY CARES WORK HARDER" 
-            className="text-4xl md:text-6xl lg:text-7xl font-bold text-center font-brand tracking-widest mb-6"
-            style={{ color: '#C4FF39' }}
-          />
+          <div className="text-4xl md:text-6xl lg:text-7xl font-bold text-center font-brand tracking-widest mb-6">
+            <TextGenerateEffect 
+              words="NOBODY CARES WORK HARDER" 
+              className="text-4xl md:text-6xl lg:text-7xl font-bold text-center font-brand tracking-widest"
+              duration={1.5}
+              filter={true}
+              textColor="#C4FF39"
+            />
+          </div>
           
           <p className="text-white text-base md:text-xl max-w-2xl mt-6 text-center mb-8 font-heading">
             Inizia creando il tuo primo programma di allenamento per sbloccare tutte le funzionalità dell'app.
