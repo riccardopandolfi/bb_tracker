@@ -35,17 +35,17 @@ function App() {
   return (
     <div className="min-h-screen w-full bg-background text-foreground relative overflow-x-hidden font-sans selection:bg-primary/20">
       {/* Header - Monetra Style */}
-      <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-white/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-black/95 backdrop-blur-xl supports-[backdrop-filter]:bg-black/60">
         <div className="w-full flex h-16 items-center justify-between px-4 md:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl lime-gradient flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
               <Dumbbell className="h-5 w-5 text-black" />
             </div>
-            <h1 className="text-lg font-bold tracking-tight text-foreground font-heading sm:block">Nobody Cares Work Harder</h1>
+            <h1 className="hidden md:block text-lg font-bold tracking-widest text-white font-brand uppercase">Nobody Cares Work Harder</h1>
           </div>
 
           {/* Desktop Navigation - Monetra Style */}
-          <div className="hidden md:flex items-center gap-1 bg-muted/50 p-1.5 rounded-full border border-border/50">
+          <div className="hidden md:flex items-center gap-1 bg-white/5 p-1.5 rounded-full border border-white/10">
             <NavigationMenuLink
               active={currentTab === 'home'}
               onClick={() => setCurrentTab('home')}
@@ -132,8 +132,8 @@ function NavigationMenuLink({ active, onClick, children, icon, disabled }: { act
       disabled={disabled}
       className={cn(
         "relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-full flex items-center gap-2",
-        active ? "text-black" : "text-muted-foreground hover:text-foreground hover:bg-white/50",
-        disabled && "opacity-50 cursor-not-allowed hover:text-muted-foreground hover:bg-transparent"
+        active ? "text-black" : "text-gray-400 hover:text-white hover:bg-white/10",
+        disabled && "opacity-50 cursor-not-allowed hover:text-gray-500 hover:bg-transparent"
       )}
     >
       {active && (
