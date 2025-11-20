@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useApp } from './contexts/AppContext';
 import { HomeTab } from './components/HomeTab';
 import { ExerciseLibrary } from './components/ExerciseLibrary';
@@ -21,7 +22,15 @@ import { MobileNav } from './components/ui/mobile-nav';
 import { AnimatePresence, motion } from 'framer-motion';
 
 function App() {
-  const { currentTab, setCurrentTab } = useApp();
+  const { currentTab, setCurrentTab, programs } = useApp();
+  const hasPrograms = Object.keys(programs).length > 0;
+
+  // Redirect to programs tab if user is on a disabled tab and no programs exist
+  useEffect(() => {
+    if (!hasPrograms && (currentTab === 'program' || currentTab === 'logbook' || currentTab === 'macros')) {
+      setCurrentTab('programs');
+    }
+  }, [hasPrograms, currentTab, setCurrentTab]);
 
   return (
     <div className="min-h-screen w-full bg-background text-foreground relative overflow-x-hidden font-sans selection:bg-primary/20">
@@ -53,7 +62,8 @@ function App() {
             </NavigationMenuLink>
             <NavigationMenuLink
               active={currentTab === 'program'}
-              onClick={() => setCurrentTab('program')}
+              onClick={() => hasPrograms && setCurrentTab('program')}
+              disabled={!hasPrograms}
               icon={<Dumbbell className="w-4 h-4" />}
             >
               Scheda
@@ -67,14 +77,16 @@ function App() {
             </NavigationMenuLink>
             <NavigationMenuLink
               active={currentTab === 'logbook'}
-              onClick={() => setCurrentTab('logbook')}
+              onClick={() => hasPrograms && setCurrentTab('logbook')}
+              disabled={!hasPrograms}
               icon={<Dumbbell className="w-4 h-4" />}
             >
               Logbook
             </NavigationMenuLink>
             <NavigationMenuLink
               active={currentTab === 'macros'}
-              onClick={() => setCurrentTab('macros')}
+              onClick={() => hasPrograms && setCurrentTab('macros')}
+              disabled={!hasPrograms}
               icon={<Apple className="w-4 h-4" />}
             >
               Macros
@@ -108,18 +120,20 @@ function App() {
       </main>
 
       {/* Mobile Navigation */}
-      <MobileNav currentTab={currentTab} setCurrentTab={setCurrentTab} />
+      <MobileNav currentTab={currentTab} setCurrentTab={setCurrentTab} hasPrograms={hasPrograms} />
     </div>
   );
 }
 
-function NavigationMenuLink({ active, onClick, children, icon }: { active: boolean; onClick: () => void; children: React.ReactNode; icon?: React.ReactNode }) {
+function NavigationMenuLink({ active, onClick, children, icon, disabled }: { active: boolean; onClick: () => void; children: React.ReactNode; icon?: React.ReactNode; disabled?: boolean }) {
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       className={cn(
         "relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-full flex items-center gap-2",
-        active ? "text-black" : "text-muted-foreground hover:text-foreground hover:bg-white/50"
+        active ? "text-black" : "text-muted-foreground hover:text-foreground hover:bg-white/50",
+        disabled && "opacity-50 cursor-not-allowed hover:text-muted-foreground hover:bg-transparent"
       )}
     >
       {active && (

@@ -86,14 +86,6 @@ export function ProgramsTab() {
   if (!hasProgramms) {
     return (
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold font-heading">Gestione Programmi</h2>
-            <p className="text-muted-foreground">Crea, gestisci e seleziona i tuoi programmi di allenamento</p>
-          </div>
-        </div>
-
         {/* Empty State - Large */}
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12 sm:py-20 px-4">
@@ -104,7 +96,7 @@ export function ProgramsTab() {
             <p className="text-sm sm:text-base text-muted-foreground text-center mb-6 sm:mb-8 max-w-lg px-2">
               Inizia il tuo percorso di allenamento creando un programma personalizzato con settimane, giorni ed esercizi.
             </p>
-            <Button onClick={() => setShowNewProgramModal(true)} size="sm" className="w-full">
+            <Button onClick={() => setShowNewProgramModal(true)} size="sm" className="w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Crea Nuovo Programma
             </Button>
@@ -162,11 +154,7 @@ export function ProgramsTab() {
     <>
       <div className="space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold font-heading">Gestione Programmi</h2>
-            <p className="text-sm sm:text-base text-muted-foreground">Crea, gestisci e seleziona i tuoi programmi di allenamento</p>
-          </div>
+        <div className="flex flex-col sm:flex-row sm:justify-end gap-3 sm:gap-4">
           <Button onClick={() => setShowNewProgramModal(true)} size="sm" className="w-full sm:w-auto">
             <Plus className="w-4 h-4 mr-2" />
             Nuovo Programma

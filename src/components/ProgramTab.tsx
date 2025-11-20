@@ -8,33 +8,12 @@ import { DaysTabs } from './program/DaysTabs';
 import { Folder } from 'lucide-react';
 
 export function ProgramTab() {
-  const { getCurrentProgram, setCurrentTab, programs } = useApp();
+  const { getCurrentProgram, programs } = useApp();
   const currentProgram = getCurrentProgram();
   const hasPrograms = Object.keys(programs).length > 0;
 
-  if (!currentProgram) {
-    return (
-      <div className="space-y-6">
-        <Card className="card-monetra">
-          <CardHeader>
-            <CardTitle className="text-xl sm:text-2xl font-bold font-heading">Nessun programma selezionato</CardTitle>
-            <CardDescription className="text-sm sm:text-base">
-              Crea o seleziona un programma per iniziare a costruire la tua scheda di allenamento.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <p className="text-sm sm:text-base text-muted-foreground">
-              {hasPrograms
-                ? 'Seleziona un programma esistente oppure crea un nuovo programma dalla sezione Programmi.'
-                : 'Non hai ancora creato nessun programma. Premi il pulsante qui sotto per iniziare.'}
-            </p>
-            <Button onClick={() => setCurrentTab('programs')} size="sm" className="w-full sm:w-auto">
-              Vai alla gestione programmi
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (!hasPrograms || !currentProgram) {
+    return null;
   }
 
   return (

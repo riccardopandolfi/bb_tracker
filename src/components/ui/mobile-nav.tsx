@@ -5,9 +5,10 @@ import { motion } from 'framer-motion';
 interface MobileNavProps {
     currentTab: string;
     setCurrentTab: (tab: any) => void;
+    hasPrograms: boolean;
 }
 
-export function MobileNav({ currentTab, setCurrentTab }: MobileNavProps) {
+export function MobileNav({ currentTab, setCurrentTab, hasPrograms }: MobileNavProps) {
     const tabs = [
         { id: 'home', icon: Home, label: 'Home' },
         { id: 'programs', icon: Folder, label: 'Programmi' },
@@ -23,14 +24,17 @@ export function MobileNav({ currentTab, setCurrentTab }: MobileNavProps) {
                 {tabs.map((tab) => {
                     const isActive = currentTab === tab.id;
                     const Icon = tab.icon;
+                    const isDisabled = !hasPrograms && (tab.id === 'program' || tab.id === 'logbook' || tab.id === 'macros');
 
                     return (
                         <button
                             key={tab.id}
-                            onClick={() => setCurrentTab(tab.id)}
+                            onClick={() => !isDisabled && setCurrentTab(tab.id)}
+                            disabled={isDisabled}
                             className={cn(
                                 "relative flex flex-col items-center justify-center w-full h-12 rounded-xl transition-all duration-300",
-                                isActive ? "text-black" : "text-muted-foreground hover:text-foreground"
+                                isActive ? "text-black" : "text-muted-foreground hover:text-foreground",
+                                isDisabled && "opacity-50 cursor-not-allowed hover:text-muted-foreground"
                             )}
                         >
                             {isActive && (

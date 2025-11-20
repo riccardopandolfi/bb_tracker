@@ -77,8 +77,8 @@ export function HomeTab() {
                 <Label htmlFor="demo-mode">Dati Demo</Label>
               </div>
             </div>
-            <div className="rounded-full bg-muted p-4 mb-4">
-              <Dumbbell className="h-12 w-12 text-muted-foreground" />
+            <div className="rounded-full bg-primary/10 p-4 sm:p-6 mb-4 sm:mb-6">
+              <Dumbbell className="h-12 w-12 sm:h-16 sm:w-16 text-primary" />
             </div>
             <h3 className="text-xl sm:text-2xl font-bold mb-2 font-heading">Nessun Programma Trovato</h3>
             <p className="text-sm sm:text-base text-muted-foreground text-center mb-6 max-w-md">
