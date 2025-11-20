@@ -66,23 +66,6 @@ export function HomeTab() {
           rangeHue={20}
           className="flex items-center flex-col justify-center px-4 md:px-10 py-4 w-full h-full"
         >
-          <div className="absolute top-4 right-4 z-20">
-            <div className="flex items-center space-x-2 bg-black/50 backdrop-blur-sm rounded-full px-3 py-2 border border-white/10">
-              <Switch
-                id="demo-mode"
-                checked={hasDemoData()}
-                onCheckedChange={(checked) => {
-                  if (checked) {
-                    loadDemoData();
-                  } else {
-                    clearDemoData();
-                  }
-                }}
-              />
-              <Label htmlFor="demo-mode" className="text-white text-sm">Dati Demo</Label>
-            </div>
-          </div>
-          
           <TextGenerateEffect 
             words="NOBODY CARES WORK HARDER" 
             className="text-4xl md:text-6xl lg:text-7xl font-bold text-center font-brand tracking-widest mb-6"
@@ -109,7 +92,7 @@ export function HomeTab() {
                 loadDemoData();
                 setCurrentTab('program');
               }}
-              className="text-white border-white/30 hover:bg-white/10"
+              className="bg-white text-black border-white hover:bg-gray-100"
             >
               Carica Dati Demo
             </Button>
