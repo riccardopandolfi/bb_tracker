@@ -40,10 +40,10 @@ export function UserSelector() {
     return (
         <div className="flex items-center gap-2">
             <Select value={currentUserId} onValueChange={switchUser}>
-                <SelectTrigger className="w-10 md:w-[200px] bg-white/10 border-white/20 text-white px-2 md:px-3">
+                <SelectTrigger className="w-10 md:w-[200px] bg-muted/50 border-border text-foreground px-2 md:px-3 hover:bg-muted transition-colors">
                     <div className="flex items-center gap-2 justify-center md:justify-start w-full">
                         <UserIcon className="h-4 w-4 shrink-0" />
-                        <span className="hidden md:inline truncate">
+                        <span className="hidden md:inline truncate font-heading">
                             <SelectValue placeholder="Seleziona utente" />
                         </span>
                     </div>
@@ -72,7 +72,7 @@ export function UserSelector() {
             <Button
                 variant="ghost"
                 size="icon"
-                className="text-white hover:bg-white/10"
+                className="text-foreground hover:bg-muted"
                 onClick={() => setIsAddDialogOpen(true)}
                 title="Aggiungi utente"
             >
