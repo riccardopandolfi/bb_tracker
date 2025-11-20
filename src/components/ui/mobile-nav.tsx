@@ -1,4 +1,4 @@
-import { Home, BookOpen, Dumbbell, Folder, Apple } from 'lucide-react';
+import { Home, BookOpen, Dumbbell, Folder, Apple, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
@@ -14,7 +14,7 @@ export function MobileNav({ currentTab, setCurrentTab, hasPrograms }: MobileNavP
         { id: 'library', icon: BookOpen, label: 'Libreria' },
         { id: 'programs', icon: Folder, label: 'Programmi' },
         { id: 'program', icon: Dumbbell, label: 'Scheda' },
-        { id: 'logbook', icon: Dumbbell, label: 'Logbook' },
+        { id: 'logbook', icon: FileText, label: 'Logbook' },
         { id: 'macros', icon: Apple, label: 'Macros' },
     ];
 
