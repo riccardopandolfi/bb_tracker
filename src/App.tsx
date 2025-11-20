@@ -46,7 +46,7 @@ function App() {
           </div>
 
           {/* Desktop Navigation - Monetra Style */}
-          <div className="hidden md:flex items-center gap-1 bg-transparent p-1.5 rounded-full border border-white">
+          <div className="hidden md:flex items-center gap-1 bg-transparent p-1.5 rounded-full border-2 border-primary">
             <NavigationMenuLink
               active={currentTab === 'home'}
               onClick={() => setCurrentTab('home')}

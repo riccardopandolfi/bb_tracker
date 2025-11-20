@@ -582,7 +582,7 @@ function ExerciseCard({ exercise, index, onUpdate, onDelete, muscleGroups }: Exe
 
             {/* Add Muscle Button */}
             {(localExercise.muscles?.length || 0) < 3 && (
-              <Button variant="outline" size="sm" onClick={handleAddMuscle} className="w-full text-xs sm:text-sm lime-gradient text-black hover:opacity-90 border-primary">
+              <Button variant="outline" size="sm" onClick={handleAddMuscle} className="w-full text-xs sm:text-sm">
                 <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 Aggiungi Muscolo
               </Button>
