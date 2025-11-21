@@ -537,10 +537,10 @@ export function HomeTab() {
               Nessun dato disponibile
             </div>
           ) : (
-            <div className="rounded-3xl border border-white/5 bg-gradient-to-b from-black/70 via-slate-900/70 to-black/40 p-4 sm:p-6 shadow-inner">
+            <div className="rounded-3xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm">
               <ChartContainer
                 config={chartConfig}
-                className="h-[300px] w-full [&_.recharts-cartesian-axis-tick_text]:fill-white/60"
+                className="h-[300px] w-full"
               >
                 <AreaChart
                   data={chartData}
