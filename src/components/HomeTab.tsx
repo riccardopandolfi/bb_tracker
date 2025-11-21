@@ -578,8 +578,8 @@ export function HomeTab() {
                     dataKey="week"
                     tickLine={false}
                     axisLine={false}
-                    interval={0}
-                    minTickGap={12}
+                    interval="preserveStartEnd"
+                    minTickGap={32}
                     tickMargin={10}
                     tick={{ fill: '#6b7280', fontSize: 11, fontFamily: 'var(--font-heading)' }}
                   />

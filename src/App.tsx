@@ -38,11 +38,13 @@ function App() {
       {hasPrograms && (
       <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-black">
         <div className="w-full flex h-16 items-center justify-between px-4 md:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl lime-gradient flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
-              <Dumbbell className="h-5 w-5 text-black" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl lime-gradient flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
+              <Dumbbell className="h-4 w-4 sm:h-5 sm:w-5 text-black" />
             </div>
-            <h1 className="hidden md:block text-lg font-bold tracking-widest text-white font-brand uppercase whitespace-nowrap">NOBODY CARES WORK HARDER</h1>
+            <h1 className="text-[10px] sm:text-xs md:text-lg font-bold tracking-wider md:tracking-widest text-white font-brand uppercase leading-tight">
+              NOBODY CARES<br className="sm:hidden" /> WORK HARDER
+            </h1>
           </div>
 
           {/* Desktop Navigation - Monetra Style */}
