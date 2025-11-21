@@ -36,19 +36,10 @@ function App() {
     <div className={cn("min-h-screen w-full relative overflow-x-hidden font-sans selection:bg-primary/20", hasPrograms ? "bg-background text-foreground" : "bg-black")}>
       {/* Header - Monetra Style - Only show if programs exist */}
       {hasPrograms && (
-      <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-white/5 bg-black/80 backdrop-blur-xl supports-[backdrop-filter]:bg-black/60">
-        <div className="max-w-7xl mx-auto flex h-20 items-center justify-between px-4 md:px-6 lg:px-8">
-          <div className="flex items-center gap-4">
-            <div className="h-10 w-10 rounded-xl lime-gradient flex items-center justify-center flex-shrink-0 shadow-[0_0_15px_rgba(196,255,57,0.3)]">
-              <Dumbbell className="h-5 w-5 text-black" />
-            </div>
-            <h1 className="hidden md:block text-lg font-bold tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70 font-brand uppercase whitespace-nowrap">
-              NOBODY CARES WORK HARDER
-            </h1>
-          </div>
-
-          {/* Desktop Navigation - Glassy Pill Style */}
-          <div className="hidden md:flex items-center gap-1 bg-white/5 p-1.5 rounded-full border border-white/10 backdrop-blur-md shadow-lg shadow-black/20">
+      <div className="fixed top-0 left-0 right-0 z-50 w-full bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto flex h-20 items-center justify-center px-4 md:px-6 lg:px-8 relative">
+          {/* Desktop Navigation - Centered Pill Style */}
+          <div className="hidden md:flex items-center gap-1 bg-white p-1.5 rounded-full border border-gray-200 shadow-sm">
             <NavigationMenuLink
               active={currentTab === 'home'}
               onClick={() => setCurrentTab('home')}
@@ -96,9 +87,12 @@ function App() {
             </NavigationMenuLink>
           </div>
 
-          <UserSelector />
+          {/* User Selector - Positioned absolutely on the right */}
+          <div className="absolute right-4 md:right-6 lg:right-8">
+            <UserSelector />
+          </div>
         </div>
-      </header>
+      </div>
       )}
 
       {/* Main Content */}
@@ -136,8 +130,8 @@ function NavigationMenuLink({ active, onClick, children, icon, disabled }: { act
       disabled={disabled}
       className={cn(
         "relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-full flex items-center gap-2",
-        active ? "text-black" : "text-white hover:text-white hover:bg-white/10",
-        disabled && "opacity-50 cursor-not-allowed hover:text-white/50 hover:bg-transparent"
+        active ? "text-black" : "text-gray-600 hover:text-gray-900 hover:bg-gray-100",
+        disabled && "opacity-50 cursor-not-allowed hover:text-gray-400 hover:bg-transparent"
       )}
     >
       {active && (
