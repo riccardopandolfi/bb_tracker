@@ -38,6 +38,8 @@ export function UserSelector() {
         deleteUser(userId);
     };
 
+    const currentUser = users.find(u => u.id === currentUserId);
+
     return (
         <div className="flex items-center gap-2">
             <Select value={currentUserId} onValueChange={switchUser}>
@@ -53,35 +55,25 @@ export function UserSelector() {
                     {users.map((user) => (
                         <SelectItem 
                             key={user.id} 
-                            value={user.id} 
-                            className="group"
+                            value={user.id}
                         >
-                            <div className="flex items-center justify-between w-full gap-2">
-                                <span>{user.name}</span>
-                                {users.length > 1 && (
-                                    <button
-                                        type="button"
-                                        className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 hover:text-red-600 rounded flex items-center justify-center"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            e.preventDefault();
-                                            handleDeleteUser(e, user.id);
-                                        }}
-                                        onMouseDown={(e) => {
-                                            e.stopPropagation();
-                                        }}
-                                        onPointerDown={(e) => {
-                                            e.stopPropagation();
-                                        }}
-                                    >
-                                        <Trash2 className="h-3 w-3" />
-                                    </button>
-                                )}
-                            </div>
+                            {user.name}
                         </SelectItem>
                     ))}
                 </SelectContent>
             </Select>
+
+            {users.length > 1 && (
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-white hover:bg-white/10 hover:text-red-400"
+                    onClick={(e) => handleDeleteUser(e, currentUserId)}
+                    title={`Elimina ${currentUser?.name || 'utente'}`}
+                >
+                    <Trash2 className="h-4 w-4" />
+                </Button>
+            )}
 
             <Button
                 variant="ghost"
