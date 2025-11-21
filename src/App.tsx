@@ -36,17 +36,19 @@ function App() {
     <div className={cn("min-h-screen w-full relative overflow-x-hidden font-sans selection:bg-primary/20", hasPrograms ? "bg-background text-foreground" : "bg-black")}>
       {/* Header - Monetra Style - Only show if programs exist */}
       {hasPrograms && (
-      <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-black">
-        <div className="w-full flex h-16 items-center justify-between px-4 md:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl lime-gradient flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
+      <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-white/5 bg-black/80 backdrop-blur-xl supports-[backdrop-filter]:bg-black/60">
+        <div className="max-w-7xl mx-auto flex h-20 items-center justify-between px-4 md:px-6 lg:px-8">
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 rounded-xl lime-gradient flex items-center justify-center flex-shrink-0 shadow-[0_0_15px_rgba(196,255,57,0.3)]">
               <Dumbbell className="h-5 w-5 text-black" />
             </div>
-            <h1 className="hidden md:block text-lg font-bold tracking-widest text-white font-brand uppercase whitespace-nowrap">NOBODY CARES WORK HARDER</h1>
+            <h1 className="hidden md:block text-lg font-bold tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70 font-brand uppercase whitespace-nowrap">
+              NOBODY CARES WORK HARDER
+            </h1>
           </div>
 
-          {/* Desktop Navigation - Monetra Style */}
-          <div className="hidden md:flex items-center gap-1 bg-transparent p-1.5 rounded-full border-2 border-primary">
+          {/* Desktop Navigation - Glassy Pill Style */}
+          <div className="hidden md:flex items-center gap-1 bg-white/5 p-1.5 rounded-full border border-white/10 backdrop-blur-md shadow-lg shadow-black/20">
             <NavigationMenuLink
               active={currentTab === 'home'}
               onClick={() => setCurrentTab('home')}
@@ -100,7 +102,7 @@ function App() {
       )}
 
       {/* Main Content */}
-      <main className={hasPrograms ? "w-full py-6 pb-24 md:pb-8 relative z-10" : "w-full h-[100dvh] relative z-10"}>
+      <main className={hasPrograms ? "w-full py-6 pt-24 pb-24 md:pb-8 relative z-10" : "w-full h-[100dvh] relative z-10"}>
         <div className={hasPrograms ? "w-full px-4 md:px-6 lg:px-8" : "w-full h-full"}>
           <AnimatePresence mode="wait">
             <motion.div
@@ -141,8 +143,8 @@ function NavigationMenuLink({ active, onClick, children, icon, disabled }: { act
       {active && (
         <motion.div
           layoutId="desktop-nav-pill"
-          className="absolute inset-0 lime-gradient rounded-full shadow-md shadow-primary/20"
-          transition={{ type: "spring", stiffness: 400, damping: 35 }}
+          className="absolute inset-0 lime-gradient rounded-full shadow-[0_0_20px_rgba(196,255,57,0.4)]"
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
         />
       )}
       <span className="relative z-10 flex items-center gap-2 font-heading">
