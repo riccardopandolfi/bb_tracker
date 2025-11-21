@@ -228,22 +228,26 @@ export function HomeTab() {
     }
   }
 
-  // Group the logged days by week for display
-  const daysByWeek = new Map<number, typeof allLoggedDays>();
-  allLoggedDays.forEach(day => {
+  // Limit visible days to a maximum
+  const MAX_VISIBLE_DAYS = 6;
+  let visibleDays = [...allLoggedDays].slice(0, MAX_VISIBLE_DAYS);
+  if (nextDayToLog) {
+    const alreadyIncluded = visibleDays.some(
+      (day) => day.weekNum === nextDayToLog!.weekNum && day.dayIndex === nextDayToLog!.dayIndex
+    );
+    if (!alreadyIncluded) {
+      visibleDays = [nextDayToLog, ...visibleDays].slice(0, MAX_VISIBLE_DAYS);
+    }
+  }
+
+  // Group the visible days by week for display
+  const daysByWeek = new Map<number, typeof visibleDays>();
+  visibleDays.forEach(day => {
     if (!daysByWeek.has(day.weekNum)) {
       daysByWeek.set(day.weekNum, []);
     }
     daysByWeek.get(day.weekNum)!.push(day);
   });
-  
-  // Add the next day to log to the appropriate week group
-  if (nextDayToLog && !allLoggedDays.some(d => d.weekNum === nextDayToLog.weekNum && d.dayIndex === nextDayToLog.dayIndex)) {
-    if (!daysByWeek.has(nextDayToLog.weekNum)) {
-      daysByWeek.set(nextDayToLog.weekNum, []);
-    }
-    daysByWeek.get(nextDayToLog.weekNum)!.push(nextDayToLog);
-  }
 
   // Calculate volume by muscle group per week - across ALL programs in chronological order
   // First, create a mapping of (programId, weekNum) to chronological week number
@@ -385,7 +389,7 @@ export function HomeTab() {
 
             {/* Divider */}
             <div className="border-t pt-4 mt-4 flex flex-col flex-1 min-h-0">
-              {allLoggedDays.length === 0 && !nextDayToLog ? (
+              {visibleDays.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Nessuna sessione loggata</p>
               ) : (
                 <div className="space-y-3 flex-1 overflow-y-auto pr-2">
