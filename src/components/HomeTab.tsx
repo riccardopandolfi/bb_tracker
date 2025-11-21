@@ -571,7 +571,7 @@ export function HomeTab() {
                   </defs>
                   <CartesianGrid
                     strokeDasharray="3 3"
-                    stroke="rgba(255,255,255,0.07)"
+                    stroke="#e5e7eb"
                     vertical={false}
                   />
                   <XAxis
@@ -581,14 +581,14 @@ export function HomeTab() {
                     interval={0}
                     minTickGap={12}
                     tickMargin={10}
-                    tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 11, fontFamily: 'var(--font-heading)' }}
+                    tick={{ fill: '#6b7280', fontSize: 11, fontFamily: 'var(--font-heading)' }}
                   />
                   <ChartTooltip
-                    cursor={{ stroke: 'rgba(255,255,255,0.24)', strokeWidth: 1 }}
+                    cursor={{ stroke: '#e5e7eb', strokeWidth: 1 }}
                     content={
                       <ChartTooltipContent
-                        className="bg-black/80 border-white/10 text-white"
-                        labelClassName="text-white/80"
+                        className="bg-white/95 border-gray-200 text-gray-900 backdrop-blur-sm"
+                        labelClassName="text-gray-700"
                         indicator="line"
                         labelFormatter={(value) => value.toString()}
                       />
@@ -610,7 +610,7 @@ export function HomeTab() {
                   <ChartLegend
                     verticalAlign="top"
                     content={
-                      <ChartLegendContent className="flex flex-wrap gap-3 text-[11px] text-white/70" />
+                      <ChartLegendContent className="flex flex-wrap gap-3 text-[11px] text-gray-900" />
                     }
                   />
                 </AreaChart>
