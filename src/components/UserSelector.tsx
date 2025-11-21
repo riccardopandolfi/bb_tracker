@@ -34,6 +34,7 @@ export function UserSelector() {
 
     const handleDeleteUser = (e: React.MouseEvent, userId: string) => {
         e.stopPropagation();
+        e.preventDefault();
         deleteUser(userId);
     };
 
@@ -50,15 +51,32 @@ export function UserSelector() {
                 </SelectTrigger>
                 <SelectContent>
                     {users.map((user) => (
-                        <SelectItem key={user.id} value={user.id} className="group">
-                            <div className="flex items-center justify-between w-full gap-2">
+                        <SelectItem key={user.id} value={user.id} className="group" onSelect={(e) => {
+                            // Prevent selection if clicking on delete button
+                            const target = e.target as HTMLElement;
+                            if (target.closest('button')) {
+                                e.preventDefault();
+                            }
+                        }}>
+                            <div className="flex items-center justify-between w-full gap-2" onClick={(e) => {
+                                // Prevent selection when clicking on delete button area
+                                const target = e.target as HTMLElement;
+                                if (target.closest('button')) {
+                                    e.stopPropagation();
+                                }
+                            }}>
                                 <span>{user.name}</span>
                                 {users.length > 1 && (
                                     <Button
                                         variant="ghost"
                                         size="icon"
+                                        type="button"
                                         className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 hover:text-red-600"
                                         onClick={(e) => handleDeleteUser(e, user.id)}
+                                        onMouseDown={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                        }}
                                     >
                                         <Trash2 className="h-3 w-3" />
                                     </Button>
