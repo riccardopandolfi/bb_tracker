@@ -1,7 +1,7 @@
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Dumbbell, CheckCircle2, Filter, Clock } from 'lucide-react';
-import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from './ui/chart';
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from './ui/chart';
 import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
@@ -74,11 +74,11 @@ export function HomeTab() {
               filter={true}
               textColor="#C4FF39"
             />
-          </div>
+              </div>
           
           <p className="text-white text-base md:text-xl max-w-2xl mt-6 text-center mb-8 font-heading">
-            Inizia creando il tuo primo programma di allenamento per sbloccare tutte le funzionalità dell'app.
-          </p>
+              Inizia creando il tuo primo programma di allenamento per sbloccare tutte le funzionalità dell'app.
+            </p>
           
           <div className="flex flex-col sm:flex-row items-center gap-4 mt-6">
             <Button 
@@ -86,21 +86,21 @@ export function HomeTab() {
               size="lg"
               className="lime-gradient text-black font-bold hover:opacity-90 transition-opacity shadow-lg shadow-primary/50"
             >
-              <Dumbbell className="mr-2 h-5 w-5" />
+                <Dumbbell className="mr-2 h-5 w-5" />
               Inizia Ora
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => {
-                loadDemoData();
-                setCurrentTab('program');
-              }}
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => {
+                  loadDemoData();
+                  setCurrentTab('program');
+                }}
               className="bg-white text-black border-white hover:bg-gray-100"
-            >
-              Carica Dati Demo
-            </Button>
-          </div>
+              >
+                Carica Dati Demo
+              </Button>
+            </div>
         </Vortex>
       </div>
     );
@@ -407,41 +407,41 @@ export function HomeTab() {
                               day.loggedCount === 0;
                             
                             return (
-                              <div
+                      <div
                                 key={`${day.date}-${day.dayIndex}-${idx}`}
                                 className={`flex items-center justify-between p-2 rounded-lg border transition-colors ${
                                   isNextDay ? 'bg-primary/5 border-primary/30' : 'bg-card hover:bg-accent/50'
                                 }`}
-                              >
-                                <div className="flex items-center gap-3">
+                      >
+                        <div className="flex items-center gap-3">
                                   {isNextDay ? (
                                     <Clock className="h-5 w-5 flex-shrink-0 text-primary animate-pulse" />
                                   ) : (
                                     <CheckCircle2 className={`h-5 w-5 flex-shrink-0 ${day.isComplete ? 'text-green-500' : 'text-orange-500'}`} />
                                   )}
-                                  <div className="min-w-0">
-                                    <p className="text-sm text-gray-600 truncate">{day.name}</p>
-                                    <p className="text-xs text-muted-foreground">
+                          <div className="min-w-0">
+                            <p className="text-sm text-gray-600 truncate">{day.name}</p>
+                            <p className="text-xs text-muted-foreground">
                                       {isNextDay ? (
                                         <>Prossimo • {day.totalSets} set • Day {day.dayIndex}</>
                                       ) : (
                                         <>
-                                          {day.date
-                                            ? new Date(day.date).toLocaleDateString('it-IT', {
-                                              day: 'numeric',
-                                              month: 'short',
-                                            })
+                              {day.date
+                                ? new Date(day.date).toLocaleDateString('it-IT', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                })
                                             : 'Completato'} • {day.totalSets} set • Day {day.dayIndex}
                                         </>
                                       )}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="text-right flex-shrink-0">
-                                  <p className="text-sm font-semibold text-gray-900">
-                                    {day.loggedCount}/{day.exercisesCount}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">esercizi</p>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-sm font-semibold text-gray-900">
+                            {day.loggedCount}/{day.exercisesCount}
+                          </p>
+                          <p className="text-xs text-muted-foreground">esercizi</p>
                                 </div>
                               </div>
                             );
@@ -546,8 +546,8 @@ export function HomeTab() {
                   data={chartData}
                   margin={{ top: 10, right: 12, left: -10, bottom: 0 }}
                 >
-                  <defs>
-                    {muscleList.map((muscle) => (
+                <defs>
+                  {muscleList.map((muscle) => (
                       <linearGradient
                         key={muscle}
                         id={`fill${muscle.replace(/\s+/g, '')}`}
@@ -556,65 +556,59 @@ export function HomeTab() {
                         x2="0"
                         y2="1"
                       >
-                        <stop
+                      <stop
                           offset="0%"
                           stopColor={getMuscleGradientColor(muscle, 0.2)}
                           stopOpacity={0.9}
-                        />
-                        <stop
+                      />
+                      <stop
                           offset="100%"
                           stopColor={getMuscleGradientColor(muscle, -0.15)}
                           stopOpacity={0.05}
-                        />
-                      </linearGradient>
-                    ))}
-                  </defs>
+                      />
+                    </linearGradient>
+                  ))}
+                </defs>
                   <CartesianGrid
                     strokeDasharray="3 3"
                     stroke="#e5e7eb"
                     vertical={false}
                   />
-                  <XAxis
-                    dataKey="week"
-                    tickLine={false}
-                    axisLine={false}
-                    interval="preserveStartEnd"
-                    minTickGap={32}
-                    tickMargin={10}
-                    tick={{ fill: '#6b7280', fontSize: 11, fontFamily: 'var(--font-heading)' }}
-                  />
-                  <ChartTooltip
+                <XAxis
+                  dataKey="week"
+                  tickLine={false}
+                  axisLine={false}
+                  interval={chartData.length > 12 ? Math.ceil(chartData.length / 8) : 0}
+                  minTickGap={24}
+                  tickMargin={10}
+                  tick={{ fill: '#6b7280', fontSize: 11, fontFamily: 'var(--font-heading)' }}
+                />
+                <ChartTooltip
                     cursor={{ stroke: '#e5e7eb', strokeWidth: 1 }}
-                    content={
-                      <ChartTooltipContent
+                  content={
+                    <ChartTooltipContent
                         className="bg-white/95 border-gray-200 text-gray-900 backdrop-blur-sm"
                         labelClassName="text-gray-700"
                         indicator="line"
-                        labelFormatter={(value) => value.toString()}
-                      />
-                    }
-                  />
-                  {muscleList.map((muscle) => (
-                    <Area
-                      key={muscle}
-                      dataKey={muscle}
+                      labelFormatter={(value) => value.toString()}
+                    />
+                  }
+                />
+                {muscleList.map((muscle) => (
+                  <Area
+                    key={muscle}
+                    dataKey={muscle}
                       type="monotone"
                       stroke={getMuscleColorHex(muscle)}
                       strokeWidth={2.2}
-                      fill={`url(#fill${muscle.replace(/\s+/g, '')})`}
-                      stackId="a"
+                    fill={`url(#fill${muscle.replace(/\s+/g, '')})`}
+                    stackId="a"
                       dot={false}
                       activeDot={{ r: 4 }}
-                    />
-                  ))}
-                  <ChartLegend
-                    verticalAlign="top"
-                    content={
-                      <ChartLegendContent className="flex flex-wrap gap-3 text-sm text-gray-900" />
-                    }
                   />
-                </AreaChart>
-              </ChartContainer>
+                ))}
+              </AreaChart>
+            </ChartContainer>
             </div>
           )}
         </CardContent>
