@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Checkbox } from './ui/checkbox';
 import { Button } from './ui/button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MacrosSummaryWidget } from './home/MacrosSummaryWidget';
 import { adjustColor } from '@/lib/colorUtils';
 import { Vortex } from './ui/vortex';
@@ -28,6 +28,17 @@ export function HomeTab() {
     getMuscleColor: resolveMuscleColor,
   } = useApp();
   const [weekRange, setWeekRange] = useState<'all' | 'last2' | 'last4'>('all');
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640); // sm breakpoint
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Default muscle groups to show
   const [selectedMuscles, setSelectedMuscles] = useState<Set<string>>(new Set([
@@ -339,7 +350,7 @@ export function HomeTab() {
 
   // Prepare chart data
   const chartData = weekList.map((week) => {
-    const dataPoint: any = { week: `S${week}`, weekNum: week };
+    const dataPoint: any = { week: isMobile ? `S${week}` : `Sett. ${week}`, weekNum: week };
     muscleList.forEach((muscle) => {
       dataPoint[muscle] = parseFloat((volumeByWeekAndMuscle[week][muscle] || 0).toFixed(1));
     });
@@ -579,9 +590,9 @@ export function HomeTab() {
                   tickLine={false}
                   axisLine={false}
                   interval={chartData.length > 12 ? Math.ceil(chartData.length / 8) : 0}
-                  minTickGap={20}
+                  minTickGap={isMobile ? 20 : 24}
                   tickMargin={10}
-                  tick={{ fill: '#6b7280', fontSize: 10, fontFamily: 'var(--font-heading)' }}
+                  tick={{ fill: '#6b7280', fontSize: isMobile ? 10 : 11, fontFamily: 'var(--font-heading)' }}
                 />
                 <ChartTooltip
                     cursor={{ stroke: '#e5e7eb', strokeWidth: 1 }}
