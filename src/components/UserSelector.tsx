@@ -40,7 +40,7 @@ export function UserSelector() {
     return (
         <div className="flex items-center gap-2">
             <Select value={currentUserId} onValueChange={switchUser}>
-                <SelectTrigger className="w-10 md:w-[200px] bg-black border-white/10 text-white px-2 md:px-3 hover:bg-black/80 transition-colors focus:ring-primary/50">
+                <SelectTrigger className="w-10 md:w-[200px] bg-white/5 border-white/10 text-white px-2 md:px-3 hover:bg-white/10 transition-colors focus:ring-primary/50">
                     <div className="flex items-center gap-2 justify-center md:justify-start w-full">
                         <UserIcon className="h-4 w-4 shrink-0" />
                         <span className="hidden md:inline truncate font-heading">
