@@ -371,9 +371,9 @@ export function HomeTab() {
       </div>
 
       {/* Top Grid */}
-      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 w-full lg:h-[600px]">
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 w-full">
         {/* Programma Attivo e Sessioni Recenti Completate */}
-        <Card className="min-w-0 w-full h-full card-monetra">
+        <Card className="min-w-0 w-full h-full lg:h-[600px] lg:max-h-[600px] card-monetra overflow-hidden">
           <CardContent className="flex flex-col pt-6 h-full overflow-hidden">
             {/* Programma Attivo */}
             <div>
