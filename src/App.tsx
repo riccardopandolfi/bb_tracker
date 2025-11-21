@@ -34,69 +34,75 @@ function App() {
 
   return (
     <div className={cn("min-h-screen w-full relative overflow-x-hidden font-sans selection:bg-primary/20", hasPrograms ? "bg-background text-foreground" : "bg-black")}>
-      {/* Header - Monetra Style - Only show if programs exist */}
+      {/* Header with Gradient Accent Strip */}
       {hasPrograms && (
-      <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-black">
-        <div className="w-full flex h-16 items-center justify-between px-4 md:px-6 lg:px-8">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl lime-gradient flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
-              <Dumbbell className="h-4 w-4 sm:h-5 sm:w-5 text-black" />
+      <header className="sticky top-0 z-40 w-full">
+        {/* Lime gradient strip - brand signature */}
+        <div className="h-1 w-full lime-gradient" />
+
+        {/* Main header content */}
+        <div className="w-full bg-black/95 backdrop-blur-sm">
+          <div className="w-full flex h-14 items-center justify-between px-4 md:px-6 lg:px-8">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg lime-gradient flex items-center justify-center flex-shrink-0">
+                <Dumbbell className="h-4 w-4 sm:h-5 sm:w-5 text-black" />
+              </div>
+              <h1 className="text-[10px] sm:text-xs md:text-sm font-bold tracking-wider md:tracking-widest text-white font-brand uppercase leading-tight">
+                NOBODY CARES<br className="sm:hidden" /> WORK HARDER
+              </h1>
             </div>
-            <h1 className="text-[10px] sm:text-xs md:text-lg font-bold tracking-wider md:tracking-widest text-white font-brand uppercase leading-tight">
-              NOBODY CARES<br className="sm:hidden" /> WORK HARDER
-            </h1>
-          </div>
 
-          {/* Desktop Navigation - Monetra Style */}
-          <div className="hidden md:flex items-center gap-1 bg-transparent p-1.5 rounded-full border-2 border-primary">
-            <NavigationMenuLink
-              active={currentTab === 'home'}
-              onClick={() => setCurrentTab('home')}
-              icon={<Home className="w-4 h-4" />}
-            >
-              Home
-            </NavigationMenuLink>
-            <NavigationMenuLink
-              active={currentTab === 'library'}
-              onClick={() => setCurrentTab('library')}
-              icon={<BookOpen className="w-4 h-4" />}
-            >
-              Libreria
-            </NavigationMenuLink>
-            <NavigationMenuLink
-              active={currentTab === 'programs'}
-              onClick={() => setCurrentTab('programs')}
-              icon={<Folder className="w-4 h-4" />}
-            >
-              Programmi
-            </NavigationMenuLink>
-            <NavigationMenuLink
-              active={currentTab === 'program'}
-              onClick={() => hasPrograms && setCurrentTab('program')}
-              disabled={!hasPrograms}
-              icon={<Dumbbell className="w-4 h-4" />}
-            >
-              Scheda
-            </NavigationMenuLink>
-            <NavigationMenuLink
-              active={currentTab === 'logbook'}
-              onClick={() => hasPrograms && setCurrentTab('logbook')}
-              disabled={!hasPrograms}
-              icon={<Dumbbell className="w-4 h-4" />}
-            >
-              Logbook
-            </NavigationMenuLink>
-            <NavigationMenuLink
-              active={currentTab === 'macros'}
-              onClick={() => hasPrograms && setCurrentTab('macros')}
-              disabled={!hasPrograms}
-              icon={<Apple className="w-4 h-4" />}
-            >
-              Macros
-            </NavigationMenuLink>
-          </div>
+            {/* Desktop Navigation - Clean style */}
+            <nav className="hidden md:flex items-center gap-1">
+              <NavigationMenuLink
+                active={currentTab === 'home'}
+                onClick={() => setCurrentTab('home')}
+                icon={<Home className="w-4 h-4" />}
+              >
+                Home
+              </NavigationMenuLink>
+              <NavigationMenuLink
+                active={currentTab === 'library'}
+                onClick={() => setCurrentTab('library')}
+                icon={<BookOpen className="w-4 h-4" />}
+              >
+                Libreria
+              </NavigationMenuLink>
+              <NavigationMenuLink
+                active={currentTab === 'programs'}
+                onClick={() => setCurrentTab('programs')}
+                icon={<Folder className="w-4 h-4" />}
+              >
+                Programmi
+              </NavigationMenuLink>
+              <NavigationMenuLink
+                active={currentTab === 'program'}
+                onClick={() => hasPrograms && setCurrentTab('program')}
+                disabled={!hasPrograms}
+                icon={<Dumbbell className="w-4 h-4" />}
+              >
+                Scheda
+              </NavigationMenuLink>
+              <NavigationMenuLink
+                active={currentTab === 'logbook'}
+                onClick={() => hasPrograms && setCurrentTab('logbook')}
+                disabled={!hasPrograms}
+                icon={<Dumbbell className="w-4 h-4" />}
+              >
+                Logbook
+              </NavigationMenuLink>
+              <NavigationMenuLink
+                active={currentTab === 'macros'}
+                onClick={() => hasPrograms && setCurrentTab('macros')}
+                disabled={!hasPrograms}
+                icon={<Apple className="w-4 h-4" />}
+              >
+                Macros
+              </NavigationMenuLink>
+            </nav>
 
-          <UserSelector />
+            <UserSelector />
+          </div>
         </div>
       </header>
       )}
@@ -135,22 +141,30 @@ function NavigationMenuLink({ active, onClick, children, icon, disabled }: { act
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-full flex items-center gap-2",
-        active ? "text-black" : "text-white hover:text-white hover:bg-white/10",
-        disabled && "opacity-50 cursor-not-allowed hover:text-white/50 hover:bg-transparent"
+        "relative px-4 py-2.5 text-sm font-medium transition-all duration-200 flex items-center gap-2 group",
+        active ? "text-primary" : "text-white/70 hover:text-white",
+        disabled && "opacity-40 cursor-not-allowed hover:text-white/40"
       )}
     >
-      {active && (
-        <motion.div
-          layoutId="desktop-nav-pill"
-          className="absolute inset-0 lime-gradient rounded-full shadow-md shadow-primary/20"
-          transition={{ type: "spring", stiffness: 400, damping: 35 }}
-        />
-      )}
       <span className="relative z-10 flex items-center gap-2 font-heading">
         {icon}
         {children}
       </span>
+      {/* Animated underline indicator */}
+      <motion.div
+        className="absolute bottom-0 left-1/2 h-0.5 bg-primary rounded-full"
+        initial={false}
+        animate={{
+          width: active ? "60%" : "0%",
+          x: "-50%",
+          opacity: active ? 1 : 0
+        }}
+        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      />
+      {/* Hover glow effect */}
+      {active && (
+        <div className="absolute inset-0 bg-primary/5 rounded-lg -z-10" />
+      )}
     </button>
   );
 }
