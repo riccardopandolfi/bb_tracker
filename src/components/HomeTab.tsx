@@ -106,32 +106,42 @@ export function HomeTab() {
     );
   }
 
-  // Calculate last logged week - only from current program
-  const lastLoggedSession = currentProgramSessions.length > 0
-    ? [...currentProgramSessions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
-    : null;
+  // Group logged sessions by week and day to show last 4 logged days across weeks
+  const dayGroups = new Map<string, {
+    weekNum: number;
+    dayIndex: number;
+    dayName: string;
+    date: string;
+    sessions: typeof currentProgramSessions;
+  }>();
 
-  const lastWeekNum = lastLoggedSession?.weekNum || 1;
+  currentProgramSessions.forEach(session => {
+    if (session.dayName && session.dayIndex !== undefined) {
+      const key = `${session.weekNum}-${session.dayIndex}-${session.date}`;
+      if (!dayGroups.has(key)) {
+        dayGroups.set(key, {
+          weekNum: session.weekNum,
+          dayIndex: session.dayIndex,
+          dayName: session.dayName,
+          date: session.date,
+          sessions: [],
+        });
+      }
+      dayGroups.get(key)!.sessions.push(session);
+    }
+  });
 
-  // Get current week structure
-  const currentWeek = currentProgram?.weeks?.[lastWeekNum];
-  const daysInWeek = currentWeek?.days || [];
+  // Convert to array and calculate status for each logged day
+  const allLoggedDays = Array.from(dayGroups.values()).map(dayGroup => {
+    const week = currentProgram?.weeks?.[dayGroup.weekNum];
+    const day = week?.days?.[dayGroup.dayIndex];
 
-  // Calculate status for each day
-  const dayStatus = daysInWeek.map((day, dayIndex) => {
+    if (!day) {
+      return null;
+    }
+
     // Find all exercises for this day
     const dayExercises = day.exercises.map(ex => ex.exerciseName);
-
-    // Check which exercises have been logged for this day in this week
-    const loggedExercisesForDay = currentProgramSessions.filter(
-      session => session.weekNum === lastWeekNum && session.dayIndex === dayIndex
-    );
-
-    // Get unique dates for this day
-    const dates = [...new Set(loggedExercisesForDay.map(s => s.date))];
-    const latestDate = dates.length > 0
-      ? dates.sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0]
-      : null;
 
     // Count occurrences of each exercise in the program
     const exerciseOccurrences = new Map<string, number>();
@@ -141,30 +151,49 @@ export function HomeTab() {
 
     // Count occurrences of each logged exercise
     const loggedOccurrences = new Map<string, number>();
-    loggedExercisesForDay.forEach(session => {
+    dayGroup.sessions.forEach(session => {
       loggedOccurrences.set(session.exercise, (loggedOccurrences.get(session.exercise) || 0) + 1);
     });
 
-    // Count how many exercises are fully logged (all occurrences)
+    // Count how many exercises are fully logged
     let loggedCount = 0;
     exerciseOccurrences.forEach((requiredCount, exerciseName) => {
       const actualCount = loggedOccurrences.get(exerciseName) || 0;
       loggedCount += Math.min(actualCount, requiredCount);
     });
 
-    // Check if all exercises have been logged (all occurrences)
+    // Check if all exercises have been logged
     const isComplete = Array.from(exerciseOccurrences.entries()).every(
       ([exerciseName, requiredCount]) => (loggedOccurrences.get(exerciseName) || 0) >= requiredCount
     );
 
+    // Calculate total sets
+    const totalSets = dayGroup.sessions.reduce((sum, s) => sum + (s.sets?.length || 0), 0);
+
     return {
-      dayIndex: dayIndex + 1,
-      name: day.name,
+      weekNum: dayGroup.weekNum,
+      dayIndex: dayGroup.dayIndex + 1,
+      name: dayGroup.dayName,
       isComplete,
-      date: latestDate,
+      date: dayGroup.date,
       exercisesCount: dayExercises.length,
       loggedCount: loggedCount,
+      totalSets: totalSets,
     };
+  }).filter((day): day is NonNullable<typeof day> => day !== null)
+    .sort((a, b) => {
+      // Sort by date descending
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    })
+    .slice(0, 4); // Take only the last 4 logged days
+
+  // Group the logged days by week for display
+  const daysByWeek = new Map<number, typeof allLoggedDays>();
+  allLoggedDays.forEach(day => {
+    if (!daysByWeek.has(day.weekNum)) {
+      daysByWeek.set(day.weekNum, []);
+    }
+    daysByWeek.get(day.weekNum)!.push(day);
   });
 
   // Calculate volume by muscle group per week - across ALL programs in chronological order
@@ -307,52 +336,46 @@ export function HomeTab() {
 
             {/* Divider */}
             <div className="border-t pt-4 mt-4 flex flex-col flex-1 min-h-0">
-              <div className="mb-3">
-                <h4 className="text-xs font-semibold mb-2 text-gray-400">Sessioni Completate - Week {lastWeekNum}</h4>
-              </div>
-              {dayStatus.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nessun giorno configurato</p>
+              {allLoggedDays.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nessuna sessione loggata</p>
               ) : (
-                <div className="space-y-2 flex-1 overflow-y-auto pr-2 grid grid-cols-1 gap-2 auto-rows-fr">
-                  {dayStatus
-                    .filter((day) => day.loggedCount > 0)
-                    .sort((a, b) => {
-                      if (!a.date || !b.date) return 0;
-                      return new Date(b.date).getTime() - new Date(a.date).getTime();
-                    })
-                    .slice(0, 4)
-                    .map((day) => (
-                      <div
-                        key={day.dayIndex}
-                        className="flex items-center justify-between p-2 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <CheckCircle2 className={`h-5 w-5 flex-shrink-0 ${day.isComplete ? 'text-green-500' : 'text-orange-500'}`} />
-                          <div className="min-w-0">
-                            <p className="text-sm text-gray-600 truncate">{day.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {day.date
-                                ? new Date(day.date).toLocaleDateString('it-IT', {
-                                  day: 'numeric',
-                                  month: 'short',
-                                })
-                                : 'Completato'} • Day {day.dayIndex}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <p className="text-sm font-semibold text-gray-900">
-                            {day.loggedCount}/{day.exercisesCount}
-                          </p>
-                          <p className="text-xs text-muted-foreground">esercizi</p>
+                <div className="space-y-3 flex-1 overflow-y-auto pr-2">
+                  {Array.from(daysByWeek.entries())
+                    .sort((a, b) => b[0] - a[0])
+                    .map(([weekNum, days]) => (
+                      <div key={weekNum} className="space-y-2">
+                        <h4 className="text-xs font-semibold text-gray-400">Sessioni Completate - Week {weekNum}</h4>
+                        <div className="space-y-2">
+                          {days.map((day, idx) => (
+                            <div
+                              key={`${day.date}-${day.dayIndex}-${idx}`}
+                              className="flex items-center justify-between p-2 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                            >
+                              <div className="flex items-center gap-3">
+                                <CheckCircle2 className={`h-5 w-5 flex-shrink-0 ${day.isComplete ? 'text-green-500' : 'text-orange-500'}`} />
+                                <div className="min-w-0">
+                                  <p className="text-sm text-gray-600 truncate">{day.name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {day.date
+                                      ? new Date(day.date).toLocaleDateString('it-IT', {
+                                        day: 'numeric',
+                                        month: 'short',
+                                      })
+                                      : 'Completato'} • {day.totalSets} set • Day {day.dayIndex}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="text-right flex-shrink-0">
+                                <p className="text-sm font-semibold text-gray-900">
+                                  {day.loggedCount}/{day.exercisesCount}
+                                </p>
+                                <p className="text-xs text-muted-foreground">esercizi</p>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     ))}
-                  {dayStatus.filter((day) => day.loggedCount > 0).length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      Nessuna sessione loggata questa settimana
-                    </p>
-                  )}
                 </div>
               )}
             </div>
