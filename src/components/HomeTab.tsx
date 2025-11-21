@@ -374,7 +374,7 @@ export function HomeTab() {
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 w-full lg:h-[600px]">
         {/* Programma Attivo e Sessioni Recenti Completate */}
         <Card className="min-w-0 w-full h-full card-monetra">
-          <CardContent className="flex flex-col pt-6 h-full">
+          <CardContent className="flex flex-col pt-6 h-full overflow-hidden">
             {/* Programma Attivo */}
             <div>
               <div className="text-base sm:text-lg font-bold font-heading">{currentProgram?.name || 'Nessuno'}</div>
