@@ -73,21 +73,21 @@ export function MacrosSummaryWidget() {
                 {/* Proteine Box - Lime Green (Monetra accent) */}
                 <div className="p-4 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/30 hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-default">
                   <div className="text-center">
-                    <span className="block text-xs text-black mb-1.5 font-medium">Proteine</span>
+                    <span className="block text-sm text-black mb-1.5 font-medium">Proteine</span>
                     <span className="block text-base font-bold text-foreground font-heading">{p}g</span>
                   </div>
                 </div>
                 {/* Carbo Box - Emerald */}
                 <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 border border-emerald-500/30 hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-default">
                   <div className="text-center">
-                    <span className="block text-xs text-black mb-1.5 font-medium">Carbo</span>
+                    <span className="block text-sm text-black mb-1.5 font-medium">Carbo</span>
                     <span className="block text-base font-bold text-foreground font-heading">{c}g</span>
                   </div>
                 </div>
                 {/* Grassi Box - Amber */}
                 <div className="p-4 rounded-xl bg-gradient-to-br from-amber-500/15 to-amber-500/5 border border-amber-500/30 hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-default">
                   <div className="text-center">
-                    <span className="block text-xs text-black mb-1.5 font-medium">Grassi</span>
+                    <span className="block text-sm text-black mb-1.5 font-medium">Grassi</span>
                     <span className="block text-base font-bold text-foreground font-heading">{f}g</span>
                   </div>
                 </div>

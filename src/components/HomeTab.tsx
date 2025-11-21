@@ -610,7 +610,7 @@ export function HomeTab() {
                   <ChartLegend
                     verticalAlign="top"
                     content={
-                      <ChartLegendContent className="flex flex-wrap gap-3 text-[11px] text-gray-900" />
+                      <ChartLegendContent className="flex flex-wrap gap-3 text-sm text-gray-900" />
                     }
                   />
                 </AreaChart>
