@@ -1,6 +1,6 @@
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Dumbbell, CheckCircle2, Filter } from 'lucide-react';
+import { Dumbbell, CheckCircle2, Filter, Clock } from 'lucide-react';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from './ui/chart';
 import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
 import { Switch } from './ui/switch';
@@ -184,8 +184,49 @@ export function HomeTab() {
     .sort((a, b) => {
       // Sort by date descending
       return new Date(b.date).getTime() - new Date(a.date).getTime();
-    })
-    .slice(0, 4); // Take only the last 4 logged days
+    });
+
+  // Find the next day to log (first incomplete or next unlogged day in the latest week)
+  let nextDayToLog: typeof allLoggedDays[0] | null = null;
+  if (currentProgram && allLoggedDays.length > 0) {
+    // Get the latest week number that has logged days
+    const latestWeekNum = Math.max(...allLoggedDays.map(d => d.weekNum));
+    const latestWeek = currentProgram.weeks?.[latestWeekNum];
+    
+    if (latestWeek) {
+      // Check each day in the latest week
+      for (let dayIndex = 0; dayIndex < latestWeek.days.length; dayIndex++) {
+        const day = latestWeek.days[dayIndex];
+        const dayExercises = day.exercises.map(ex => ex.exerciseName);
+        
+        // Find logged sessions for this specific day
+        const dayLoggedSessions = currentProgramSessions.filter(
+          s => s.weekNum === latestWeekNum && s.dayIndex === dayIndex
+        );
+        
+        // Count logged exercises
+        const loggedExercises = new Set(dayLoggedSessions.map(s => s.exercise));
+        const isFullyLogged = dayExercises.every(ex => loggedExercises.has(ex));
+        
+        if (!isFullyLogged) {
+          // This day is not fully logged, it's the next one
+          const totalSets = latestWeek.days[dayIndex].exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0);
+          
+          nextDayToLog = {
+            weekNum: latestWeekNum,
+            dayIndex: dayIndex + 1,
+            name: day.name,
+            isComplete: false,
+            date: new Date().toISOString().split('T')[0], // Today's date as placeholder
+            exercisesCount: dayExercises.length,
+            loggedCount: loggedExercises.size,
+            totalSets: totalSets,
+          };
+          break;
+        }
+      }
+    }
+  }
 
   // Group the logged days by week for display
   const daysByWeek = new Map<number, typeof allLoggedDays>();
@@ -195,6 +236,14 @@ export function HomeTab() {
     }
     daysByWeek.get(day.weekNum)!.push(day);
   });
+  
+  // Add the next day to log to the appropriate week group
+  if (nextDayToLog && !allLoggedDays.some(d => d.weekNum === nextDayToLog.weekNum && d.dayIndex === nextDayToLog.dayIndex)) {
+    if (!daysByWeek.has(nextDayToLog.weekNum)) {
+      daysByWeek.set(nextDayToLog.weekNum, []);
+    }
+    daysByWeek.get(nextDayToLog.weekNum)!.push(nextDayToLog);
+  }
 
   // Calculate volume by muscle group per week - across ALL programs in chronological order
   // First, create a mapping of (programId, weekNum) to chronological week number
@@ -336,7 +385,7 @@ export function HomeTab() {
 
             {/* Divider */}
             <div className="border-t pt-4 mt-4 flex flex-col flex-1 min-h-0">
-              {allLoggedDays.length === 0 ? (
+              {allLoggedDays.length === 0 && !nextDayToLog ? (
                 <p className="text-sm text-muted-foreground">Nessuna sessione loggata</p>
               ) : (
                 <div className="space-y-3 flex-1 overflow-y-auto pr-2">
@@ -346,33 +395,53 @@ export function HomeTab() {
                       <div key={weekNum} className="space-y-2">
                         <h4 className="text-xs font-semibold text-gray-400">Sessioni Completate - Week {weekNum}</h4>
                         <div className="space-y-2">
-                          {days.map((day, idx) => (
-                            <div
-                              key={`${day.date}-${day.dayIndex}-${idx}`}
-                              className="flex items-center justify-between p-2 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                            >
-                              <div className="flex items-center gap-3">
-                                <CheckCircle2 className={`h-5 w-5 flex-shrink-0 ${day.isComplete ? 'text-green-500' : 'text-orange-500'}`} />
-                                <div className="min-w-0">
-                                  <p className="text-sm text-gray-600 truncate">{day.name}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {day.date
-                                      ? new Date(day.date).toLocaleDateString('it-IT', {
-                                        day: 'numeric',
-                                        month: 'short',
-                                      })
-                                      : 'Completato'} • {day.totalSets} set • Day {day.dayIndex}
+                          {days.map((day, idx) => {
+                            // Check if this is the next day to log
+                            const isNextDay = nextDayToLog && 
+                              day.weekNum === nextDayToLog.weekNum && 
+                              day.dayIndex === nextDayToLog.dayIndex &&
+                              day.loggedCount === 0;
+                            
+                            return (
+                              <div
+                                key={`${day.date}-${day.dayIndex}-${idx}`}
+                                className={`flex items-center justify-between p-2 rounded-lg border transition-colors ${
+                                  isNextDay ? 'bg-primary/5 border-primary/30' : 'bg-card hover:bg-accent/50'
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  {isNextDay ? (
+                                    <Clock className="h-5 w-5 flex-shrink-0 text-primary animate-pulse" />
+                                  ) : (
+                                    <CheckCircle2 className={`h-5 w-5 flex-shrink-0 ${day.isComplete ? 'text-green-500' : 'text-orange-500'}`} />
+                                  )}
+                                  <div className="min-w-0">
+                                    <p className="text-sm text-gray-600 truncate">{day.name}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {isNextDay ? (
+                                        <>Prossimo • {day.totalSets} set • Day {day.dayIndex}</>
+                                      ) : (
+                                        <>
+                                          {day.date
+                                            ? new Date(day.date).toLocaleDateString('it-IT', {
+                                              day: 'numeric',
+                                              month: 'short',
+                                            })
+                                            : 'Completato'} • {day.totalSets} set • Day {day.dayIndex}
+                                        </>
+                                      )}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right flex-shrink-0">
+                                  <p className="text-sm font-semibold text-gray-900">
+                                    {day.loggedCount}/{day.exercisesCount}
                                   </p>
+                                  <p className="text-xs text-muted-foreground">esercizi</p>
                                 </div>
                               </div>
-                              <div className="text-right flex-shrink-0">
-                                <p className="text-sm font-semibold text-gray-900">
-                                  {day.loggedCount}/{day.exercisesCount}
-                                </p>
-                                <p className="text-xs text-muted-foreground">esercizi</p>
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     ))}
