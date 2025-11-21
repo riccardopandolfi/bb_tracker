@@ -315,14 +315,19 @@ export function HomeTab() {
               ) : (
                 <div className="space-y-2 flex-1 overflow-y-auto pr-2 grid grid-cols-1 gap-2 auto-rows-fr">
                   {dayStatus
-                    .filter((day) => day.isComplete)
+                    .filter((day) => day.loggedCount > 0)
+                    .sort((a, b) => {
+                      if (!a.date || !b.date) return 0;
+                      return new Date(b.date).getTime() - new Date(a.date).getTime();
+                    })
+                    .slice(0, 4)
                     .map((day) => (
                       <div
                         key={day.dayIndex}
                         className="flex items-center justify-between p-2 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
                       >
                         <div className="flex items-center gap-3">
-                          <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                          <CheckCircle2 className={`h-5 w-5 flex-shrink-0 ${day.isComplete ? 'text-green-500' : 'text-orange-500'}`} />
                           <div className="min-w-0">
                             <p className="text-sm text-gray-600 truncate">{day.name}</p>
                             <p className="text-xs text-muted-foreground">
@@ -343,9 +348,9 @@ export function HomeTab() {
                         </div>
                       </div>
                     ))}
-                  {dayStatus.filter((day) => day.isComplete).length === 0 && (
+                  {dayStatus.filter((day) => day.loggedCount > 0).length === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-4">
-                      Nessuna sessione completata questa settimana
+                      Nessuna sessione loggata questa settimana
                     </p>
                   )}
                 </div>

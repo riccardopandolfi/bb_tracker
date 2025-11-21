@@ -168,7 +168,7 @@ export function MacrosTab() {
 
       {/* Card Riepilogo */}
       {weeklyAverage && (
-        <Card className="card-monetra">
+        <Card className="card-monetra bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
           <CardHeader>
             <CardTitle className="text-base sm:text-lg font-heading">Riepilogo Settimanale</CardTitle>
           </CardHeader>
@@ -307,7 +307,7 @@ export function MacrosTab() {
                   className={`p-4 ${isChecked
                       ? 'border-emerald-200 bg-emerald-50'
                       : isToday
-                        ? 'border-primary/40 border-2 ring-2 ring-primary/10'
+                        ? 'border-primary border-2 ring-4 ring-primary/30 bg-primary/5'
                         : 'border-gray-200'
                     }`}
                 >
