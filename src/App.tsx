@@ -39,7 +39,7 @@ function App() {
       <div className="fixed top-0 left-0 right-0 z-50 w-full bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto flex h-20 items-center justify-center px-4 md:px-6 lg:px-8 relative">
           {/* Desktop Navigation - Centered Pill Style */}
-          <div className="hidden md:flex items-center gap-1 bg-white p-1.5 rounded-full border border-gray-200 shadow-sm">
+          <div className="hidden md:flex items-center gap-1 bg-black p-1.5 rounded-full border border-white/10 shadow-lg shadow-black/20">
             <NavigationMenuLink
               active={currentTab === 'home'}
               onClick={() => setCurrentTab('home')}
@@ -130,8 +130,8 @@ function NavigationMenuLink({ active, onClick, children, icon, disabled }: { act
       disabled={disabled}
       className={cn(
         "relative px-4 py-2 text-sm font-medium transition-all duration-300 rounded-full flex items-center gap-2",
-        active ? "text-black" : "text-gray-600 hover:text-gray-900 hover:bg-gray-100",
-        disabled && "opacity-50 cursor-not-allowed hover:text-gray-400 hover:bg-transparent"
+        active ? "text-black" : "text-white hover:text-white hover:bg-white/10",
+        disabled && "opacity-50 cursor-not-allowed hover:text-white/50 hover:bg-transparent"
       )}
     >
       {active && (
