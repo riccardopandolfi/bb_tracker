@@ -533,62 +533,89 @@ export function HomeTab() {
         </CardHeader>
         <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
           {chartData.length === 0 ? (
-            <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+            <div className="h-[280px] flex items-center justify-center text-muted-foreground">
               Nessun dato disponibile
             </div>
           ) : (
-            <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
-              <AreaChart data={chartData}>
-                <defs>
-                  {muscleList.map((muscle) => (
-                    <linearGradient key={muscle} id={`fill${muscle.replace(/\s+/g, '')}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop
-                        offset="5%"
-                        stopColor={getMuscleGradientColor(muscle, 0.18)}
-                        stopOpacity={0.8}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor={getMuscleGradientColor(muscle, -0.12)}
-                        stopOpacity={0.1}
-                      />
-                    </linearGradient>
-                  ))}
-                </defs>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="week"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  minTickGap={32}
-                />
-                <ChartTooltip
-                  cursor={false}
-                  content={
-                    <ChartTooltipContent
-                      labelFormatter={(value) => value.toString()}
-                      indicator="dot"
-                    />
-                  }
-                />
-                {muscleList.map((muscle) => (
-                  <Area
-                    key={muscle}
-                    dataKey={muscle}
-                    type="natural"
-                    fill={`url(#fill${muscle.replace(/\s+/g, '')})`}
-                    stroke={getMuscleColorHex(muscle)}
-                    stackId="a"
+            <div className="rounded-3xl border border-white/5 bg-gradient-to-b from-black/70 via-slate-900/70 to-black/40 p-4 sm:p-6 shadow-inner">
+              <ChartContainer
+                config={chartConfig}
+                className="h-[300px] w-full [&_.recharts-cartesian-axis-tick_text]:fill-white/60"
+              >
+                <AreaChart
+                  data={chartData}
+                  margin={{ top: 10, right: 12, left: -10, bottom: 0 }}
+                >
+                  <defs>
+                    {muscleList.map((muscle) => (
+                      <linearGradient
+                        key={muscle}
+                        id={`fill${muscle.replace(/\s+/g, '')}`}
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="0%"
+                          stopColor={getMuscleGradientColor(muscle, 0.2)}
+                          stopOpacity={0.9}
+                        />
+                        <stop
+                          offset="100%"
+                          stopColor={getMuscleGradientColor(muscle, -0.15)}
+                          stopOpacity={0.05}
+                        />
+                      </linearGradient>
+                    ))}
+                  </defs>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="rgba(255,255,255,0.07)"
+                    vertical={false}
                   />
-                ))}
-                <ChartLegend
-                  content={
-                    <ChartLegendContent className="hidden sm:flex sm:flex-wrap sm:gap-3" />
-                  }
-                />
-              </AreaChart>
-            </ChartContainer>
+                  <XAxis
+                    dataKey="week"
+                    tickLine={false}
+                    axisLine={false}
+                    interval={0}
+                    minTickGap={12}
+                    tickMargin={10}
+                    tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 11, fontFamily: 'var(--font-heading)' }}
+                  />
+                  <ChartTooltip
+                    cursor={{ stroke: 'rgba(255,255,255,0.24)', strokeWidth: 1 }}
+                    content={
+                      <ChartTooltipContent
+                        className="bg-black/80 border-white/10 text-white"
+                        labelClassName="text-white/80"
+                        indicator="line"
+                        labelFormatter={(value) => value.toString()}
+                      />
+                    }
+                  />
+                  {muscleList.map((muscle) => (
+                    <Area
+                      key={muscle}
+                      dataKey={muscle}
+                      type="monotone"
+                      stroke={getMuscleColorHex(muscle)}
+                      strokeWidth={2.2}
+                      fill={`url(#fill${muscle.replace(/\s+/g, '')})`}
+                      stackId="a"
+                      dot={false}
+                      activeDot={{ r: 4 }}
+                    />
+                  ))}
+                  <ChartLegend
+                    verticalAlign="top"
+                    content={
+                      <ChartLegendContent className="flex flex-wrap gap-3 text-[11px] text-white/70" />
+                    }
+                  />
+                </AreaChart>
+              </ChartContainer>
+            </div>
           )}
         </CardContent>
       </Card>
