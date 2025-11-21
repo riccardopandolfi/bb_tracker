@@ -339,7 +339,7 @@ export function HomeTab() {
 
   // Prepare chart data
   const chartData = weekList.map((week) => {
-    const dataPoint: any = { week: `Sett. ${week}`, weekNum: week };
+    const dataPoint: any = { week: `S${week}`, weekNum: week };
     muscleList.forEach((muscle) => {
       dataPoint[muscle] = parseFloat((volumeByWeekAndMuscle[week][muscle] || 0).toFixed(1));
     });
@@ -579,9 +579,9 @@ export function HomeTab() {
                   tickLine={false}
                   axisLine={false}
                   interval={chartData.length > 12 ? Math.ceil(chartData.length / 8) : 0}
-                  minTickGap={24}
+                  minTickGap={20}
                   tickMargin={10}
-                  tick={{ fill: '#6b7280', fontSize: 11, fontFamily: 'var(--font-heading)' }}
+                  tick={{ fill: '#6b7280', fontSize: 10, fontFamily: 'var(--font-heading)' }}
                 />
                 <ChartTooltip
                     cursor={{ stroke: '#e5e7eb', strokeWidth: 1 }}
