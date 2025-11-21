@@ -51,35 +51,31 @@ export function UserSelector() {
                 </SelectTrigger>
                 <SelectContent>
                     {users.map((user) => (
-                        <SelectItem key={user.id} value={user.id} className="group" onSelect={(e) => {
-                            // Prevent selection if clicking on delete button
-                            const target = e.target as HTMLElement;
-                            if (target.closest('button')) {
-                                e.preventDefault();
-                            }
-                        }}>
-                            <div className="flex items-center justify-between w-full gap-2" onClick={(e) => {
-                                // Prevent selection when clicking on delete button area
-                                const target = e.target as HTMLElement;
-                                if (target.closest('button')) {
-                                    e.stopPropagation();
-                                }
-                            }}>
+                        <SelectItem 
+                            key={user.id} 
+                            value={user.id} 
+                            className="group"
+                        >
+                            <div className="flex items-center justify-between w-full gap-2">
                                 <span>{user.name}</span>
                                 {users.length > 1 && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
+                                    <button
                                         type="button"
-                                        className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 hover:text-red-600"
-                                        onClick={(e) => handleDeleteUser(e, user.id)}
-                                        onMouseDown={(e) => {
+                                        className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 hover:text-red-600 rounded flex items-center justify-center"
+                                        onClick={(e) => {
                                             e.stopPropagation();
                                             e.preventDefault();
+                                            handleDeleteUser(e, user.id);
+                                        }}
+                                        onMouseDown={(e) => {
+                                            e.stopPropagation();
+                                        }}
+                                        onPointerDown={(e) => {
+                                            e.stopPropagation();
                                         }}
                                     >
                                         <Trash2 className="h-3 w-3" />
-                                    </Button>
+                                    </button>
                                 )}
                             </div>
                         </SelectItem>
