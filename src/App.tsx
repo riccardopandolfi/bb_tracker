@@ -42,12 +42,12 @@ function App() {
 
         {/* Main header content */}
         <div className="w-full bg-black/95 backdrop-blur-sm">
-          <div className="w-full flex h-14 items-center justify-between px-4 md:px-6 lg:px-8">
+          <div className="w-full flex min-h-14 py-2 items-center justify-between px-4 md:px-6 lg:px-8">
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg lime-gradient flex items-center justify-center flex-shrink-0">
                 <Dumbbell className="h-4 w-4 sm:h-5 sm:w-5 text-black" />
               </div>
-              <h1 className="text-[10px] sm:text-xs md:text-sm font-bold tracking-wider md:tracking-widest text-white font-brand uppercase leading-tight">
+              <h1 className="text-[10px] sm:text-xs md:text-sm font-bold tracking-wider md:tracking-widest text-white font-brand uppercase leading-[1.2]">
                 NOBODY CARES<br className="sm:hidden" /> WORK HARDER
               </h1>
             </div>
