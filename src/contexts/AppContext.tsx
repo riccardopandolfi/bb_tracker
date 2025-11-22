@@ -3,7 +3,8 @@ import { AppState, Exercise, Week, LoggedSession, CustomTechnique, Program, Dail
 import { DEFAULT_EXERCISES, MUSCLE_COLORS } from '@/lib/constants';
 import { DEFAULT_MUSCLE_GROUPS } from '@/types';
 import { generateDemoPrograms, generateDemoLoggedSessions } from '@/lib/demoData';
-import { loadAppState, saveAppState, subscribeToAppState, migrateFromLocalStorage } from '@/lib/supabaseService';
+import { loadUserAppState, saveUserAppState, subscribeToUserAppState } from '@/lib/supabaseService';
+import { useAuth } from './AuthContext';
 
 interface AppContextType extends UserData {
   // User Management
@@ -90,57 +91,70 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(defaultState);
   const [isLoading, setIsLoading] = useState(true);
   const isSavingRef = useRef(false);
+  const { user: authUser, activeAccountId } = useAuth();
+  const remoteOwnerId = authUser ? (activeAccountId ?? authUser.id) : null;
+  const storageKey = remoteOwnerId ? `${STORAGE_KEY}-${remoteOwnerId}` : STORAGE_KEY;
+  const isRemoteMode = Boolean(remoteOwnerId);
 
-  // Load from Supabase (with localStorage fallback) on mount
+  // Gestione caricamento dati (Supabase o localStorage)
   useEffect(() => {
+    let unsubscribe: (() => void) | null = null;
+    let cancelled = false;
+
     const loadData = async () => {
+      setIsLoading(true);
       try {
-        // Try to load from Supabase first
-        const supabaseData = await loadAppState();
+        if (isRemoteMode && remoteOwnerId) {
+          const remoteState = await loadUserAppState(remoteOwnerId);
+          const nextState = remoteState ? migrateData(remoteState) : defaultState;
 
-        if (supabaseData) {
-          console.log('Loaded data from Supabase');
-          const migratedData = migrateData(supabaseData);
-          setState(migratedData);
-
-          // Check if we need to save back (e.g. after migration)
-          // Simple check: if structure changed significantly or if we just migrated
-          if (!supabaseData.users && migratedData.users) {
-            console.log('Saving migrated data to Supabase...');
-            await saveAppState(migratedData);
+          if (!remoteState) {
+            await saveUserAppState(remoteOwnerId, nextState);
           }
 
-          setIsLoading(false);
-          return;
+          if (!cancelled) {
+            setState(nextState);
+            localStorage.setItem(storageKey, JSON.stringify(nextState));
+          }
+
+          unsubscribe = subscribeToUserAppState(remoteOwnerId, (newState) => {
+            isSavingRef.current = true;
+            const migrated = migrateData(newState);
+            setState(migrated);
+            localStorage.setItem(storageKey, JSON.stringify(migrated));
+            setTimeout(() => {
+              isSavingRef.current = false;
+            }, 100);
+          });
+        } else {
+          const saved = localStorage.getItem(storageKey);
+          if (saved) {
+            const data = JSON.parse(saved);
+            const migratedData = migrateData(data);
+            setState(migratedData);
+          } else {
+            setState(defaultState);
+          }
         }
       } catch (error) {
-        console.error('Error loading from Supabase:', error);
-      }
-
-      // Fallback to localStorage
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        try {
-          const data = JSON.parse(saved);
-          const migratedData = migrateData(data);
-          setState(migratedData);
-
-          // Migrate to Supabase in background
-          migrateFromLocalStorage(migratedData).then((success) => {
-            if (success) {
-              console.log('Migrated data to Supabase');
-            }
-          });
-        } catch (error) {
-          console.error('Error loading data from localStorage:', error);
+        console.error('Errore nel caricamento dei dati', error);
+        if (!isRemoteMode) {
+          setState(defaultState);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
         }
       }
-
-      setIsLoading(false);
     };
 
     loadData();
-  }, []);
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [isRemoteMode, remoteOwnerId, storageKey]);
 
   // Helper function to migrate data format
   const migrateData = (data: any): AppState => {
@@ -296,41 +310,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   };
 
-  // Real-time subscription
-  useEffect(() => {
-    if (!isLoading) {
-      const unsubscribe = subscribeToAppState((newState) => {
-        console.log('Received update from Supabase');
-        isSavingRef.current = true;
-        setState(newState);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
-        setTimeout(() => {
-          isSavingRef.current = false;
-        }, 100);
-      });
-
-      return () => {
-        unsubscribe();
-      };
-    }
-  }, [isLoading]);
-
-  // Save to localStorage and Supabase on state change (debounced)
+  // Persistenza dati (localStorage + Supabase)
   useEffect(() => {
     if (isLoading || isSavingRef.current) return;
 
     const timeoutId = setTimeout(async () => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      try {
-        const success = await saveAppState(state);
-        if (success) console.log('Saved to Supabase');
-      } catch (error) {
-        console.error('Error saving to Supabase:', error);
+      localStorage.setItem(storageKey, JSON.stringify(state));
+      if (isRemoteMode && remoteOwnerId) {
+        try {
+          await saveUserAppState(remoteOwnerId, state);
+        } catch (error) {
+          console.error('Errore nel salvataggio su Supabase', error);
+        }
       }
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [state, isLoading]);
+  }, [state, isLoading, isRemoteMode, remoteOwnerId, storageKey]);
 
   // Helper to update current user data
   const updateCurrentUser = (updateFn: (prev: UserData) => Partial<UserData>) => {

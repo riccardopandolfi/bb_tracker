@@ -257,6 +257,33 @@ export interface AppState {
   userData: Record<string, UserData>;
 }
 
+export type ProfileRole = 'athlete' | 'coach' | 'hybrid';
+
+export interface Profile {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  avatar_url: string | null;
+  role: ProfileRole;
+  created_at: string;
+  updated_at: string;
+}
+
+export type CoachingRelationshipStatus = 'pending' | 'active' | 'revoked';
+export type CoachingPermission = 'viewer' | 'editor' | 'admin';
+
+export interface CoachingRelationship {
+  id: string;
+  coach_id: string;
+  athlete_id: string;
+  status: CoachingRelationshipStatus;
+  permissions: CoachingPermission;
+  created_at: string;
+  updated_at: string;
+  coach?: Profile | null;
+  athlete?: Profile | null;
+}
+
 // Volume calculations
 export interface VolumeByMuscle {
   [muscle: string]: {

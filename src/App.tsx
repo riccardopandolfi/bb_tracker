@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useApp } from './contexts/AppContext';
 import { HomeTab } from './components/HomeTab';
 import { ExerciseLibrary } from './components/ExerciseLibrary';
@@ -20,19 +20,63 @@ import '@fontsource/dm-sans/700.css';
 import { UserSelector } from './components/UserSelector';
 import { MobileNav } from './components/ui/mobile-nav';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useAuth } from './contexts/AuthContext';
+import { LandingGate } from './components/LandingGate';
+import { AuthModal } from './components/auth/AuthModal';
+import { AccountControls } from './components/coach/AccountControls';
+import { CoachAccessDialog } from './components/coach/CoachAccessDialog';
 
 function App() {
-  const { currentTab, setCurrentTab, programs } = useApp();
+  const { currentTab, setCurrentTab, programs, loadDemoData } = useApp();
+  const { session } = useAuth();
   const hasPrograms = Object.keys(programs).length > 0;
+  const [guestUnlocked, setGuestUnlocked] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [coachDialogOpen, setCoachDialogOpen] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
+  const isAuthenticated = Boolean(session);
+  const canAccessApp = isAuthenticated || guestUnlocked;
 
-  // On initial mount, redirect to home if no programs exist (except home/library)
   useEffect(() => {
     if (!hasPrograms && currentTab !== 'home' && currentTab !== 'library') {
       setCurrentTab('home');
     }
-  }, [hasPrograms]); // Run only when hasPrograms changes, not on every tab change
+  }, [hasPrograms, currentTab, setCurrentTab]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      setGuestUnlocked(false);
+      setShowAuthModal(false);
+    }
+  }, [isAuthenticated]);
+
+  const handleDemo = async () => {
+    if (demoLoading) return;
+    setDemoLoading(true);
+    try {
+      loadDemoData();
+      setGuestUnlocked(true);
+      setCurrentTab('programs');
+    } finally {
+      setDemoLoading(false);
+    }
+  };
+
+  if (!canAccessApp) {
+    return (
+      <>
+        <LandingGate
+          onStart={() => setShowAuthModal(true)}
+          onDemo={handleDemo}
+          isDemoLoading={demoLoading}
+        />
+        <AuthModal open={showAuthModal} onOpenChange={setShowAuthModal} />
+      </>
+    );
+  }
 
   return (
+    <>
     <div className={cn("min-h-screen w-full relative overflow-x-hidden font-sans selection:bg-primary/20", hasPrograms ? "bg-background text-foreground" : "bg-black")}>
       {/* Header with Gradient Accent Strip */}
       {hasPrograms && (
@@ -101,10 +145,18 @@ function App() {
               </NavigationMenuLink>
             </nav>
 
-            <UserSelector />
+            <div className="flex items-center gap-3">
+              <AccountControls onOpenCoachPanel={() => setCoachDialogOpen(true)} />
+              <UserSelector />
+            </div>
           </div>
         </div>
       </header>
+      )}
+      {!hasPrograms && isAuthenticated && (
+        <div className="fixed top-4 right-4 z-40">
+          <AccountControls compact onOpenCoachPanel={() => setCoachDialogOpen(true)} />
+        </div>
       )}
 
       {/* Main Content */}
@@ -132,6 +184,9 @@ function App() {
       {/* Mobile Navigation - Only show if programs exist */}
       {hasPrograms && <MobileNav currentTab={currentTab} setCurrentTab={setCurrentTab} hasPrograms={hasPrograms} />}
     </div>
+    <AuthModal open={showAuthModal && !isAuthenticated} onOpenChange={setShowAuthModal} />
+    <CoachAccessDialog open={coachDialogOpen} onOpenChange={setCoachDialogOpen} />
+    </>
   );
 }
 

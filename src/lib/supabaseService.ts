@@ -7,6 +7,12 @@ export interface AppStateRow {
   updated_at: string;
 }
 
+export interface UserAppStateRow {
+  user_id: string;
+  data: AppState;
+  updated_at: string;
+}
+
 /**
  * Carica lo stato dell'app dal database
  */
@@ -109,4 +115,74 @@ export async function migrateFromLocalStorage(localData: AppState): Promise<bool
     console.error('Error migrating from localStorage:', error);
     return false;
   }
+}
+
+export async function loadUserAppState(userId: string): Promise<AppState | null> {
+  try {
+    const { data, error } = await supabase
+      .from('user_data')
+      .select('data')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Errore nel recupero dello stato utente', error);
+      throw error;
+    }
+
+    return (data as UserAppStateRow | null)?.data ?? null;
+  } catch (error) {
+    console.error('Errore generale nel recupero dello stato utente', error);
+    throw error;
+  }
+}
+
+export async function saveUserAppState(userId: string, state: AppState): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('user_data')
+      .upsert({
+        user_id: userId,
+        data: state,
+      })
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Errore nel salvataggio dello stato utente', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Errore generale nel salvataggio dello stato utente', error);
+    return false;
+  }
+}
+
+export function subscribeToUserAppState(
+  userId: string,
+  callback: (state: AppState) => void
+) {
+  const channel = supabase
+    .channel(`user_data_changes_${userId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'user_data',
+        filter: `user_id=eq.${userId}`,
+      },
+      (payload) => {
+        const newState = payload.new as UserAppStateRow | null;
+        if (newState?.data) {
+          callback(newState.data);
+        }
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
 }
