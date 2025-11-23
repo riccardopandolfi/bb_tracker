@@ -90,21 +90,21 @@ function App() {
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg lime-gradient flex items-center justify-center flex-shrink-0">
                 <Dumbbell className="h-4 w-4 sm:h-5 sm:w-5 text-black" />
-              </div>
+            </div>
               <h1 className="text-[10px] sm:text-xs md:text-sm font-bold tracking-wider md:tracking-widest text-white font-brand uppercase leading-[1.2]">
                 NOBODY CARES<br className="sm:hidden" /> WORK HARDER
               </h1>
-            </div>
+          </div>
 
             {/* Desktop Navigation - Clean style */}
             <nav className="hidden md:flex items-center gap-1">
-              <NavigationMenuLink
-                active={currentTab === 'home'}
-                onClick={() => setCurrentTab('home')}
-                icon={<Home className="w-4 h-4" />}
-              >
-                Home
-              </NavigationMenuLink>
+            <NavigationMenuLink
+              active={currentTab === 'home'}
+              onClick={() => setCurrentTab('home')}
+              icon={<Home className="w-4 h-4" />}
+            >
+              Home
+            </NavigationMenuLink>
               <NavigationMenuLink
                 active={currentTab === 'library'}
                 onClick={() => setCurrentTab('library')}
@@ -112,37 +112,37 @@ function App() {
               >
                 Libreria
               </NavigationMenuLink>
-              <NavigationMenuLink
-                active={currentTab === 'programs'}
-                onClick={() => setCurrentTab('programs')}
-                icon={<Folder className="w-4 h-4" />}
-              >
-                Programmi
-              </NavigationMenuLink>
-              <NavigationMenuLink
-                active={currentTab === 'program'}
+            <NavigationMenuLink
+              active={currentTab === 'programs'}
+              onClick={() => setCurrentTab('programs')}
+              icon={<Folder className="w-4 h-4" />}
+            >
+              Programmi
+            </NavigationMenuLink>
+            <NavigationMenuLink
+              active={currentTab === 'program'}
                 onClick={() => hasPrograms && setCurrentTab('program')}
                 disabled={!hasPrograms}
-                icon={<Dumbbell className="w-4 h-4" />}
-              >
-                Scheda
-              </NavigationMenuLink>
-              <NavigationMenuLink
-                active={currentTab === 'logbook'}
+              icon={<Dumbbell className="w-4 h-4" />}
+            >
+              Scheda
+            </NavigationMenuLink>
+            <NavigationMenuLink
+              active={currentTab === 'logbook'}
                 onClick={() => hasPrograms && setCurrentTab('logbook')}
                 disabled={!hasPrograms}
-                icon={<Dumbbell className="w-4 h-4" />}
-              >
-                Logbook
-              </NavigationMenuLink>
-              <NavigationMenuLink
-                active={currentTab === 'macros'}
+              icon={<Dumbbell className="w-4 h-4" />}
+            >
+              Logbook
+            </NavigationMenuLink>
+            <NavigationMenuLink
+              active={currentTab === 'macros'}
                 onClick={() => hasPrograms && setCurrentTab('macros')}
                 disabled={!hasPrograms}
-                icon={<Apple className="w-4 h-4" />}
-              >
-                Macros
-              </NavigationMenuLink>
+              icon={<Apple className="w-4 h-4" />}
+            >
+              Macros
+            </NavigationMenuLink>
             </nav>
 
             <div className="flex items-center gap-3">

@@ -128,22 +128,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
           });
         } else {
           const saved = localStorage.getItem(storageKey);
-          if (saved) {
-            const data = JSON.parse(saved);
-            const migratedData = migrateData(data);
-            setState(migratedData);
+      if (saved) {
+          const data = JSON.parse(saved);
+          const migratedData = migrateData(data);
+          setState(migratedData);
           } else {
             setState(defaultState);
-          }
+            }
         }
-      } catch (error) {
+        } catch (error) {
         console.error('Errore nel caricamento dei dati', error);
         if (!isRemoteMode) {
           setState(defaultState);
         }
       } finally {
         if (!cancelled) {
-          setIsLoading(false);
+      setIsLoading(false);
         }
       }
     };
@@ -317,9 +317,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const timeoutId = setTimeout(async () => {
       localStorage.setItem(storageKey, JSON.stringify(state));
       if (isRemoteMode && remoteOwnerId) {
-        try {
+      try {
           await saveUserAppState(remoteOwnerId, state);
-        } catch (error) {
+      } catch (error) {
           console.error('Errore nel salvataggio su Supabase', error);
         }
       }

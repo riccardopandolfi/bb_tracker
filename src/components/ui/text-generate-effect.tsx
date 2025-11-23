@@ -34,18 +34,18 @@ export const TextGenerateEffect = ({
 
     const renderWords = () => {
         return (
-            <motion.div ref={scope}>
+            <motion.div ref={scope} className="inline-flex flex-wrap justify-center items-center gap-x-2 md:gap-x-3">
                 {wordsArray.map((word, idx) => {
                     return (
                         <motion.span
                             key={word + idx}
-              className={cn("opacity-0", className)}
+              className={cn("opacity-0 whitespace-nowrap", className)}
               style={{
                 filter: filter ? "blur(10px)" : "none",
                 color: textColor,
               }}
                         >
-                            {word}{" "}
+                            {word}
                         </motion.span>
                     );
                 })}
@@ -54,12 +54,8 @@ export const TextGenerateEffect = ({
     };
 
     return (
-    <div className="font-bold">
-            <div className="mt-4">
-        <div className="leading-snug tracking-wide">
-                    {renderWords()}
-                </div>
-            </div>
+        <div className="w-full flex justify-center items-center">
+            {renderWords()}
         </div>
     );
 };
