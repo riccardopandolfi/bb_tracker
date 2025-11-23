@@ -106,7 +106,8 @@ function App() {
 
         {/* Main header content */}
         <div className="w-full bg-black/95 backdrop-blur-sm">
-          <div className="w-full flex items-center justify-between min-h-14 py-2 px-4 md:px-6 lg:px-8 gap-3">
+          <div className="w-full flex items-center min-h-14 py-2 px-4 md:px-6 lg:px-8 gap-2 md:gap-3">
+            {/* Logo - Fixed width, no shrink */}
             <button
               type="button"
               onClick={handleLogoClick}
@@ -125,8 +126,8 @@ function App() {
               </span>
             </button>
 
-            {/* Desktop Navigation - Clean style - Only show on large screens */}
-            <nav className="hidden lg:flex items-center justify-center gap-1 flex-1 min-w-0">
+            {/* Desktop Navigation - Centered between logo and profile, with flexible width */}
+            <nav className="hidden lg:flex items-center justify-center gap-1 flex-1 min-w-0 px-4">
             <NavigationMenuLink
               active={currentTab === 'home'}
               onClick={() => setCurrentTab('home')}
@@ -174,7 +175,8 @@ function App() {
             </NavigationMenuLink>
             </nav>
 
-            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            {/* Profile controls - Fixed on right, responsive width */}
+            <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
               <AccountControls onOpenCoachPanel={() => setCoachDialogOpen(true)} />
               <UserSelector />
             </div>

@@ -38,7 +38,7 @@ export function AccountControls({ onOpenCoachPanel, compact }: AccountControlsPr
       )}
     >
       {!compact && (
-        <div className="hidden md:flex flex-col text-right leading-tight">
+        <div className="hidden xl:flex flex-col text-right leading-tight">
           <span className="text-[10px] uppercase tracking-wide text-white/50">
             {isCoachMode ? 'Coach Mode' : 'Profilo'}
           </span>
@@ -50,7 +50,7 @@ export function AccountControls({ onOpenCoachPanel, compact }: AccountControlsPr
           value={isCoachMode ? activeAccountId ?? 'self' : 'self'}
           onValueChange={handleChange}
         >
-          <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white hover:bg-white/10 focus:ring-primary/50">
+          <SelectTrigger className="w-[140px] xl:w-[180px] bg-white/5 border-white/10 text-white hover:bg-white/10 focus:ring-primary/50">
             <SelectValue
               placeholder="Seleziona atleta"
             />
@@ -68,15 +68,24 @@ export function AccountControls({ onOpenCoachPanel, compact }: AccountControlsPr
       <Button
         variant={compact ? 'ghost' : 'outline'}
         size="sm"
-        className={cn('text-white border-white/30 hover:bg-white/10', compact && 'h-8 px-3')}
+        className={cn(
+          'text-white border-white/30 hover:bg-white/10',
+          compact && 'h-8 px-3',
+          !compact && 'px-2 xl:px-3 text-xs xl:text-sm'
+        )}
         onClick={onOpenCoachPanel}
       >
-        Coach Area
+        <span className="hidden lg:inline">Coach Area</span>
+        <span className="lg:hidden">Coach</span>
       </Button>
       <Button
         variant={compact ? 'ghost' : 'outline'}
         size="sm"
-        className={cn('text-white border-white/30 hover:bg-white/10', compact && 'h-8 px-3')}
+        className={cn(
+          'text-white border-white/30 hover:bg-white/10',
+          compact && 'h-8 px-3',
+          !compact && 'px-2 xl:px-3 text-xs xl:text-sm'
+        )}
         onClick={signOut}
       >
         Esci
