@@ -15,7 +15,12 @@ import { adjustColor } from '@/lib/colorUtils';
 import { Vortex } from './ui/vortex';
 import { TextGenerateEffect } from './ui/text-generate-effect';
 
-export function HomeTab() {
+interface HomeTabProps {
+  forceLanding?: boolean;
+  onExitLanding?: () => void;
+}
+
+export function HomeTab({ forceLanding = false, onExitLanding }: HomeTabProps) {
   const {
     programs,
     currentProgramId,
@@ -62,24 +67,51 @@ export function HomeTab() {
 
   // Get total programs count
   const totalPrograms = Object.keys(programs).length;
+  const shouldShowLanding = forceLanding || totalPrograms === 0;
+
+  const handleStartProgramNavigation = () => {
+    onExitLanding?.();
+    setCurrentTab('programs');
+  };
+
+  const handleLoadDemoData = () => {
+    loadDemoData();
+    onExitLanding?.();
+    setCurrentTab('program');
+  };
 
   const getMuscleColorHex = (muscle: string) => resolveMuscleColor(muscle) || '#6b7280';
   const getMuscleGradientColor = (muscle: string, modifier: number) =>
     adjustColor(getMuscleColorHex(muscle), modifier);
 
-  // Empty state when no programs exist
-  if (totalPrograms === 0) {
+  // Empty state when no programs exist or landing forced
+  if (shouldShowLanding) {
     return (
-      <div className="w-full h-[100dvh] overflow-hidden fixed inset-0 bg-black m-0 p-0" style={{ height: '100dvh', width: '100vw' }}>
+      <div
+        className="w-full h-[100dvh] overflow-hidden fixed inset-0 bg-black m-0 p-0"
+        style={{ height: '100dvh', width: '100vw' }}
+      >
         <Vortex
           backgroundColor="black"
           baseHue={76}
           rangeHue={20}
           className="flex items-center flex-col justify-center px-4 md:px-10 py-4 w-full h-full"
         >
+          {forceLanding && (
+            <div className="absolute top-6 right-6">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onExitLanding?.()}
+                className="bg-black/50 text-white border-white/40 hover:bg-black/70"
+              >
+                Torna all&rsquo;app
+              </Button>
+            </div>
+          )}
           <div className="w-full max-w-7xl mx-auto px-4">
-            <TextGenerateEffect 
-              words="NOBODY CARES WORK HARDER" 
+            <TextGenerateEffect
+              words="NOBODY CARES WORK HARDER"
               className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-center font-brand tracking-wider md:tracking-widest"
               duration={3}
               filter={true}
@@ -93,7 +125,7 @@ export function HomeTab() {
           
           <div className="flex flex-col sm:flex-row items-center gap-4 mt-6">
             <Button 
-              onClick={() => setCurrentTab('programs')} 
+              onClick={handleStartProgramNavigation} 
               size="lg"
               className="lime-gradient text-black font-bold hover:opacity-90 transition-opacity shadow-lg shadow-primary/50"
             >
@@ -104,8 +136,7 @@ export function HomeTab() {
                 variant="outline"
                 size="lg"
                 onClick={() => {
-                  loadDemoData();
-                  setCurrentTab('program');
+                  handleLoadDemoData();
                 }}
               className="bg-white text-black border-white hover:bg-gray-100"
               >

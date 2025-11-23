@@ -34,14 +34,22 @@ function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [coachDialogOpen, setCoachDialogOpen] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
+  const [showLandingPreview, setShowLandingPreview] = useState(false);
   const isAuthenticated = Boolean(session);
   const canAccessApp = isAuthenticated || guestUnlocked;
+  const landingActive = !hasPrograms || showLandingPreview;
 
   useEffect(() => {
     if (!hasPrograms && currentTab !== 'home' && currentTab !== 'library') {
       setCurrentTab('home');
     }
   }, [hasPrograms, currentTab, setCurrentTab]);
+
+  useEffect(() => {
+    if (!hasPrograms) {
+      setShowLandingPreview(false);
+    }
+  }, [hasPrograms]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -75,29 +83,50 @@ function App() {
     );
   }
 
+  const handleLogoClick = () => {
+    if (!hasPrograms) return;
+    setShowLandingPreview(true);
+    setCurrentTab('home');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <>
-    <div className={cn("min-h-screen w-full relative overflow-x-hidden font-sans selection:bg-primary/20", hasPrograms ? "bg-background text-foreground" : "bg-black")}>
+    <div
+      className={cn(
+        "min-h-screen w-full relative overflow-x-hidden font-sans selection:bg-primary/20",
+        landingActive ? "bg-black text-foreground" : "bg-background text-foreground"
+      )}
+    >
       {/* Header with Gradient Accent Strip */}
-      {hasPrograms && (
+      {hasPrograms && !showLandingPreview && (
       <header className="sticky top-0 z-40 w-full">
         {/* Lime gradient strip - brand signature */}
         <div className="h-1 w-full lime-gradient" />
 
         {/* Main header content */}
         <div className="w-full bg-black/95 backdrop-blur-sm">
-          <div className="w-full flex min-h-14 py-2 items-center justify-between px-4 md:px-6 lg:px-8">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg lime-gradient flex items-center justify-center flex-shrink-0">
+          <div className="w-full flex flex-wrap items-center gap-3 md:gap-4 min-h-14 py-2 px-4 md:px-6 lg:px-8">
+            <button
+              type="button"
+              onClick={handleLogoClick}
+              className="flex items-center gap-2 sm:gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md pr-2"
+            >
+              <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg lime-gradient flex items-center justify-center flex-shrink-0 transition-transform group-active:scale-95">
                 <Dumbbell className="h-4 w-4 sm:h-5 sm:w-5 text-black" />
-            </div>
-              <h1 className="text-[10px] sm:text-xs md:text-sm font-bold tracking-wider md:tracking-widest text-white font-brand uppercase leading-[1.2]">
-                NOBODY CARES<br className="sm:hidden" /> WORK HARDER
-              </h1>
-          </div>
+              </div>
+              <span className="text-left">
+                <span className="text-[10px] sm:text-xs md:text-sm font-bold tracking-wider md:tracking-widest text-white font-brand uppercase leading-[1.2] block">
+                  NOBODY CARES
+                </span>
+                <span className="text-[10px] sm:text-xs md:text-sm font-bold tracking-wider md:tracking-widest text-white font-brand uppercase leading-[1.2] block">
+                  WORK HARDER
+                </span>
+              </span>
+            </button>
 
             {/* Desktop Navigation - Clean style */}
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden md:flex flex-1 flex-wrap items-center justify-center gap-1 order-3 w-full md:order-2 md:w-auto">
             <NavigationMenuLink
               active={currentTab === 'home'}
               onClick={() => setCurrentTab('home')}
@@ -145,7 +174,7 @@ function App() {
             </NavigationMenuLink>
             </nav>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-shrink-0 order-2 md:order-3 w-full md:w-auto justify-end">
               <AccountControls onOpenCoachPanel={() => setCoachDialogOpen(true)} />
               <UserSelector />
             </div>
@@ -160,8 +189,8 @@ function App() {
       )}
 
       {/* Main Content */}
-      <main className={hasPrograms ? "w-full py-6 pb-24 md:pb-8 relative z-10" : "w-full h-[100dvh] relative z-10"}>
-        <div className={hasPrograms ? "w-full px-4 md:px-6 lg:px-8" : "w-full h-full"}>
+      <main className={landingActive ? "w-full h-[100dvh] relative z-10" : "w-full py-6 pb-24 md:pb-8 relative z-10"}>
+        <div className={landingActive ? "w-full h-full" : "w-full px-4 md:px-6 lg:px-8"}>
           <AnimatePresence mode="wait">
             <motion.div
               key={currentTab}
@@ -170,7 +199,12 @@ function App() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
-              {currentTab === 'home' && <HomeTab />}
+              {currentTab === 'home' && (
+                <HomeTab
+                  forceLanding={showLandingPreview}
+                  onExitLanding={() => setShowLandingPreview(false)}
+                />
+              )}
               {currentTab === 'library' && <ExerciseLibrary />}
               {currentTab === 'programs' && <ProgramsTab />}
               {currentTab === 'program' && <ProgramTab />}
@@ -182,7 +216,9 @@ function App() {
       </main>
 
       {/* Mobile Navigation - Only show if programs exist */}
-      {hasPrograms && <MobileNav currentTab={currentTab} setCurrentTab={setCurrentTab} hasPrograms={hasPrograms} />}
+      {hasPrograms && !showLandingPreview && (
+        <MobileNav currentTab={currentTab} setCurrentTab={setCurrentTab} hasPrograms={hasPrograms} />
+      )}
     </div>
     <AuthModal open={showAuthModal && !isAuthenticated} onOpenChange={setShowAuthModal} />
     <CoachAccessDialog open={coachDialogOpen} onOpenChange={setCoachDialogOpen} />
