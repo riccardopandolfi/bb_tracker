@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import {
     Dialog,
     DialogContent,
@@ -21,6 +22,12 @@ import { Plus, User as UserIcon, Trash2 } from 'lucide-react';
 
 export function UserSelector() {
     const { users, currentUserId, switchUser, addUser, deleteUser } = useApp();
+    const { session } = useAuth();
+    
+    // Non mostrare il selettore per utenti autenticati
+    if (session) {
+        return null;
+    }
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [newUserName, setNewUserName] = useState('');
 
