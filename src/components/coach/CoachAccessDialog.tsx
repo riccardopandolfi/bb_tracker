@@ -113,7 +113,7 @@ export function CoachAccessDialog({ open, onOpenChange }: CoachAccessDialogProps
           {hasInvites && (
             <section className="space-y-4">
               <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-primary" />
+                <Mail className="h-4 w-4 text-foreground" />
                 <h3 className="text-sm font-semibold text-foreground">Inviti</h3>
               </div>
               
@@ -156,7 +156,7 @@ export function CoachAccessDialog({ open, onOpenChange }: CoachAccessDialogProps
           {/* Sezione I Miei Atleti */}
           <section className="space-y-4">
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-primary" />
+              <Users className="h-4 w-4 text-foreground" />
               <h3 className="text-sm font-semibold text-foreground">I Miei Atleti</h3>
             </div>
             
@@ -193,7 +193,7 @@ export function CoachAccessDialog({ open, onOpenChange }: CoachAccessDialogProps
           {/* Sezione Invita Atleta */}
           <section className="space-y-4 pt-4 border-t border-border">
             <div className="flex items-center gap-2">
-              <UserPlus className="h-4 w-4 text-primary" />
+              <UserPlus className="h-4 w-4 text-foreground" />
               <h3 className="text-sm font-semibold text-foreground">Invita un nuovo atleta</h3>
             </div>
             <form onSubmit={handleInvite} className="grid gap-3">
