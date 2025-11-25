@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import type { CoachingRelationship } from '@/types';
+import { Users, Mail, UserPlus } from 'lucide-react';
 
 interface CoachAccessDialogProps {
   open: boolean;
@@ -58,38 +59,44 @@ export function CoachAccessDialog({ open, onOpenChange }: CoachAccessDialogProps
     }
   };
 
-  const renderRelationshipCard = (
-    title: string,
-    list: CoachingRelationship[],
-    actions: (rel: CoachingRelationship) => React.ReactNode
-  ) => {
-    if (list.length === 0) return null;
-    return (
+  const renderAthleteCard = (rel: CoachingRelationship, actions: React.ReactNode) => (
+    <div
+      key={rel.id}
+      className="border border-white/10 rounded-xl p-3 flex items-center justify-between bg-white/5"
+    >
       <div>
-        <h4 className="text-xs uppercase tracking-wide text-white/60 mb-2">{title}</h4>
-        <div className="space-y-3">
-          {list.map((rel) => (
-            <div
-              key={rel.id}
-              className="border border-white/10 rounded-xl p-3 flex items-center justify-between bg-white/5"
-            >
-              <div>
-                <p className="font-heading text-white">
-                  {rel.athlete?.full_name || rel.coach?.full_name || rel.athlete?.email || rel.coach?.email || 'Profilo'}
-                </p>
-                <Badge variant="outline" className="mt-1 uppercase tracking-wide text-[10px]">
-                  {rel.status}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-2">
-                {actions(rel)}
-              </div>
-            </div>
-          ))}
-        </div>
+        <p className="font-heading text-white">
+          {rel.athlete?.full_name || rel.athlete?.email || 'Atleta'}
+        </p>
+        <p className="text-xs text-white/50">{rel.athlete?.email}</p>
       </div>
-    );
-  };
+      <div className="flex items-center gap-2">
+        {actions}
+      </div>
+    </div>
+  );
+
+  const renderCoachCard = (rel: CoachingRelationship, actions: React.ReactNode) => (
+    <div
+      key={rel.id}
+      className="border border-primary/30 rounded-xl p-3 flex items-center justify-between bg-primary/5"
+    >
+      <div>
+        <p className="font-heading text-white">
+          {rel.coach?.full_name || rel.coach?.email || 'Coach'}
+        </p>
+        <p className="text-xs text-white/50">{rel.coach?.email}</p>
+        <Badge variant="outline" className="mt-1 uppercase tracking-wide text-[10px] border-primary/50 text-primary">
+          In attesa
+        </Badge>
+      </div>
+      <div className="flex items-center gap-2">
+        {actions}
+      </div>
+    </div>
+  );
+
+  const hasInvites = pendingAsAthlete.length > 0 || pendingAsCoach.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -101,8 +108,94 @@ export function CoachAccessDialog({ open, onOpenChange }: CoachAccessDialogProps
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-[70vh] pr-2 space-y-6 overflow-y-auto">
+          
+          {/* Sezione Inviti */}
+          {hasInvites && (
+            <section className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold text-white">Inviti</h3>
+              </div>
+              
+              {/* Inviti ricevuti da coach */}
+              {pendingAsAthlete.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-xs uppercase tracking-wide text-white/60">Richieste ricevute</h4>
+                  {pendingAsAthlete.map((rel) => renderCoachCard(rel, (
+                    <>
+                      <Button size="sm" variant="outline" onClick={() => acceptInvite(rel.id)}>
+                        Accetta
+                      </Button>
+                      <Button size="sm" variant="ghost" className="text-red-400" onClick={() => declineInvite(rel.id)}>
+                        Rifiuta
+                      </Button>
+                    </>
+                  )))}
+                </div>
+              )}
+
+              {/* Inviti inviati come coach */}
+              {pendingAsCoach.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-xs uppercase tracking-wide text-white/60">Inviti inviati</h4>
+                  {pendingAsCoach.map((rel) => renderAthleteCard(rel, (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-red-400"
+                      onClick={() => declineInvite(rel.id)}
+                    >
+                      Annulla
+                    </Button>
+                  )))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Sezione I Miei Atleti */}
           <section className="space-y-4">
-            <h3 className="text-sm font-semibold text-white">Invita un nuovo atleta</h3>
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-semibold text-white">I Miei Atleti</h3>
+            </div>
+            
+            {activeAthletes.length > 0 ? (
+              <div className="space-y-3">
+                {activeAthletes.map((rel) => renderAthleteCard(rel, (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setActiveAccountId(rel.athlete_id);
+                        onOpenChange(false);
+                      }}
+                    >
+                      Visualizza
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-red-400"
+                      onClick={() => revokeRelationship(rel.id)}
+                    >
+                      Rimuovi
+                    </Button>
+                  </>
+                )))}
+              </div>
+            ) : (
+              <p className="text-sm text-white/50">Nessun atleta collegato. Invita il tuo primo atleta!</p>
+            )}
+          </section>
+
+          {/* Sezione Invita Atleta */}
+          <section className="space-y-4 pt-4 border-t border-white/10">
+            <div className="flex items-center gap-2">
+              <UserPlus className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-semibold text-white">Invita un nuovo atleta</h3>
+            </div>
             <form onSubmit={handleInvite} className="grid gap-3">
               <div className="grid gap-2">
                 <Label>Email dell&rsquo;atleta</Label>
@@ -121,50 +214,6 @@ export function CoachAccessDialog({ open, onOpenChange }: CoachAccessDialogProps
             </form>
           </section>
 
-          {renderRelationshipCard('Atleti attivi', activeAthletes, (rel) => (
-            <>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setActiveAccountId(rel.athlete_id);
-                  onOpenChange(false);
-                }}
-              >
-                Visualizza
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-red-400"
-                onClick={() => revokeRelationship(rel.id)}
-              >
-                Rimuovi
-              </Button>
-            </>
-          ))}
-
-          {renderRelationshipCard('Inviti inviati (coach)', pendingAsCoach, (rel) => (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-red-400"
-              onClick={() => declineInvite(rel.id)}
-            >
-              Annulla
-            </Button>
-          ))}
-
-          {renderRelationshipCard('Inviti ricevuti', pendingAsAthlete, (rel) => (
-            <>
-              <Button size="sm" variant="outline" onClick={() => acceptInvite(rel.id)}>
-                Accetta
-              </Button>
-              <Button size="sm" variant="ghost" className="text-red-400" onClick={() => declineInvite(rel.id)}>
-                Rifiuta
-              </Button>
-            </>
-          ))}
         </div>
         {relationshipsLoading && <p className="text-xs text-white/60">Aggiornamento relazioni...</p>}
       </DialogContent>
