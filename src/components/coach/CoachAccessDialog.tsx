@@ -62,13 +62,13 @@ export function CoachAccessDialog({ open, onOpenChange }: CoachAccessDialogProps
   const renderAthleteCard = (rel: CoachingRelationship, actions: React.ReactNode) => (
     <div
       key={rel.id}
-      className="border border-white/10 rounded-xl p-3 flex items-center justify-between bg-white/5"
+      className="border border-border rounded-xl p-3 flex items-center justify-between bg-muted/50"
     >
       <div>
-        <p className="font-heading text-white">
+        <p className="font-heading text-foreground font-medium">
           {rel.athlete?.full_name || rel.athlete?.email || 'Atleta'}
         </p>
-        <p className="text-xs text-white/50">{rel.athlete?.email}</p>
+        <p className="text-xs text-muted-foreground">{rel.athlete?.email}</p>
       </div>
       <div className="flex items-center gap-2">
         {actions}
@@ -79,14 +79,14 @@ export function CoachAccessDialog({ open, onOpenChange }: CoachAccessDialogProps
   const renderCoachCard = (rel: CoachingRelationship, actions: React.ReactNode) => (
     <div
       key={rel.id}
-      className="border border-primary/30 rounded-xl p-3 flex items-center justify-between bg-primary/5"
+      className="border border-primary/30 rounded-xl p-3 flex items-center justify-between bg-primary/10"
     >
       <div>
-        <p className="font-heading text-white">
+        <p className="font-heading text-foreground font-medium">
           {rel.coach?.full_name || rel.coach?.email || 'Coach'}
         </p>
-        <p className="text-xs text-white/50">{rel.coach?.email}</p>
-        <Badge variant="outline" className="mt-1 uppercase tracking-wide text-[10px] border-primary/50 text-primary">
+        <p className="text-xs text-muted-foreground">{rel.coach?.email}</p>
+        <Badge variant="outline" className="mt-1 uppercase tracking-wide text-[10px] border-primary text-primary font-semibold">
           In attesa
         </Badge>
       </div>
@@ -114,19 +114,19 @@ export function CoachAccessDialog({ open, onOpenChange }: CoachAccessDialogProps
             <section className="space-y-4">
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-primary" />
-                <h3 className="text-sm font-semibold text-white">Inviti</h3>
+                <h3 className="text-sm font-semibold text-foreground">Inviti</h3>
               </div>
               
               {/* Inviti ricevuti da coach */}
               {pendingAsAthlete.length > 0 && (
                 <div className="space-y-3">
-                  <h4 className="text-xs uppercase tracking-wide text-white/60">Richieste ricevute</h4>
+                  <h4 className="text-xs uppercase tracking-wide text-muted-foreground">Richieste ricevute</h4>
                   {pendingAsAthlete.map((rel) => renderCoachCard(rel, (
                     <>
                       <Button size="sm" variant="outline" onClick={() => acceptInvite(rel.id)}>
                         Accetta
                       </Button>
-                      <Button size="sm" variant="ghost" className="text-red-400" onClick={() => declineInvite(rel.id)}>
+                      <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600" onClick={() => declineInvite(rel.id)}>
                         Rifiuta
                       </Button>
                     </>
@@ -137,12 +137,12 @@ export function CoachAccessDialog({ open, onOpenChange }: CoachAccessDialogProps
               {/* Inviti inviati come coach */}
               {pendingAsCoach.length > 0 && (
                 <div className="space-y-3">
-                  <h4 className="text-xs uppercase tracking-wide text-white/60">Inviti inviati</h4>
+                  <h4 className="text-xs uppercase tracking-wide text-muted-foreground">Inviti inviati</h4>
                   {pendingAsCoach.map((rel) => renderAthleteCard(rel, (
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="text-red-400"
+                      className="text-red-500 hover:text-red-600"
                       onClick={() => declineInvite(rel.id)}
                     >
                       Annulla
@@ -157,7 +157,7 @@ export function CoachAccessDialog({ open, onOpenChange }: CoachAccessDialogProps
           <section className="space-y-4">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-primary" />
-              <h3 className="text-sm font-semibold text-white">I Miei Atleti</h3>
+              <h3 className="text-sm font-semibold text-foreground">I Miei Atleti</h3>
             </div>
             
             {activeAthletes.length > 0 ? (
@@ -177,7 +177,7 @@ export function CoachAccessDialog({ open, onOpenChange }: CoachAccessDialogProps
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="text-red-400"
+                      className="text-red-500 hover:text-red-600"
                       onClick={() => revokeRelationship(rel.id)}
                     >
                       Rimuovi
@@ -186,15 +186,15 @@ export function CoachAccessDialog({ open, onOpenChange }: CoachAccessDialogProps
                 )))}
               </div>
             ) : (
-              <p className="text-sm text-white/50">Nessun atleta collegato. Invita il tuo primo atleta!</p>
+              <p className="text-sm text-muted-foreground">Nessun atleta collegato. Invita il tuo primo atleta!</p>
             )}
           </section>
 
           {/* Sezione Invita Atleta */}
-          <section className="space-y-4 pt-4 border-t border-white/10">
+          <section className="space-y-4 pt-4 border-t border-border">
             <div className="flex items-center gap-2">
               <UserPlus className="h-4 w-4 text-primary" />
-              <h3 className="text-sm font-semibold text-white">Invita un nuovo atleta</h3>
+              <h3 className="text-sm font-semibold text-foreground">Invita un nuovo atleta</h3>
             </div>
             <form onSubmit={handleInvite} className="grid gap-3">
               <div className="grid gap-2">
@@ -215,7 +215,7 @@ export function CoachAccessDialog({ open, onOpenChange }: CoachAccessDialogProps
           </section>
 
         </div>
-        {relationshipsLoading && <p className="text-xs text-white/60">Aggiornamento relazioni...</p>}
+        {relationshipsLoading && <p className="text-xs text-muted-foreground">Aggiornamento relazioni...</p>}
       </DialogContent>
     </Dialog>
   );
