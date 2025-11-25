@@ -179,7 +179,7 @@ function App() {
             {/* Profile controls - Fixed on right, responsive width */}
             <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
               <AccountControls onOpenCoachPanel={() => setCoachDialogOpen(true)} />
-              <UserSelector />
+              {!isAuthenticated && <UserSelector />}
             </div>
           </div>
         </div>
