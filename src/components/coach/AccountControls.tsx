@@ -69,7 +69,7 @@ export function AccountControls({ onOpenCoachPanel, compact }: AccountControlsPr
         variant={compact ? 'ghost' : 'outline'}
         size="sm"
         className={cn(
-          'text-white border-white/30 hover:bg-white/10',
+          'text-white border-white/40 bg-white/5 hover:bg-white/15 hover:text-white hover:border-white/60',
           compact && 'h-8 px-3',
           !compact && 'px-2 xl:px-3 text-xs xl:text-sm'
         )}
@@ -82,7 +82,7 @@ export function AccountControls({ onOpenCoachPanel, compact }: AccountControlsPr
         variant={compact ? 'ghost' : 'outline'}
         size="sm"
         className={cn(
-          'text-white border-white/30 hover:bg-white/10',
+          'text-white border-white/40 bg-white/5 hover:bg-white/15 hover:text-white hover:border-white/60',
           compact && 'h-8 px-3',
           !compact && 'px-2 xl:px-3 text-xs xl:text-sm'
         )}

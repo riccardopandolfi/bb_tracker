@@ -1,4 +1,5 @@
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Dumbbell, CheckCircle2, Filter, Clock } from 'lucide-react';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from './ui/chart';
@@ -32,6 +33,8 @@ export function HomeTab({ forceLanding = false, onExitLanding }: HomeTabProps) {
     setCurrentTab,
     getMuscleColor: resolveMuscleColor,
   } = useApp();
+  const { session } = useAuth();
+  const isAuthenticated = Boolean(session);
   const [weekRange, setWeekRange] = useState<'all' | 'last2' | 'last4'>('all');
   const [isMobile, setIsMobile] = useState(false);
 
@@ -67,7 +70,10 @@ export function HomeTab({ forceLanding = false, onExitLanding }: HomeTabProps) {
 
   // Get total programs count
   const totalPrograms = Object.keys(programs).length;
-  const shouldShowLanding = forceLanding || totalPrograms === 0;
+  // Landing solo per guest, mai per utenti autenticati
+  const shouldShowLanding = !isAuthenticated && (forceLanding || totalPrograms === 0);
+  // Per utenti autenticati senza programmi, mostriamo una schermata di onboarding
+  const shouldShowOnboarding = isAuthenticated && totalPrograms === 0;
 
   const handleStartProgramNavigation = () => {
     onExitLanding?.();
@@ -84,7 +90,34 @@ export function HomeTab({ forceLanding = false, onExitLanding }: HomeTabProps) {
   const getMuscleGradientColor = (muscle: string, modifier: number) =>
     adjustColor(getMuscleColorHex(muscle), modifier);
 
-  // Empty state when no programs exist or landing forced
+  // Onboarding per utenti autenticati senza programmi
+  if (shouldShowOnboarding) {
+    return (
+      <div className="min-h-[80vh] flex flex-col items-center justify-center px-4">
+        <div className="max-w-md text-center space-y-6">
+          <div className="h-20 w-20 rounded-2xl lime-gradient flex items-center justify-center mx-auto shadow-lg shadow-primary/30">
+            <Dumbbell className="h-10 w-10 text-black" />
+          </div>
+          <h1 className="text-2xl md:text-3xl font-bold font-heading">
+            Benvenuto! 🎉
+          </h1>
+          <p className="text-muted-foreground text-base md:text-lg">
+            Crea il tuo primo programma di allenamento per iniziare a tracciare i tuoi progressi.
+          </p>
+          <Button 
+            onClick={handleStartProgramNavigation} 
+            size="lg"
+            className="lime-gradient text-black font-bold hover:opacity-90 transition-opacity shadow-lg shadow-primary/50"
+          >
+            <Dumbbell className="mr-2 h-5 w-5" />
+            Crea Programma
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state when no programs exist or landing forced (solo per guest)
   if (shouldShowLanding) {
     return (
       <div
@@ -399,22 +432,25 @@ export function HomeTab({ forceLanding = false, onExitLanding }: HomeTabProps) {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className="flex justify-end">
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="demo-mode"
-            checked={hasDemoData()}
-            onCheckedChange={(checked) => {
-              if (checked) {
-                loadDemoData();
-              } else {
-                clearDemoData();
-              }
-            }}
-          />
-          <Label htmlFor="demo-mode" className="text-sm">Dati Demo</Label>
+      {/* Switch Dati Demo solo per guest */}
+      {!isAuthenticated && (
+        <div className="flex justify-end">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="demo-mode"
+              checked={hasDemoData()}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  loadDemoData();
+                } else {
+                  clearDemoData();
+                }
+              }}
+            />
+            <Label htmlFor="demo-mode" className="text-sm">Dati Demo</Label>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Top Grid */}
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 w-full">

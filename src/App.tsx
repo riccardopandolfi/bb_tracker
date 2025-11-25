@@ -37,7 +37,8 @@ function App() {
   const [showLandingPreview, setShowLandingPreview] = useState(false);
   const isAuthenticated = Boolean(session);
   const canAccessApp = isAuthenticated || guestUnlocked;
-  const landingActive = !hasPrograms || showLandingPreview;
+  // Landing attiva solo per guest senza programmi, MAI per utenti autenticati
+  const landingActive = !isAuthenticated && (!hasPrograms || showLandingPreview);
 
   useEffect(() => {
     if (!hasPrograms && currentTab !== 'home' && currentTab !== 'library') {
@@ -98,8 +99,8 @@ function App() {
         landingActive ? "bg-black text-foreground" : "bg-background text-foreground"
       )}
     >
-      {/* Header with Gradient Accent Strip */}
-      {hasPrograms && !showLandingPreview && (
+      {/* Header with Gradient Accent Strip - sempre visibile per utenti autenticati */}
+      {(hasPrograms || isAuthenticated) && !landingActive && (
       <header className="sticky top-0 z-40 w-full">
         {/* Lime gradient strip - brand signature */}
         <div className="h-1 w-full lime-gradient" />
@@ -127,7 +128,7 @@ function App() {
             </button>
 
             {/* Desktop Navigation - Centered between logo and profile, with flexible width */}
-            <nav className="hidden lg:flex items-center justify-center gap-1 flex-1 min-w-0 px-4">
+            <nav className="hidden xl:flex items-center justify-center gap-1 flex-1 min-w-0 px-4">
             <NavigationMenuLink
               active={currentTab === 'home'}
               onClick={() => setCurrentTab('home')}
@@ -184,11 +185,6 @@ function App() {
         </div>
       </header>
       )}
-      {!hasPrograms && isAuthenticated && (
-        <div className="fixed top-4 right-4 z-40">
-          <AccountControls compact onOpenCoachPanel={() => setCoachDialogOpen(true)} />
-        </div>
-      )}
 
       {/* Main Content */}
       <main className={landingActive ? "w-full h-[100dvh] relative z-10" : "w-full py-6 pb-24 md:pb-8 relative z-10"}>
@@ -217,8 +213,8 @@ function App() {
         </div>
       </main>
 
-      {/* Mobile Navigation - Only show if programs exist */}
-      {hasPrograms && !showLandingPreview && (
+      {/* Mobile Navigation - Visibile per utenti autenticati o con programmi */}
+      {(hasPrograms || isAuthenticated) && !landingActive && (
         <MobileNav currentTab={currentTab} setCurrentTab={setCurrentTab} hasPrograms={hasPrograms} />
       )}
     </div>

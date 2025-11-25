@@ -19,7 +19,7 @@ export function MobileNav({ currentTab, setCurrentTab, hasPrograms }: MobileNavP
     ];
 
     return (
-        <div className="fixed bottom-4 left-4 right-4 z-50 lg:hidden">
+        <div className="fixed bottom-4 left-4 right-4 z-50 xl:hidden">
             <div className="bg-card/95 backdrop-blur-xl rounded-2xl p-2 flex justify-between items-center shadow-monetra-xl border border-border/50">
                 {tabs.map((tab) => {
                     const isActive = currentTab === tab.id;
