@@ -9,8 +9,8 @@ const RELATIONSHIP_SELECT = `
   permissions,
   created_at,
   updated_at,
-  coach:profiles!coaching_relationships_coach_id_fkey(id, full_name, email, avatar_url, role),
-  athlete:profiles!coaching_relationships_athlete_id_fkey(id, full_name, email, avatar_url, role)
+  coach:profiles!coaching_relationships_coach_profile_fkey(id, full_name, email, avatar_url, role),
+  athlete:profiles!coaching_relationships_athlete_profile_fkey(id, full_name, email, avatar_url, role)
 `;
 
 export async function fetchRelationships(userId: string): Promise<CoachingRelationship[]> {
