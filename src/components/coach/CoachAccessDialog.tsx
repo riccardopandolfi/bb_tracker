@@ -86,7 +86,7 @@ export function CoachAccessDialog({ open, onOpenChange }: CoachAccessDialogProps
           {rel.coach?.full_name || rel.coach?.email || 'Coach'}
         </p>
         <p className="text-xs text-muted-foreground">{rel.coach?.email}</p>
-        <Badge variant="outline" className="mt-1 uppercase tracking-wide text-[10px] border-primary text-primary font-semibold">
+        <Badge variant="outline" className="mt-1 uppercase tracking-wide text-[10px] border-foreground/30 text-foreground font-semibold">
           In attesa
         </Badge>
       </div>
