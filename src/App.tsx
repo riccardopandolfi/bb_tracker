@@ -115,7 +115,7 @@ function App() {
             >
               <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg lime-gradient flex items-center justify-center flex-shrink-0 transition-transform group-active:scale-95">
                 <Dumbbell className="h-4 w-4 sm:h-5 sm:w-5 text-black" />
-              </div>
+            </div>
               <span className="text-left">
                 <span className="text-[10px] sm:text-xs md:text-sm font-bold tracking-wider md:tracking-widest text-white font-brand uppercase leading-[1.2] block">
                   NOBODY CARES
@@ -141,7 +141,7 @@ function App() {
                 icon={<BookOpen className="w-4 h-4" />}
               >
                 Libreria
-              </NavigationMenuLink>
+            </NavigationMenuLink>
             <NavigationMenuLink
               active={currentTab === 'programs'}
               onClick={() => setCurrentTab('programs')}

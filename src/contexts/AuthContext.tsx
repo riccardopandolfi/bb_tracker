@@ -199,8 +199,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(error.message);
     }
 
+    // Il profilo viene creato automaticamente dal trigger del database
+    // Attendiamo un attimo e poi verifichiamo/aggiorniamo se necessario
     if (data.user) {
-      await ensureProfileForUser(data.user, fullName);
+      try {
+        await ensureProfileForUser(data.user, fullName);
+      } catch (err) {
+        // Se c'è un errore nel profilo, logghiamolo ma non blocchiamo la registrazione
+        console.error('Errore nel controllo del profilo dopo la registrazione:', err);
+      }
     }
   };
 

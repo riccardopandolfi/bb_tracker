@@ -117,7 +117,7 @@ export function HomeTab({ forceLanding = false, onExitLanding }: HomeTabProps) {
               filter={true}
               textColor="#C4FF39"
             />
-          </div>
+            </div>
           
           <p className="text-white text-base md:text-xl max-w-2xl mt-6 text-center mb-8 font-heading">
               Inizia creando il tuo primo programma di allenamento per sbloccare tutte le funzionalità dell'app.

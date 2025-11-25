@@ -40,7 +40,19 @@ export async function getProfileByEmail(email: string): Promise<Profile | null> 
 }
 
 export async function ensureProfileForUser(user: SupabaseUser, fullNameOverride?: string): Promise<Profile> {
-  const existing = await getProfileById(user.id);
+  // Attendi che il profilo venga creato dal trigger (può richiedere qualche millisecondo)
+  let existing = await getProfileById(user.id);
+  
+  // Se il profilo non esiste ancora, attendi e riprova (il trigger lo sta creando)
+  if (!existing) {
+    let retries = 5;
+    while (!existing && retries > 0) {
+      await new Promise(resolve => setTimeout(resolve, 500)); // Attendi 500ms
+      existing = await getProfileById(user.id);
+      retries--;
+    }
+  }
+
   const payload = {
     id: user.id,
     email: normalizeEmail(user.email),
@@ -71,6 +83,7 @@ export async function ensureProfileForUser(user: SupabaseUser, fullNameOverride?
     return data;
   }
 
+  // Se dopo i retry il profilo non esiste, prova a crearlo manualmente come fallback
   const { data, error } = await supabase
     .from('profiles')
     .insert({
