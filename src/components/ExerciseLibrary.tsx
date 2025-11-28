@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Exercise, MuscleDistribution, CARDIO_EQUIPMENT, CardioEquipment, CustomTechnique, TechniqueParameter } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Button } from './ui/button';
@@ -12,9 +13,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Textarea } from './ui/textarea';
 import { AnimatePresence, motion } from 'framer-motion';
 import { BookOpen } from 'lucide-react';
+import { VideoLibrary } from './video/VideoLibrary';
 
 export function ExerciseLibrary() {
   const { exercises, addExercise, updateExercise, deleteExercise, muscleGroups, addMuscleGroup, updateMuscleGroupColor, deleteMuscleGroup, getMuscleColor, customTechniques, addCustomTechnique, deleteCustomTechnique } = useApp();
+  const { session } = useAuth();
+  const isAuthenticated = Boolean(session);
   const [newMuscleGroup, setNewMuscleGroup] = useState('');
   const [newMuscleColor, setNewMuscleColor] = useState('#6b7280'); // Default gray
   const [showMuscleDialog, setShowMuscleDialog] = useState(false);
@@ -434,6 +438,13 @@ export function ExerciseLibrary() {
               </motion.div>
             ))}
           </AnimatePresence>
+        </div>
+      )}
+
+      {/* Video Library - Solo per utenti autenticati */}
+      {isAuthenticated && (
+        <div className="mt-8 pt-8 border-t">
+          <VideoLibrary />
         </div>
       )}
     </div>

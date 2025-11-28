@@ -4,12 +4,14 @@ import { Button } from '../ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
-import { ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { ChevronDown, ChevronUp, Pencil, Trash2, Video } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { getExerciseBlocks } from '@/lib/exerciseUtils';
 import { calculateBlockTargetReps } from '@/lib/calculations';
 import { adjustColor, getContrastTextColor } from '@/lib/colorUtils';
+import { countVideosForSession } from '@/lib/videoService';
 
 interface LoggedSessionCardProps {
   session: LoggedSession;
@@ -29,9 +31,19 @@ export function LoggedSessionCard({
   onDelete,
 }: LoggedSessionCardProps) {
   const [showBlockSelector, setShowBlockSelector] = useState(false);
+  const [videoCount, setVideoCount] = useState(0);
   const { getCurrentWeeks, exercises, getMuscleColor: resolveMuscleColor } = useApp();
+  const { session: authSession } = useAuth();
   const weeks = getCurrentWeeks();
   const week = weeks[session.weekNum];
+  const isAuthenticated = Boolean(authSession);
+  
+  // Carica conteggio video per la sessione
+  useEffect(() => {
+    if (isAuthenticated && session.id) {
+      countVideosForSession(session.id).then(setVideoCount);
+    }
+  }, [session.id, isAuthenticated]);
 
   // Funzione per ottenere il blocco originale dalla scheda di allenamento
   const getOriginalBlock = (blockSession: LoggedSession) => {
@@ -620,6 +632,21 @@ export function LoggedSessionCard({
                   )}
                 </Button>
               </CollapsibleTrigger>
+              {/* Video indicator */}
+              {isAuthenticated && videoCount > 0 && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleEditClick} 
+                  className="h-8 w-8 sm:h-10 sm:w-10 relative"
+                  title={`${videoCount} video`}
+                >
+                  <Video className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-[10px] text-black font-bold rounded-full flex items-center justify-center">
+                    {videoCount}
+                  </span>
+                </Button>
+              )}
               <Button variant="ghost" size="icon" onClick={handleEditClick} className="h-8 w-8 sm:h-10 sm:w-10">
                 <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-500" />
               </Button>

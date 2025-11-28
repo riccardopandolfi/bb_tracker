@@ -309,6 +309,28 @@ export interface CoachingRelationship {
   athlete?: Profile | null;
 }
 
+// Video delle esecuzioni
+export interface ExerciseVideo {
+  id: string;
+  user_id: string;
+  exercise_name: string;
+  technique: string;
+  sets?: number;
+  reps?: string;
+  load_kg?: number;
+  rpe?: number;
+  storage_path: string;
+  thumbnail_path?: string;
+  file_size_bytes?: number;
+  duration_seconds?: number;
+  logged_session_id?: number;
+  program_name?: string;
+  week_num?: number;
+  notes?: string;
+  recorded_at: string;
+  created_at: string;
+}
+
 // Volume calculations
 export interface VolumeByMuscle {
   [muscle: string]: {

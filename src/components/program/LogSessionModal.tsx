@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { LoggedSet, LoggedSession } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { LoggedSet, LoggedSession, ExerciseVideo } from '@/types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Card } from '../ui/card';
-import { Plus, Trash2, CheckCircle } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
+import { Plus, Trash2, CheckCircle, Video, ChevronDown, X } from 'lucide-react';
 import { parseSchema, calculateBlockTargetReps, calculateSessionMetrics } from '@/lib/calculations';
 import { getExerciseBlocks } from '@/lib/exerciseUtils';
+import { VideoUploader } from '../video/VideoUploader';
+import { linkVideoToSession } from '@/lib/videoService';
 
 interface LogSessionModalProps {
   open: boolean;
@@ -26,7 +30,8 @@ export function LogSessionModal({
   exerciseIndex,
   blockIndex,
 }: LogSessionModalProps) {
-  const { currentWeek, getCurrentWeeks, currentProgramId, addLoggedSession } = useApp();
+  const { currentWeek, getCurrentWeeks, currentProgramId, programs, addLoggedSession } = useApp();
+  const { session } = useAuth();
   const weeks = getCurrentWeeks();
   const week = weeks[currentWeek];
   const day = week?.days[dayIndex];
@@ -39,12 +44,19 @@ export function LogSessionModal({
 
   const [tempLogSets, setTempLogSets] = useState<LoggedSet[]>([]);
   const [sessionNotes, setSessionNotes] = useState<string>('');
+  const [pendingVideos, setPendingVideos] = useState<ExerciseVideo[]>([]);
+  const [showVideoUploader, setShowVideoUploader] = useState(false);
+  
+  // Controlla se l'utente è autenticato (video disponibili solo per utenti autenticati)
+  const isAuthenticated = Boolean(session);
 
   useEffect(() => {
     if (open && exercise && block) {
       // Initialize temp log sets
       initializeTempSets();
       setSessionNotes('');
+      setPendingVideos([]);
+      setShowVideoUploader(false);
     }
   }, [open, exercise, block]);
 
@@ -152,7 +164,7 @@ export function LogSessionModal({
     setTempLogSets(tempLogSets.filter((s) => s.setNum !== setNum));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!exercise || !block) return;
     if (currentProgramId == null) {
       alert('Seleziona un programma prima di loggare una sessione.');
@@ -165,8 +177,9 @@ export function LogSessionModal({
     const targetReps = calculateBlockTargetReps(block);
     const metrics = calculateSessionMetrics(tempLogSets);
 
-    const session: LoggedSession = {
-      id: Date.now(),
+    const sessionId = Date.now();
+    const loggedSession: LoggedSession = {
+      id: sessionId,
       programId: currentProgramId,
       date: new Date().toISOString().split('T')[0],
       weekNum: currentWeek,
@@ -193,9 +206,29 @@ export function LogSessionModal({
       notes: sessionNotes.trim() || undefined,
     };
 
-    addLoggedSession(session);
+    addLoggedSession(loggedSession);
+
+    // Collega i video pendenti alla sessione
+    if (pendingVideos.length > 0) {
+      for (const video of pendingVideos) {
+        await linkVideoToSession(video.id, sessionId);
+      }
+    }
+
     onOpenChange(false);
   };
+  
+  const handleVideoUploaded = (video: ExerciseVideo) => {
+    setPendingVideos((prev) => [...prev, video]);
+    setShowVideoUploader(false);
+  };
+  
+  const handleRemoveVideo = (videoId: string) => {
+    setPendingVideos((prev) => prev.filter((v) => v.id !== videoId));
+  };
+  
+  // Ottieni nome programma per i metadati video
+  const programName = currentProgramId != null ? programs[currentProgramId]?.name : undefined;
 
   if (!exercise || !block) return null;
 
@@ -309,6 +342,79 @@ export function LogSessionModal({
               className="min-h-[80px]"
             />
           </div>
+
+          {/* Video Section - Solo per utenti autenticati */}
+          {isAuthenticated && (
+            <Collapsible open={showVideoUploader} onOpenChange={setShowVideoUploader}>
+              <div className="border rounded-lg">
+                <CollapsibleTrigger asChild>
+                  <button className="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <Video className="w-4 h-4 text-gray-500" />
+                      <span className="text-sm font-medium">
+                        Video Esecuzione
+                        {pendingVideos.length > 0 && (
+                          <span className="ml-2 px-1.5 py-0.5 bg-primary/20 text-primary text-xs rounded">
+                            {pendingVideos.length}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showVideoUploader ? 'rotate-180' : ''}`} />
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="p-3 pt-0 space-y-3">
+                    {/* Video già caricati */}
+                    {pendingVideos.length > 0 && (
+                      <div className="space-y-2">
+                        {pendingVideos.map((video) => (
+                          <div
+                            key={video.id}
+                            className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Video className="w-4 h-4 text-primary" />
+                              <span className="text-sm text-gray-700 truncate max-w-[200px]">
+                                Video caricato
+                              </span>
+                              {video.file_size_bytes && (
+                                <span className="text-xs text-gray-400">
+                                  {(video.file_size_bytes / (1024 * 1024)).toFixed(1)} MB
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => handleRemoveVideo(video.id)}
+                              className="p-1 hover:bg-gray-200 rounded"
+                            >
+                              <X className="w-4 h-4 text-gray-500" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Uploader */}
+                    <VideoUploader
+                      defaultMetadata={{
+                        exercise_name: exercise?.exerciseName || '',
+                        technique: block?.technique || 'Normale',
+                        sets: block?.sets,
+                        reps: block?.repsBase?.toString() || block?.techniqueSchema,
+                        load_kg: block?.targetLoads?.[0] ? parseFloat(block.targetLoads[0]) : undefined,
+                        rpe: block?.targetRPE,
+                        program_name: programName,
+                        week_num: currentWeek,
+                      }}
+                      onUploadComplete={handleVideoUploaded}
+                      compact
+                    />
+                  </div>
+                </CollapsibleContent>
+              </div>
+            </Collapsible>
+          )}
         </div>
 
         <DialogFooter>

@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { LoggedSet, LoggedSession } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { LoggedSet, LoggedSession, ExerciseVideo } from '@/types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Card } from '../ui/card';
-import { Plus, Trash2, CheckCircle } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
+import { Plus, Trash2, CheckCircle, Video, ChevronDown, X, Loader2 } from 'lucide-react';
 import { calculateSessionMetrics, calculateBlockTargetReps } from '@/lib/calculations';
 import { getExerciseBlocks } from '@/lib/exerciseUtils';
+import { VideoUploader } from '../video/VideoUploader';
+import { VideoPlayer } from '../video/VideoPlayer';
+import { getVideosForSession, linkVideoToSession, deleteVideo } from '@/lib/videoService';
 
 interface EditSessionModalProps {
   open: boolean;
@@ -23,9 +28,18 @@ export function EditSessionModal({
   session,
 }: EditSessionModalProps) {
   const { updateLoggedSession, getCurrentWeeks, programs } = useApp();
+  const { session: authSession } = useAuth();
   const [tempLogSets, setTempLogSets] = useState<LoggedSet[]>([]);
   const [sessionNotes, setSessionNotes] = useState<string>('');
   const [blockNotes, setBlockNotes] = useState<string>('');
+  
+  // Video state
+  const [sessionVideos, setSessionVideos] = useState<ExerciseVideo[]>([]);
+  const [loadingVideos, setLoadingVideos] = useState(false);
+  const [showVideoSection, setShowVideoSection] = useState(false);
+  const [pendingVideos, setPendingVideos] = useState<ExerciseVideo[]>([]);
+  
+  const isAuthenticated = Boolean(authSession);
 
   useEffect(() => {
     if (open && session) {
@@ -34,6 +48,10 @@ export function EditSessionModal({
 
       // Initialize session notes
       setSessionNotes(session.notes || '');
+      
+      // Reset video state
+      setPendingVideos([]);
+      setShowVideoSection(false);
 
       // Fetch block notes from program
       const program = programs[session.programId];
@@ -55,8 +73,26 @@ export function EditSessionModal({
           }
         }
       }
+      
+      // Load existing videos for this session
+      if (isAuthenticated) {
+        loadSessionVideos();
+      }
     }
-  }, [open, session, programs]);
+  }, [open, session, programs, isAuthenticated]);
+  
+  const loadSessionVideos = async () => {
+    if (!session) return;
+    setLoadingVideos(true);
+    try {
+      const videos = await getVideosForSession(session.id);
+      setSessionVideos(videos);
+    } catch (err) {
+      console.error('Errore caricamento video:', err);
+    } finally {
+      setLoadingVideos(false);
+    }
+  };
 
   const handleUpdateSet = (index: number, field: keyof LoggedSet, value: string) => {
     const updated = [...tempLogSets];
@@ -104,7 +140,7 @@ export function EditSessionModal({
     setTempLogSets(tempLogSets.filter((s) => s.setNum !== setNum));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const metrics = calculateSessionMetrics(tempLogSets);
 
     // Ricalcola targetReps se è 0 (per sessioni vecchie)
@@ -138,8 +174,34 @@ export function EditSessionModal({
     };
 
     updateLoggedSession(updatedSession);
+    
+    // Collega i nuovi video alla sessione
+    if (pendingVideos.length > 0) {
+      for (const video of pendingVideos) {
+        await linkVideoToSession(video.id, session.id);
+      }
+    }
+
     onOpenChange(false);
   };
+  
+  const handleVideoUploaded = (video: ExerciseVideo) => {
+    setPendingVideos((prev) => [...prev, video]);
+  };
+  
+  const handleRemovePendingVideo = (videoId: string) => {
+    setPendingVideos((prev) => prev.filter((v) => v.id !== videoId));
+  };
+  
+  const handleDeleteSessionVideo = async (videoId: string) => {
+    const success = await deleteVideo(videoId);
+    if (success) {
+      setSessionVideos((prev) => prev.filter((v) => v.id !== videoId));
+    }
+  };
+  
+  // Ottieni il programma per i metadati
+  const program = session ? programs[session.programId] : undefined;
 
   // Group sets by setNum
   const setGroups = tempLogSets.reduce((acc, set) => {
@@ -260,6 +322,105 @@ export function EditSessionModal({
               className="min-h-[80px]"
             />
           </div>
+          
+          {/* Video Section - Solo per utenti autenticati */}
+          {isAuthenticated && (
+            <Collapsible open={showVideoSection} onOpenChange={setShowVideoSection}>
+              <div className="border rounded-lg">
+                <CollapsibleTrigger asChild>
+                  <button className="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <Video className="w-4 h-4 text-gray-500" />
+                      <span className="text-sm font-medium">
+                        Video Esecuzione
+                        {(sessionVideos.length > 0 || pendingVideos.length > 0) && (
+                          <span className="ml-2 px-1.5 py-0.5 bg-primary/20 text-primary text-xs rounded">
+                            {sessionVideos.length + pendingVideos.length}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showVideoSection ? 'rotate-180' : ''}`} />
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="p-3 pt-0 space-y-3">
+                    {/* Loading */}
+                    {loadingVideos && (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                      </div>
+                    )}
+                    
+                    {/* Video esistenti */}
+                    {!loadingVideos && sessionVideos.length > 0 && (
+                      <div className="space-y-3">
+                        <Label className="text-xs text-gray-500">Video salvati</Label>
+                        {sessionVideos.map((video) => (
+                          <div key={video.id} className="border rounded-lg overflow-hidden">
+                            <VideoPlayer
+                              video={video}
+                              onDelete={() => handleDeleteSessionVideo(video.id)}
+                              showControls
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Video pendenti (appena caricati) */}
+                    {pendingVideos.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="text-xs text-gray-500">Nuovi video da salvare</Label>
+                        {pendingVideos.map((video) => (
+                          <div
+                            key={video.id}
+                            className="flex items-center justify-between p-2 bg-green-50 border border-green-200 rounded-lg"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Video className="w-4 h-4 text-green-600" />
+                              <span className="text-sm text-green-700">
+                                Nuovo video
+                              </span>
+                              {video.file_size_bytes && (
+                                <span className="text-xs text-green-500">
+                                  {(video.file_size_bytes / (1024 * 1024)).toFixed(1)} MB
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => handleRemovePendingVideo(video.id)}
+                              className="p-1 hover:bg-green-100 rounded"
+                            >
+                              <X className="w-4 h-4 text-green-600" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Uploader per nuovi video */}
+                    <div className="pt-2 border-t">
+                      <Label className="text-xs text-gray-500 mb-2 block">Aggiungi video</Label>
+                      <VideoUploader
+                        defaultMetadata={{
+                          exercise_name: session.exercise,
+                          technique: session.technique,
+                          reps: session.techniqueSchema || session.repRange,
+                          rpe: session.targetRPE,
+                          program_name: program?.name,
+                          week_num: session.weekNum,
+                          logged_session_id: session.id,
+                        }}
+                        onUploadComplete={handleVideoUploaded}
+                        compact
+                      />
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </div>
+            </Collapsible>
+          )}
         </div>
 
         <DialogFooter>
