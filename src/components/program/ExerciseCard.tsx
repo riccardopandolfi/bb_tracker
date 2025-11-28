@@ -1,15 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ProgramExercise, Exercise, ExerciseBlock } from '@/types';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
-import { Settings, Trash2, ClipboardList, Clock, BarChart3, Pencil } from 'lucide-react';
+import { Settings, Trash2, ClipboardList, Clock, BarChart3, Pencil, Video } from 'lucide-react';
 import { ConfigureExerciseModal } from './ConfigureExerciseModal';
 import { ExerciseHistoryDialog } from './ExerciseHistoryDialog';
 import { getExerciseBlocks } from '@/lib/exerciseUtils';
 import { REP_RANGES } from '@/types';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { adjustColor, getContrastTextColor } from '@/lib/colorUtils';
+import { searchVideos } from '@/lib/videoService';
 
 interface ExerciseCardProps {
   exercise: ProgramExercise;
@@ -43,11 +45,23 @@ export function ExerciseCard({
   onLog,
 }: ExerciseCardProps) {
   const { getMuscleColor: resolveMuscleColor, currentProgramId } = useApp();
+  const { session } = useAuth();
   const [showBlockSelector, setShowBlockSelector] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
   const [editBlockIndex, setEditBlockIndex] = useState<number | null>(null);
+  const [videoCount, setVideoCount] = useState(0);
   const blocks = getExerciseBlocks(exercise);
+  const isAuthenticated = Boolean(session);
+  
+  // Carica conteggio video per questo esercizio
+  useEffect(() => {
+    if (isAuthenticated && exercise.exerciseName) {
+      searchVideos({ exercise_name: exercise.exerciseName })
+        .then((videos) => setVideoCount(videos.length))
+        .catch(() => setVideoCount(0));
+    }
+  }, [isAuthenticated, exercise.exerciseName]);
 
   const handleLogClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -130,6 +144,13 @@ export function ExerciseCard({
                     Cardio
                   </span>
                   <span className="text-sm text-muted-foreground">#{exerciseIndex + 1}</span>
+                  {/* Indicatore video */}
+                  {isAuthenticated && videoCount > 0 && (
+                    <span className="flex items-center gap-1 text-xs text-primary" title={`${videoCount} video`}>
+                      <Video className="w-3.5 h-3.5" />
+                      {videoCount}
+                    </span>
+                  )}
                 </div>
                 <h3 className="text-lg font-semibold mb-3">{exercise.exerciseName}</h3>
                 <div className="space-y-3">
@@ -327,6 +348,13 @@ export function ExerciseCard({
                   </span>
                 )}
                 <span className="text-sm text-muted-foreground">#{exerciseIndex + 1}</span>
+                {/* Indicatore video */}
+                {isAuthenticated && videoCount > 0 && (
+                  <span className="flex items-center gap-1 text-xs text-primary" title={`${videoCount} video`}>
+                    <Video className="w-3.5 h-3.5" />
+                    {videoCount}
+                  </span>
+                )}
               </div>
               <h3 className="text-lg font-semibold mb-3">{exercise.exerciseName}</h3>
 

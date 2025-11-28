@@ -4,8 +4,8 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Video, Search, Filter, Loader2, Play, Calendar, Dumbbell, RefreshCw } from 'lucide-react';
-import { searchVideos, getUniqueTechniques, getUniqueExerciseNames, getVideoUrl } from '@/lib/videoService';
+import { Video, Search, Filter, Loader2, Play, Calendar, Dumbbell, RefreshCw, Trash2 } from 'lucide-react';
+import { searchVideos, getUniqueTechniques, getUniqueExerciseNames, getVideoUrl, deleteVideo } from '@/lib/videoService';
 import { VideoPlayerDialog } from './VideoPlayer';
 import { ExerciseVideo } from '@/types';
 
@@ -31,6 +31,7 @@ export function VideoLibrary({
   const [exerciseNames, setExerciseNames] = useState<string[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<ExerciseVideo | null>(null);
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Carica i filtri disponibili
   useEffect(() => {
@@ -85,6 +86,25 @@ export function VideoLibrary({
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     loadVideos();
+  };
+  
+  const handleDeleteVideo = async (e: React.MouseEvent, videoId: string) => {
+    e.stopPropagation(); // Previene l'apertura del modal
+    if (!confirm('Eliminare questo video? L\'azione non può essere annullata.')) {
+      return;
+    }
+    
+    setDeletingId(videoId);
+    try {
+      const success = await deleteVideo(videoId);
+      if (success) {
+        setVideos((prev) => prev.filter((v) => v.id !== videoId));
+      }
+    } catch (err) {
+      console.error('Errore eliminazione video:', err);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const formatDate = (dateStr: string) => {
@@ -241,10 +261,25 @@ export function VideoLibrary({
 
               {/* Info */}
               <CardContent className="p-3">
-                <h3 className="font-medium text-sm line-clamp-1 mb-1">
-                  {video.exercise_name}
-                </h3>
-                <div className="flex items-center gap-2 text-xs text-gray-500">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-medium text-sm line-clamp-1 flex-1">
+                    {video.exercise_name}
+                  </h3>
+                  {/* Pulsante elimina */}
+                  <button
+                    onClick={(e) => handleDeleteVideo(e, video.id)}
+                    disabled={deletingId === video.id}
+                    className="p-1 hover:bg-red-50 rounded transition-colors flex-shrink-0"
+                    title="Elimina video"
+                  >
+                    {deletingId === video.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                    ) : (
+                      <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-500" />
+                    )}
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
                   <span className="px-1.5 py-0.5 bg-gray-100 rounded">
                     {video.technique}
                   </span>
