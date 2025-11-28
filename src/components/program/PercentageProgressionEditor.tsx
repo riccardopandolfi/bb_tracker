@@ -123,23 +123,23 @@ export function PercentageProgressionEditor({
   return (
     <div className={cn('space-y-4', className)}>
       {/* Header con 1RM */}
-      <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-4 border border-primary/20">
-        <div className="flex items-center gap-3 mb-3">
-          <Calculator className="h-5 w-5 text-primary" />
-          <Label className="text-base font-semibold text-foreground">Massimale (1RM)</Label>
+      <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-3 border border-primary/20">
+        <div className="flex items-center gap-2 mb-2">
+          <Calculator className="h-4 w-4 text-foreground" />
+          <Label className="text-sm font-semibold text-foreground">Massimale (1RM)</Label>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Input
             type="number"
             value={currentProgression.oneRepMax || ''}
             onChange={(e) => updateOneRepMax(e.target.value)}
             placeholder="100"
-            className="w-32 text-lg font-bold"
+            className="w-28 h-9 text-sm font-semibold"
             min={1}
             max={500}
             step={0.5}
           />
-          <span className="text-muted-foreground font-medium">kg</span>
+          <span className="text-sm text-muted-foreground">kg</span>
         </div>
       </div>
 
@@ -176,7 +176,7 @@ export function PercentageProgressionEditor({
                     ) : (
                       <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     )}
-                    <span className="text-primary">Week {week.weekNumber}</span>
+                    <span className="text-foreground">Week {week.weekNumber}</span>
                     <span className="text-muted-foreground font-normal text-xs">
                       ({week.blocks.length} {week.blocks.length === 1 ? 'blocco' : 'blocchi'})
                     </span>
@@ -273,7 +273,7 @@ export function PercentageProgressionEditor({
                       {currentProgression.oneRepMax > 0 && (
                         <div className="flex items-center justify-between pt-2 border-t border-border/50">
                           <span className="text-xs text-muted-foreground">Carico calcolato:</span>
-                          <span className="text-sm font-bold text-primary">
+                          <span className="text-sm font-bold text-foreground">
                             {calculateLoadFromPercentage(currentProgression.oneRepMax, block.percentage)} kg
                           </span>
                         </div>
@@ -300,19 +300,21 @@ export function PercentageProgressionEditor({
       {/* Schema Preview */}
       <div className="bg-muted/50 rounded-lg p-4 space-y-2">
         <Label className="text-xs font-medium text-muted-foreground">Preview Schema</Label>
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           {currentProgression.weeks
             .sort((a, b) => a.weekNumber - b.weekNumber)
             .map((week) => (
-              <div key={week.weekNumber} className="text-sm">
-                <span className="font-semibold text-primary">W{week.weekNumber}:</span>{' '}
+              <div key={week.weekNumber} className="text-sm flex items-center gap-2">
+                <span className="font-semibold text-foreground bg-gray-200 px-1.5 py-0.5 rounded text-xs">
+                  W{week.weekNumber}
+                </span>
                 <span className="text-foreground">
                   {week.blocks
                     .map((b) => `${b.sets}x${b.reps}@${b.percentage}%`)
                     .join(' + ')}
                 </span>
                 {currentProgression.oneRepMax > 0 && (
-                  <span className="text-muted-foreground ml-2">
+                  <span className="text-muted-foreground">
                     ({week.blocks
                       .map((b) => `${calculateLoadFromPercentage(currentProgression.oneRepMax, b.percentage)}kg`)
                       .join(', ')})
