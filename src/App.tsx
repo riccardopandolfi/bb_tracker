@@ -41,7 +41,8 @@ function App() {
   const landingActive = !isAuthenticated && (!hasPrograms || showLandingPreview);
 
   useEffect(() => {
-    if (!hasPrograms && currentTab !== 'home' && currentTab !== 'library') {
+    // Permetti home, library e programs anche senza programmi (per poterne creare uno)
+    if (!hasPrograms && currentTab !== 'home' && currentTab !== 'library' && currentTab !== 'programs') {
       setCurrentTab('home');
     }
   }, [hasPrograms, currentTab, setCurrentTab]);
