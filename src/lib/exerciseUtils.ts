@@ -223,7 +223,7 @@ export function applyProgressionToWeeks(
         repsBase: blockConfig.reps.toString(),
         repRange: blockConfig.reps <= 5 ? '1-5' : blockConfig.reps <= 8 ? '6-8' : '8-12',
         targetLoads: Array(blockConfig.sets).fill(load.toString()),
-        targetRPE: 8,
+        targetRPE: weekConfig.targetRPE ?? 8,
         technique: 'Progressione a %',
         techniqueSchema: `${blockConfig.sets}x${blockConfig.reps}@${blockConfig.percentage}%`,
         techniqueParams: {
@@ -231,9 +231,9 @@ export function applyProgressionToWeeks(
           percentage: blockConfig.percentage,
           percentageProgression: progression,
         },
-        coefficient: 1.0,
-        rest: 180,
-        blockRest: blockIdx < weekConfig.blocks.length - 1 ? 180 : undefined,
+        coefficient: weekConfig.coefficient ?? 1.0,
+        rest: weekConfig.rest ?? 180,
+        blockRest: blockIdx < weekConfig.blocks.length - 1 ? (weekConfig.rest ?? 180) : undefined,
         percentageProgression: progression,
       };
     });
@@ -256,6 +256,9 @@ export function createDefaultProgression(): PercentageProgression {
         blocks: [
           { sets: 4, reps: 6, percentage: 70 },
         ],
+        coefficient: 1.0,
+        targetRPE: 8,
+        rest: 180,
       },
     ],
   };

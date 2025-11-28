@@ -42,6 +42,7 @@ interface AppContextType extends UserData {
   resetAllData: () => void;
   loadDemoData: () => void;
   clearDemoData: () => void;
+  clearDemoDataSilent: () => void;
   hasDemoData: () => boolean;
 
   // Daily Macros
@@ -784,6 +785,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Versione silenziosa per uso interno (es. ritorno alla landing)
+  const clearDemoDataSilent = () => {
+    if (!hasDemoData()) return;
+    updateCurrentUser((prev) => {
+      const newPrograms = { ...prev.programs };
+      delete newPrograms[999];
+      delete newPrograms[998];
+      const filteredSessions = prev.loggedSessions.filter(s => s.programId !== 999 && s.programId !== 998);
+      return {
+        programs: newPrograms,
+        loggedSessions: filteredSessions,
+        currentProgramId: null,
+        currentWeek: 1,
+      };
+    });
+  };
+
   // Applica una progressione percentuale a tutte le settimane del programma
   const applyProgressionToAllWeeks = (
     progression: PercentageProgression,
@@ -857,6 +875,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         resetAllData,
         loadDemoData,
         clearDemoData,
+        clearDemoDataSilent,
         hasDemoData,
         initializeDailyMacros,
         updateDailyMacros,

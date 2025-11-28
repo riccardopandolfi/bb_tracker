@@ -27,7 +27,7 @@ import { AccountControls } from './components/coach/AccountControls';
 import { CoachAccessDialog } from './components/coach/CoachAccessDialog';
 
 function App() {
-  const { currentTab, setCurrentTab, programs, loadDemoData } = useApp();
+  const { currentTab, setCurrentTab, programs, loadDemoData, hasDemoData, clearDemoDataSilent } = useApp();
   const { session } = useAuth();
   const hasPrograms = Object.keys(programs).length > 0;
   const [guestUnlocked, setGuestUnlocked] = useState(false);
@@ -85,6 +85,16 @@ function App() {
   }
 
   const handleLogoClick = () => {
+    // Se ci sono dati demo, cancellali e torna alla landing vera
+    if (hasDemoData()) {
+      clearDemoDataSilent();
+      setGuestUnlocked(false);
+      setShowLandingPreview(false);
+      setCurrentTab('home');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    
     if (!hasPrograms) return;
     setShowLandingPreview(true);
     setCurrentTab('home');

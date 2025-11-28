@@ -104,6 +104,10 @@ export interface ProgressionBlockConfig {
 export interface ProgressionWeekConfig {
   weekNumber: number;
   blocks: ProgressionBlockConfig[];
+  // Parametri di intensità per la settimana
+  coefficient?: number; // Coefficiente (default 1.0)
+  targetRPE?: number; // RPE target (5-10)
+  rest?: number; // Rest tra i set in secondi
 }
 
 export interface PercentageProgression {

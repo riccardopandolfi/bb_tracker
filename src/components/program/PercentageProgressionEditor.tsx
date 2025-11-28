@@ -44,9 +44,13 @@ export function PercentageProgressionEditor({
 
   const addWeek = () => {
     const maxWeek = Math.max(...currentProgression.weeks.map(w => w.weekNumber), 0);
+    const lastWeek = currentProgression.weeks[currentProgression.weeks.length - 1];
     const newWeek: ProgressionWeekConfig = {
       weekNumber: maxWeek + 1,
       blocks: [{ sets: 4, reps: 5, percentage: 75 }],
+      coefficient: lastWeek?.coefficient ?? 1.0,
+      targetRPE: lastWeek?.targetRPE ?? 8,
+      rest: lastWeek?.rest ?? 180,
     };
     onChange({
       ...currentProgression,
@@ -176,7 +180,7 @@ export function PercentageProgressionEditor({
                     ) : (
                       <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     )}
-                    <span className="text-foreground">Week {week.weekNumber}</span>
+                    <span className="text-foreground bg-lime-200/70 px-2 py-0.5 rounded">Week {week.weekNumber}</span>
                     <span className="text-muted-foreground font-normal text-xs">
                       ({week.blocks.length} {week.blocks.length === 1 ? 'blocco' : 'blocchi'})
                     </span>
@@ -291,6 +295,71 @@ export function PercentageProgressionEditor({
                     <Plus className="h-3.5 w-3.5" />
                     Aggiungi Blocco
                   </Button>
+
+                  {/* Parametri di intensità per la settimana */}
+                  <div className="mt-4 pt-3 border-t border-border/50">
+                    <Label className="text-xs font-medium text-muted-foreground mb-2 block">
+                      Parametri Intensità - Week {week.weekNumber}
+                    </Label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {/* Coefficiente */}
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Coefficiente</Label>
+                        <Input
+                          type="number"
+                          value={week.coefficient ?? 1.0}
+                          onChange={(e) =>
+                            updateWeek(week.weekNumber, {
+                              ...week,
+                              coefficient: parseFloat(e.target.value) || 1.0,
+                            })
+                          }
+                          min={0.1}
+                          max={2}
+                          step={0.1}
+                          className="h-9"
+                        />
+                      </div>
+
+                      {/* RPE Target */}
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">RPE Target</Label>
+                        <Input
+                          type="number"
+                          value={week.targetRPE ?? 8}
+                          onChange={(e) =>
+                            updateWeek(week.weekNumber, {
+                              ...week,
+                              targetRPE: parseFloat(e.target.value) || 8,
+                            })
+                          }
+                          min={5}
+                          max={10}
+                          step={0.5}
+                          className="h-9"
+                        />
+                      </div>
+
+                      {/* Rest */}
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Rest (sec)</Label>
+                        <Input
+                          type="number"
+                          value={week.rest ?? 180}
+                          onChange={(e) =>
+                            updateWeek(week.weekNumber, {
+                              ...week,
+                              rest: parseInt(e.target.value) || 180,
+                            })
+                          }
+                          min={30}
+                          max={600}
+                          step={15}
+                          className="h-9"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               )}
             </Card>
