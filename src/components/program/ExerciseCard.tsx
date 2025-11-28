@@ -3,7 +3,7 @@ import { ProgramExercise, Exercise, ExerciseBlock } from '@/types';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
-import { Settings, Trash2, ClipboardList, Clock, BarChart3 } from 'lucide-react';
+import { Settings, Trash2, ClipboardList, Clock, BarChart3, Pencil } from 'lucide-react';
 import { ConfigureExerciseModal } from './ConfigureExerciseModal';
 import { ExerciseHistoryDialog } from './ExerciseHistoryDialog';
 import { getExerciseBlocks } from '@/lib/exerciseUtils';
@@ -46,6 +46,7 @@ export function ExerciseCard({
   const [showBlockSelector, setShowBlockSelector] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
+  const [editBlockIndex, setEditBlockIndex] = useState<number | null>(null);
   const blocks = getExerciseBlocks(exercise);
 
   const handleLogClick = (e: React.MouseEvent) => {
@@ -62,6 +63,18 @@ export function ExerciseCard({
   const handleSelectBlock = (blockIndex: number) => {
     setShowBlockSelector(false);
     onLog(blockIndex);
+  };
+
+  const handleEditBlock = (blockIndex: number) => {
+    setEditBlockIndex(blockIndex);
+    setShowConfigModal(true);
+  };
+  
+  const handleCloseConfigModal = (open: boolean) => {
+    setShowConfigModal(open);
+    if (!open) {
+      setEditBlockIndex(null);
+    }
   };
 
   const getPrimaryMuscle = () => {
@@ -241,7 +254,7 @@ export function ExerciseCard({
         {/* Configure Modal */}
         <ConfigureExerciseModal
           open={showConfigModal}
-          onOpenChange={setShowConfigModal}
+          onOpenChange={handleCloseConfigModal}
           exercise={exercise}
           exerciseIndex={exerciseIndex}
           dayIndex={dayIndex}
@@ -253,6 +266,7 @@ export function ExerciseCard({
           onUpdateBlockBatch={onUpdateBlockBatch}
           onAddBlock={onAddBlock}
           onDeleteBlock={onDeleteBlock}
+          initialBlockIndex={editBlockIndex}
         />
 
         {/* Block Selector Dialog per Cardio */}
@@ -360,6 +374,17 @@ export function ExerciseCard({
                             title="Log blocco"
                           >
                             <ClipboardList className="w-3.5 h-3.5 text-gray-400 hover:text-green-600" />
+                          </button>
+                          {/* Pulsante modifica blocco */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditBlock(idx);
+                            }}
+                            className="p-1 hover:bg-blue-50 rounded transition-colors"
+                            title="Modifica blocco"
+                          >
+                            <Pencil className="w-3.5 h-3.5 text-gray-400 hover:text-blue-600" />
                           </button>
                           {/* Pulsante elimina blocco - solo se ci sono più blocchi */}
                           {blocks.length > 1 && (
@@ -542,7 +567,7 @@ export function ExerciseCard({
       {/* Configure Modal */}
       <ConfigureExerciseModal
         open={showConfigModal}
-        onOpenChange={setShowConfigModal}
+        onOpenChange={handleCloseConfigModal}
         exercise={exercise}
         exerciseIndex={exerciseIndex}
         dayIndex={dayIndex}
@@ -554,6 +579,7 @@ export function ExerciseCard({
         onUpdateBlockBatch={onUpdateBlockBatch}
         onAddBlock={onAddBlock}
         onDeleteBlock={onDeleteBlock}
+        initialBlockIndex={editBlockIndex}
       />
 
       {/* Block Selector Dialog */}

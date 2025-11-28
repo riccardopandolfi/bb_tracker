@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ProgramExercise, Exercise, ExerciseBlock } from '@/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -25,6 +25,7 @@ interface ConfigureExerciseModalProps {
   onUpdateBlockBatch?: (blockIndex: number, updates: Partial<ExerciseBlock>) => void;
   onAddBlock: () => void;
   onDeleteBlock: (blockIndex: number) => void;
+  initialBlockIndex?: number | null;
 }
 
 export function ConfigureExerciseModal({
@@ -41,9 +42,30 @@ export function ConfigureExerciseModal({
   onUpdateBlockBatch,
   onAddBlock,
   onDeleteBlock,
+  initialBlockIndex,
 }: ConfigureExerciseModalProps) {
   const { applyProgressionToAllWeeks } = useApp();
   const [showProgressionConfirm, setShowProgressionConfirm] = useState(false);
+  const blockRefs = useRef<(HTMLDivElement | null)[]>([]);
+  
+  // Scroll al blocco specificato quando il modal si apre
+  useEffect(() => {
+    if (open && initialBlockIndex != null && initialBlockIndex >= 0) {
+      // Piccolo delay per assicurarsi che il DOM sia renderizzato
+      const timer = setTimeout(() => {
+        const blockElement = blockRefs.current[initialBlockIndex];
+        if (blockElement) {
+          blockElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Aggiungi un effetto di highlight temporaneo
+          blockElement.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+          setTimeout(() => {
+            blockElement.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
+          }, 2000);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [open, initialBlockIndex]);
   
   const blocks = getExerciseBlocks(exercise);
   const isCardio = exercise.exerciseType === 'cardio';
@@ -118,7 +140,11 @@ export function ConfigureExerciseModal({
           <TabsContent value="blocks" className="flex-1 overflow-y-auto p-4 space-y-4">
             <div className="space-y-4">
               {blocks.map((block, blockIndex) => (
-                <div key={blockIndex} className="relative">
+                <div 
+                  key={blockIndex} 
+                  className="relative transition-all duration-300"
+                  ref={(el) => { blockRefs.current[blockIndex] = el; }}
+                >
                   <ExerciseBlockCard
                     block={block}
                     blockIndex={blockIndex}
