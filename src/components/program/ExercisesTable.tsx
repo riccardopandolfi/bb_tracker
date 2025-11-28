@@ -335,6 +335,7 @@ export function ExercisesTable({ dayIndex }: ExercisesTableProps) {
                 key={exIndex}
                 exercise={ex}
                 exerciseIndex={exIndex}
+                dayIndex={dayIndex}
                 exerciseLibrary={exercises}
                 allTechniques={allTechniques}
                 customTechniques={customTechniques}

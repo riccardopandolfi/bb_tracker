@@ -1,18 +1,22 @@
+import { useState } from 'react';
 import { ProgramExercise, Exercise, ExerciseBlock } from '@/types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
-import { Plus } from 'lucide-react';
+import { Plus, Calendar, AlertCircle } from 'lucide-react';
 import { ExerciseBlockCard } from './ExerciseBlockCard';
-import { getExerciseBlocks } from '@/lib/exerciseUtils';
+import { getExerciseBlocks, validateProgression } from '@/lib/exerciseUtils';
+import { usesPercentageProgression } from '@/lib/techniques';
+import { useApp } from '@/contexts/AppContext';
 
 interface ConfigureExerciseModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   exercise: ProgramExercise;
   exerciseIndex: number;
+  dayIndex: number;
   exerciseLibrary: Exercise[];
   allTechniques: string[];
   customTechniques: any[];
@@ -27,7 +31,8 @@ export function ConfigureExerciseModal({
   open,
   onOpenChange,
   exercise,
-  exerciseIndex: _exerciseIndex,
+  exerciseIndex,
+  dayIndex,
   exerciseLibrary,
   allTechniques,
   customTechniques,
@@ -37,11 +42,63 @@ export function ConfigureExerciseModal({
   onAddBlock,
   onDeleteBlock,
 }: ConfigureExerciseModalProps) {
+  const { applyProgressionToAllWeeks } = useApp();
+  const [showProgressionConfirm, setShowProgressionConfirm] = useState(false);
+  
   const blocks = getExerciseBlocks(exercise);
   const isCardio = exercise.exerciseType === 'cardio';
+  
+  // Verifica se c'è una progressione a % in uno dei blocchi
+  const hasPercentageProgression = blocks.some(
+    block => usesPercentageProgression(block.technique || 'Normale') && block.percentageProgression
+  );
+  
+  // Gestisce la chiusura del modal
+  const handleClose = (openState: boolean) => {
+    if (!openState && hasPercentageProgression) {
+      // Verifica se la progressione è valida prima di mostrare il dialog
+      const progressionBlock = blocks.find(
+        block => usesPercentageProgression(block.technique || 'Normale') && block.percentageProgression
+      );
+      if (progressionBlock?.percentageProgression) {
+        const validation = validateProgression(progressionBlock.percentageProgression);
+        if (validation.valid) {
+          setShowProgressionConfirm(true);
+          return;
+        }
+      }
+    }
+    onOpenChange(openState);
+  };
+  
+  // Applica la progressione a tutte le settimane
+  const handleApplyToAllWeeks = () => {
+    const progressionBlock = blocks.find(
+      block => usesPercentageProgression(block.technique || 'Normale') && block.percentageProgression
+    );
+    
+    if (progressionBlock?.percentageProgression) {
+      applyProgressionToAllWeeks(
+        progressionBlock.percentageProgression,
+        dayIndex,
+        exerciseIndex,
+        exercise.exerciseName
+      );
+    }
+    
+    setShowProgressionConfirm(false);
+    onOpenChange(false);
+  };
+  
+  // Chiude senza applicare a tutte le settimane
+  const handleCloseWithoutApply = () => {
+    setShowProgressionConfirm(false);
+    onOpenChange(false);
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-5xl max-h-[85vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-base sm:text-xl font-bold">
@@ -131,11 +188,54 @@ export function ConfigureExerciseModal({
 
         {/* Footer con pulsante chiudi */}
         <div className="flex justify-end pt-4 border-t">
-          <Button onClick={() => onOpenChange(false)}>
+          <Button onClick={() => handleClose(false)}>
             ✓ Chiudi
           </Button>
         </div>
       </DialogContent>
     </Dialog>
+    
+    {/* Dialog di conferma per Progressione a % */}
+    <Dialog open={showProgressionConfirm} onOpenChange={setShowProgressionConfirm}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-primary" />
+            Applicare la progressione?
+          </DialogTitle>
+          <DialogDescription className="pt-2">
+            Hai configurato una <strong>Progressione a %</strong> con più settimane.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4 py-4">
+          <div className="bg-primary/10 rounded-lg p-4 space-y-2">
+            <p className="text-sm text-foreground">
+              Vuoi applicare questa progressione a tutte le settimane del programma?
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Questo creerà automaticamente le settimane mancanti e configurerà l'esercizio con i carichi calcolati dalla percentuale del 1RM.
+            </p>
+          </div>
+          
+          <div className="flex items-start gap-2 text-xs text-muted-foreground bg-amber-50 p-3 rounded-lg border border-amber-200">
+            <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+            <p>
+              Se scegli "No", la progressione verrà salvata solo per la settimana corrente.
+            </p>
+          </div>
+        </div>
+        
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={handleCloseWithoutApply}>
+            No, solo questa settimana
+          </Button>
+          <Button onClick={handleApplyToAllWeeks}>
+            Sì, applica a tutte
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

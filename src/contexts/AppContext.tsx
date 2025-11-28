@@ -1,9 +1,10 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
-import { AppState, Exercise, Week, LoggedSession, CustomTechnique, Program, DailyMacrosWeek, DayMacros, User, UserData } from '@/types';
+import { AppState, Exercise, Week, LoggedSession, CustomTechnique, Program, DailyMacrosWeek, DayMacros, User, UserData, PercentageProgression } from '@/types';
 import { DEFAULT_EXERCISES, MUSCLE_COLORS } from '@/lib/constants';
 import { DEFAULT_MUSCLE_GROUPS } from '@/types';
 import { generateDemoPrograms, generateDemoLoggedSessions } from '@/lib/demoData';
 import { loadUserAppState, saveUserAppState, subscribeToUserAppState } from '@/lib/supabaseService';
+import { applyProgressionToWeeks } from '@/lib/exerciseUtils';
 import { useAuth } from './AuthContext';
 
 interface AppContextType extends UserData {
@@ -54,6 +55,14 @@ interface AppContextType extends UserData {
   // Helper getters
   getCurrentProgram: () => Program | undefined;
   getCurrentWeeks: () => Record<number, Week>;
+  
+  // Progressione percentuale
+  applyProgressionToAllWeeks: (
+    progression: PercentageProgression,
+    dayIndex: number,
+    exerciseIndex: number,
+    exerciseName: string
+  ) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -775,6 +784,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Applica una progressione percentuale a tutte le settimane del programma
+  const applyProgressionToAllWeeks = (
+    progression: PercentageProgression,
+    dayIndex: number,
+    exerciseIndex: number,
+    exerciseName: string
+  ) => {
+    const program = getCurrentProgram();
+    if (!program) return;
+    
+    const newWeeks = applyProgressionToWeeks(
+      progression,
+      program.weeks,
+      dayIndex,
+      exerciseIndex,
+      exerciseName
+    );
+    
+    updateProgram(program.id, {
+      ...program,
+      weeks: newWeeks,
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -833,6 +866,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         updateSupplements,
         getCurrentProgram,
         getCurrentWeeks,
+        applyProgressionToAllWeeks,
       }}
     >
       {children}

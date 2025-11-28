@@ -14,6 +14,7 @@ import { adjustColor, getContrastTextColor } from '@/lib/colorUtils';
 interface ExerciseCardProps {
   exercise: ProgramExercise;
   exerciseIndex: number;
+  dayIndex: number;
   exerciseLibrary: Exercise[];
   allTechniques: string[];
   customTechniques: any[];
@@ -29,6 +30,7 @@ interface ExerciseCardProps {
 export function ExerciseCard({
   exercise,
   exerciseIndex,
+  dayIndex,
   exerciseLibrary,
   allTechniques,
   customTechniques,
@@ -242,6 +244,7 @@ export function ExerciseCard({
           onOpenChange={setShowConfigModal}
           exercise={exercise}
           exerciseIndex={exerciseIndex}
+          dayIndex={dayIndex}
           exerciseLibrary={exerciseLibrary}
           allTechniques={allTechniques}
           customTechniques={customTechniques}
@@ -542,6 +545,7 @@ export function ExerciseCard({
         onOpenChange={setShowConfigModal}
         exercise={exercise}
         exerciseIndex={exerciseIndex}
+        dayIndex={dayIndex}
         exerciseLibrary={exerciseLibrary}
         allTechniques={allTechniques}
         customTechniques={customTechniques}

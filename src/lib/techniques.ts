@@ -15,7 +15,9 @@ export interface TechniqueDefinition {
   label: string;
   description: string;
   parameters: TechniqueParameter[];
-  generateSchema: (params: Record<string, any>) => string;
+  generateSchema: (params: Record<string, any>, weekNumber?: number) => string;
+  isMultiWeek?: boolean; // Flag per tecniche che si applicano a più settimane
+  usesPercentageProgression?: boolean; // Flag per tecniche che usano progressione a %
 }
 
 export const TECHNIQUE_DEFINITIONS: TechniqueDefinition[] = [
@@ -152,6 +154,30 @@ export const TECHNIQUE_DEFINITIONS: TechniqueDefinition[] = [
       return Array(Number(sets)).fill(fullReps).join('+');
     },
   },
+  {
+    name: 'Progressione a %',
+    label: 'Progressione a %',
+    description: 'Progressione multi-settimana basata su percentuali del 1RM',
+    isMultiWeek: true,
+    usesPercentageProgression: true,
+    parameters: [
+      { name: 'oneRepMax', label: '1RM (kg)', type: 'number', default: 100, min: 1, max: 500, step: 0.5 },
+    ],
+    generateSchema: (params, weekNumber = 1) => {
+      // Lo schema viene generato dinamicamente in base alla configurazione della settimana
+      // I parametri effettivi (sets, reps, %) sono in percentageProgression
+      const progression = params.percentageProgression;
+      if (!progression || !progression.weeks) return '';
+      
+      const weekConfig = progression.weeks.find((w: any) => w.weekNumber === weekNumber);
+      if (!weekConfig || !weekConfig.blocks || weekConfig.blocks.length === 0) return '';
+      
+      // Genera lo schema combinando tutti i blocchi della settimana
+      return weekConfig.blocks
+        .map((block: any) => `${block.sets}x${block.reps}@${block.percentage}%`)
+        .join(' + ');
+    },
+  },
 ];
 
 export function getTechniqueDefinition(name: Technique): TechniqueDefinition | undefined {
@@ -160,9 +186,20 @@ export function getTechniqueDefinition(name: Technique): TechniqueDefinition | u
 
 export function generateSchemaFromParams(
   technique: Technique,
-  params: Record<string, any>
+  params: Record<string, any>,
+  weekNumber?: number
 ): string {
   const def = getTechniqueDefinition(technique);
   if (!def) return '';
-  return def.generateSchema(params);
+  return def.generateSchema(params, weekNumber);
+}
+
+export function isMultiWeekTechnique(technique: Technique): boolean {
+  const def = getTechniqueDefinition(technique);
+  return def?.isMultiWeek ?? false;
+}
+
+export function usesPercentageProgression(technique: Technique): boolean {
+  const def = getTechniqueDefinition(technique);
+  return def?.usesPercentageProgression ?? false;
 }

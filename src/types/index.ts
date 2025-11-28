@@ -50,6 +50,7 @@ export const DEFAULT_TECHNIQUES = [
   'Reps Scalare',
   'Reps Crescente',
   '1.5 Reps',
+  'Progressione a %',
 ];
 
 export type Technique = string; // Ora dinamico
@@ -93,6 +94,23 @@ export interface Exercise {
   cardioEquipment?: CardioEquipment; // Solo per cardio
 }
 
+// Progressione Percentuale (basata su 1RM)
+export interface ProgressionBlockConfig {
+  sets: number;
+  reps: number;
+  percentage: number; // % del 1RM (es. 70, 75, 80)
+}
+
+export interface ProgressionWeekConfig {
+  weekNumber: number;
+  blocks: ProgressionBlockConfig[];
+}
+
+export interface PercentageProgression {
+  oneRepMax: number; // 1RM in kg
+  weeks: ProgressionWeekConfig[];
+}
+
 // Blocco di metodologia all'interno di un esercizio
 export interface ExerciseBlock {
   // Per resistance
@@ -118,6 +136,9 @@ export interface ExerciseBlock {
 
   blockRest?: number; // Rest dopo questo blocco (secondi) - null se è l'ultimo blocco
   notes?: string; // Note personalizzate per il blocco
+
+  // Per Progressione a %
+  percentageProgression?: PercentageProgression; // Configurazione progressione multi-settimana
 }
 
 // Program (Scheda)

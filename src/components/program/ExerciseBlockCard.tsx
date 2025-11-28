@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ExerciseBlock, Exercise, REP_RANGES } from '@/types';
+import { ExerciseBlock, Exercise, REP_RANGES, PercentageProgression } from '@/types';
 import { Card, CardContent, CardHeader } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -10,8 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Trash2, Dumbbell, Clock, FileText } from 'lucide-react';
 import { TechniqueParamsForm } from './TechniqueParamsForm';
-import { generateSchemaFromParams, TECHNIQUE_DEFINITIONS } from '@/lib/techniques';
+import { PercentageProgressionEditor } from './PercentageProgressionEditor';
+import { generateSchemaFromParams, TECHNIQUE_DEFINITIONS, usesPercentageProgression } from '@/lib/techniques';
 import { parseSchema } from '@/lib/calculations';
+import { createDefaultProgression } from '@/lib/exerciseUtils';
 import { useApp } from '@/contexts/AppContext';
 import { adjustColor, getContrastTextColor } from '@/lib/colorUtils';
 
@@ -51,6 +53,7 @@ export function ExerciseBlockCard({
   const [tempValue, setTempValue] = useState<string>('');
   const isNormalTechnique = (block.technique || 'Normale') === 'Normale';
   const isRampingTechnique = block.technique === 'Ramping';
+  const isProgressionTechnique = usesPercentageProgression(block.technique || 'Normale');
 
   // Helper per gestire input numerici con cancellazione libera
   const getFieldValue = (fieldName: string, actualValue: any) => {
@@ -173,6 +176,31 @@ export function ExerciseBlockCard({
   }, [showLoadModal]);
 
   const handleTechniqueChange = (newTechnique: string) => {
+    // Gestione speciale per Progressione a %
+    if (usesPercentageProgression(newTechnique)) {
+      const defaultProgression = createDefaultProgression();
+      const updates: Partial<ExerciseBlock> = {
+        technique: newTechnique,
+        repsBase: '',
+        techniqueParams: {
+          oneRepMax: defaultProgression.oneRepMax,
+          percentageProgression: defaultProgression,
+        },
+        techniqueSchema: 'Progressione a %',
+        repRange: undefined,
+        percentageProgression: defaultProgression,
+      };
+      
+      if (onUpdateBatch) {
+        onUpdateBatch(blockIndex, updates);
+      } else {
+        Object.entries(updates).forEach(([key, value]) => {
+          onUpdate(blockIndex, key as keyof ExerciseBlock, value);
+        });
+      }
+      return;
+    }
+    
     if (newTechnique !== 'Normale') {
       const customTech = customTechniques.find(t => t.name === newTechnique);
       let defaultParams: Record<string, any> = {};
@@ -208,6 +236,7 @@ export function ExerciseBlockCard({
           techniqueSchema: schema,
           repRange: undefined,
           targetLoadsByCluster: initialLoadsByCluster,
+          percentageProgression: undefined, // Pulisci la progressione se cambiamo tecnica
         };
         onUpdateBatch(blockIndex, updates);
       } else {
@@ -215,6 +244,7 @@ export function ExerciseBlockCard({
         onUpdate(blockIndex, 'repsBase', '');
         onUpdate(blockIndex, 'techniqueParams', defaultParams);
         onUpdate(blockIndex, 'repRange', undefined);
+        onUpdate(blockIndex, 'percentageProgression', undefined);
         if (schema) {
           onUpdate(blockIndex, 'techniqueSchema', schema);
           const clusters = parseSchema(schema);
@@ -233,6 +263,7 @@ export function ExerciseBlockCard({
           techniqueParams: {},
           repsBase: '10',
           repRange: '8-12',
+          percentageProgression: undefined,
         };
         onUpdateBatch(blockIndex, updates);
       } else {
@@ -241,7 +272,27 @@ export function ExerciseBlockCard({
         onUpdate(blockIndex, 'techniqueParams', {});
         onUpdate(blockIndex, 'repsBase', '10');
         onUpdate(blockIndex, 'repRange', '8-12');
+        onUpdate(blockIndex, 'percentageProgression', undefined);
       }
+    }
+  };
+  
+  const handleProgressionChange = (newProgression: PercentageProgression) => {
+    const updates: Partial<ExerciseBlock> = {
+      percentageProgression: newProgression,
+      techniqueParams: {
+        ...block.techniqueParams,
+        oneRepMax: newProgression.oneRepMax,
+        percentageProgression: newProgression,
+      },
+    };
+    
+    if (onUpdateBatch) {
+      onUpdateBatch(blockIndex, updates);
+    } else {
+      Object.entries(updates).forEach(([key, value]) => {
+        onUpdate(blockIndex, key as keyof ExerciseBlock, value);
+      });
     }
   };
 
@@ -490,13 +541,23 @@ export function ExerciseBlockCard({
               </SelectContent>
             </Select>
 
-            {/* Technique Params Form - Solo per tecniche speciali (escluso Ramping) */}
-            {block.technique && block.technique !== 'Normale' && block.technique !== 'Ramping' && (
+            {/* Technique Params Form - Solo per tecniche speciali (escluso Ramping e Progressione a %) */}
+            {block.technique && block.technique !== 'Normale' && block.technique !== 'Ramping' && !isProgressionTechnique && (
               <div className="mt-3 pt-3 border-t border-gray-200">
                 <TechniqueParamsForm
                   technique={block.technique}
                   params={block.techniqueParams || {}}
                   onChange={handleTechniqueParamsChange}
+                />
+              </div>
+            )}
+            
+            {/* Editor Progressione a % */}
+            {isProgressionTechnique && (
+              <div className="mt-3 pt-3 border-t border-gray-200">
+                <PercentageProgressionEditor
+                  progression={block.percentageProgression}
+                  onChange={handleProgressionChange}
                 />
               </div>
             )}
@@ -570,8 +631,8 @@ export function ExerciseBlockCard({
             )}
           </div>
 
-          {/* Volume: Sets & Reps - Nascosto per Ramping */}
-          {!isRampingTechnique && (
+          {/* Volume: Sets & Reps - Nascosto per Ramping e Progressione a % */}
+          {!isRampingTechnique && !isProgressionTechnique && (
             <div className="space-y-3">
               <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-block">Volume</Label>
               {isNormalTechnique ? (
@@ -725,8 +786,8 @@ export function ExerciseBlockCard({
             </div>
           )}
 
-          {/* Carichi - Nascosto per Ramping */}
-          {!isRampingTechnique && (
+          {/* Carichi - Nascosto per Ramping e Progressione a % */}
+          {!isRampingTechnique && !isProgressionTechnique && (
             <div className="space-y-2">
               <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-flex items-center gap-2">
                 <Dumbbell className="w-3.5 h-3.5" />
