@@ -4,7 +4,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Video, Search, Filter, Loader2, Play, Calendar, Dumbbell, RefreshCw, Trash2 } from 'lucide-react';
+import { Video, Search, Filter, Loader2, Play, Calendar, RefreshCw, Trash2 } from 'lucide-react';
 import { searchVideos, getUniqueTechniques, getUniqueExerciseNames, getVideoUrl, deleteVideo } from '@/lib/videoService';
 import { VideoPlayerDialog } from './VideoPlayer';
 import { ExerciseVideo } from '@/types';
@@ -279,15 +279,26 @@ export function VideoLibrary({
                     )}
                   </button>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                  <span className="px-1.5 py-0.5 bg-gray-100 rounded">
+                <div className="space-y-1 mt-1">
+                  {/* Tecnica */}
+                  <span className="inline-block px-1.5 py-0.5 bg-gray-100 text-gray-700 text-xs rounded">
                     {video.technique}
                   </span>
-                  {video.load_kg && (
-                    <span className="flex items-center gap-0.5">
-                      <Dumbbell className="w-3 h-3" />
-                      {video.load_kg}kg
-                    </span>
+                  {/* Schema: sets × reps @ carico - come nella card */}
+                  {(video.sets || video.reps || video.load_kg) && (
+                    <div className="text-xs text-gray-700 font-medium">
+                      {video.sets && video.reps ? (
+                        <span>{video.sets}× {video.reps}</span>
+                      ) : video.reps ? (
+                        <span>{video.reps}</span>
+                      ) : null}
+                      {video.load_kg && (
+                        <span className="font-semibold"> @ {video.load_kg}kg</span>
+                      )}
+                      {video.rpe && (
+                        <span className="text-gray-500 font-normal"> • RPE {video.rpe}</span>
+                      )}
+                    </div>
                   )}
                 </div>
                 <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
