@@ -98,12 +98,20 @@ export function CarbCyclingEditor({ onApply }: CarbCyclingEditorProps) {
     setRestMultiplier(0.8);
   };
 
-  // Applica alle settimane
+  // Applica alle settimane con conferma
   const handleApply = () => {
     if (selectedWeeks.length === 0) {
       alert('Seleziona almeno una settimana');
       return;
     }
+
+    // Mostra conferma
+    const weekList = selectedWeeks.map(w => `Week ${w}`).join(', ');
+    const confirmed = confirm(
+      `Stai per sovrascrivere i macro delle seguenti settimane:\n\n${weekList}\n\nI dati inseriti manualmente verranno sostituiti. Continuare?`
+    );
+    
+    if (!confirmed) return;
 
     // Salva prima se non salvato
     if (!editingTemplateId) {

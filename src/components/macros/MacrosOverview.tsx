@@ -1,25 +1,23 @@
-import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Check, X, TrendingUp, TrendingDown } from 'lucide-react';
+import { RefreshCw, Copy, Trash2 } from 'lucide-react';
 
 const DAY_NAMES = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
-type ViewMode = 'both' | 'planned' | 'tracked';
+interface MacrosOverviewProps {
+  onNavigateToWeek?: (weekNum: number) => void;
+}
 
-export function MacrosOverview() {
+export function MacrosOverview({ onNavigateToWeek }: MacrosOverviewProps) {
   const { 
     getCurrentProgram, 
-    getMacrosPlanForWeek, 
-    getTrackedMacros,
-    currentWeek 
+    getMacrosPlanForWeek,
+    copyWeekPlan,
+    resetWeekPlan,
+    currentWeek,
   } = useApp();
-
-  const [viewMode, setViewMode] = useState<ViewMode>('both');
-  const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
 
   const program = getCurrentProgram();
   const weekNumbers = program ? Object.keys(program.weeks).map(Number).sort((a, b) => a - b) : [];
@@ -27,54 +25,45 @@ export function MacrosOverview() {
   // Calcola totali settimanali
   const getWeeklyTotals = (weekNum: number) => {
     const plan = getMacrosPlanForWeek(weekNum);
-    let plannedTotal = { protein: 0, carbs: 0, fat: 0, kcal: 0 };
-    let trackedTotal = { protein: 0, carbs: 0, fat: 0, kcal: 0 };
-    let trackedDays = 0;
+    if (!plan) return null;
 
-    for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
-      if (plan?.days?.[dayIdx]) {
-        plannedTotal.protein += plan.days[dayIdx].protein;
-        plannedTotal.carbs += plan.days[dayIdx].carbs;
-        plannedTotal.fat += plan.days[dayIdx].fat;
-        plannedTotal.kcal += plan.days[dayIdx].kcal;
+    let totalKcal = 0;
+    let totalProtein = 0;
+    let totalCarbs = 0;
+    let totalFat = 0;
+    let filledDays = 0;
+    let checkedDays = 0;
+
+    plan.days.forEach((day, idx) => {
+      if (day.protein > 0 || day.carbs > 0 || day.fat > 0) {
+        totalKcal += day.kcal;
+        totalProtein += day.protein;
+        totalCarbs += day.carbs;
+        totalFat += day.fat;
+        filledDays++;
       }
+      if (plan.checked[idx]) checkedDays++;
+    });
 
-      const tracked = getTrackedMacros(weekNum, dayIdx);
-      if (tracked) {
-        trackedTotal.protein += tracked.protein;
-        trackedTotal.carbs += tracked.carbs;
-        trackedTotal.fat += tracked.fat;
-        trackedTotal.kcal += tracked.kcal;
-        if (tracked.checked) trackedDays++;
-      }
-    }
-
-    return { plannedTotal, trackedTotal, trackedDays };
-  };
-
-  // Calcola differenza percentuale
-  const getDiff = (planned: number, tracked: number) => {
-    if (planned === 0) return 0;
-    return Math.round(((tracked - planned) / planned) * 100);
-  };
-
-  // Colore in base alla differenza
-  const getDiffColor = (diff: number) => {
-    if (Math.abs(diff) <= 5) return 'text-green-600';
-    if (Math.abs(diff) <= 15) return 'text-amber-600';
-    return 'text-red-600';
+    return { 
+      totalKcal, 
+      avgKcal: filledDays > 0 ? Math.round(totalKcal / filledDays) : 0,
+      avgProtein: filledDays > 0 ? Math.round(totalProtein / filledDays) : 0,
+      avgCarbs: filledDays > 0 ? Math.round(totalCarbs / filledDays) : 0,
+      avgFat: filledDays > 0 ? Math.round(totalFat / filledDays) : 0,
+      filledDays,
+      checkedDays,
+      fromCycling: plan.fromCycling,
+    };
   };
 
   // Rendering cella
   const renderCell = (weekNum: number, dayIdx: number) => {
     const plan = getMacrosPlanForWeek(weekNum);
-    const planned = plan?.days?.[dayIdx];
-    const tracked = getTrackedMacros(weekNum, dayIdx);
+    const day = plan?.days?.[dayIdx];
+    const isChecked = plan?.checked?.[dayIdx];
 
-    const showPlanned = viewMode === 'both' || viewMode === 'planned';
-    const showTracked = viewMode === 'both' || viewMode === 'tracked';
-
-    if (!planned && !tracked) {
+    if (!day || (day.protein === 0 && day.carbs === 0 && day.fat === 0)) {
       return (
         <div className="text-[10px] text-muted-foreground text-center py-2">
           -
@@ -83,57 +72,41 @@ export function MacrosOverview() {
     }
 
     return (
-      <div className="text-[10px] space-y-0.5 py-1">
-        {/* Pianificato */}
-        {showPlanned && planned && (
-          <div className="text-muted-foreground">
-            <div className="font-medium">{planned.kcal}</div>
-            <div className="opacity-70">P{planned.protein} C{planned.carbs} G{planned.fat}</div>
-          </div>
-        )}
-        
-        {/* Tracciato */}
-        {showTracked && tracked && (
-          <div className={tracked.checked ? 'text-green-600' : 'text-foreground'}>
-            <div className="font-medium flex items-center justify-center gap-0.5">
-              {tracked.kcal}
-              {tracked.checked && <Check className="w-2.5 h-2.5" />}
-            </div>
-            <div className="opacity-70">P{tracked.protein} C{tracked.carbs} G{tracked.fat}</div>
-          </div>
-        )}
-
-        {/* Differenza */}
-        {viewMode === 'both' && planned && tracked && (
-          <div className={`text-[9px] ${getDiffColor(getDiff(planned.kcal, tracked.kcal))}`}>
-            {getDiff(planned.kcal, tracked.kcal) > 0 ? '+' : ''}{getDiff(planned.kcal, tracked.kcal)}%
-          </div>
-        )}
+      <div 
+        className={`text-[10px] py-1 cursor-pointer hover:bg-muted/50 rounded ${isChecked ? 'bg-green-50' : ''}`}
+        onClick={() => onNavigateToWeek?.(weekNum)}
+      >
+        <div className={`font-medium ${isChecked ? 'text-green-600' : ''}`}>{day.kcal}</div>
+        <div className="text-muted-foreground opacity-70">
+          P{day.protein} C{day.carbs} G{day.fat}
+        </div>
       </div>
     );
   };
 
+  // Handle copy week
+  const handleCopyWeek = (fromWeek: number) => {
+    const toWeek = prompt(`Copiare Week ${fromWeek} in quale settimana?`, String(fromWeek + 1));
+    if (toWeek && !isNaN(parseInt(toWeek))) {
+      copyWeekPlan(fromWeek, parseInt(toWeek));
+    }
+  };
+
+  // Handle reset week
+  const handleResetWeek = (weekNum: number) => {
+    if (confirm(`Svuotare i macro della Week ${weekNum}?`)) {
+      resetWeekPlan(weekNum);
+    }
+  };
+
   return (
     <div className="space-y-4">
-      {/* Controlli */}
-      <div className="flex items-center justify-between">
-        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
-          <TabsList className="h-8">
-            <TabsTrigger value="both" className="text-xs">Confronto</TabsTrigger>
-            <TabsTrigger value="planned" className="text-xs">Solo Piano</TabsTrigger>
-            <TabsTrigger value="tracked" className="text-xs">Solo Tracciato</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
-
       {/* Tabella principale */}
       <Card>
         <CardHeader className="py-3">
-          <CardTitle className="text-sm">Riepilogo Settimanale</CardTitle>
+          <CardTitle className="text-sm">Riepilogo Piano Nutrizionale</CardTitle>
           <CardDescription className="text-xs">
-            {viewMode === 'both' && 'Piano (grigio) vs Tracciato (colorato)'}
-            {viewMode === 'planned' && 'Macro pianificati per ogni giorno'}
-            {viewMode === 'tracked' && 'Macro effettivamente consumati'}
+            Clicca su una cella per andare a quella settimana
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -142,17 +115,24 @@ export function MacrosOverview() {
               <thead>
                 <tr className="border-b bg-muted/50">
                   <th className="text-left py-2 px-3 font-medium sticky left-0 bg-muted/50">Giorno</th>
-                  {weekNumbers.map(weekNum => (
-                    <th 
-                      key={weekNum} 
-                      className={`text-center py-2 px-2 font-medium cursor-pointer hover:bg-muted transition-colors ${
-                        weekNum === currentWeek ? 'bg-primary/10' : ''
-                      }`}
-                      onClick={() => setSelectedWeek(selectedWeek === weekNum ? null : weekNum)}
-                    >
-                      W{weekNum}
-                    </th>
-                  ))}
+                  {weekNumbers.map(weekNum => {
+                    const stats = getWeeklyTotals(weekNum);
+                    return (
+                      <th 
+                        key={weekNum} 
+                        className={`text-center py-2 px-2 font-medium ${
+                          weekNum === currentWeek ? 'bg-primary/10' : ''
+                        }`}
+                      >
+                        <div className="flex items-center justify-center gap-1">
+                          W{weekNum}
+                          {stats?.fromCycling && (
+                            <RefreshCw className="w-3 h-3 text-primary" />
+                          )}
+                        </div>
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
@@ -169,31 +149,24 @@ export function MacrosOverview() {
                     ))}
                   </tr>
                 ))}
-                {/* Totali */}
+                {/* Totali / Media */}
                 <tr className="bg-muted/50 font-medium">
-                  <td className="py-2 px-3 sticky left-0 bg-muted/50">Totale</td>
+                  <td className="py-2 px-3 sticky left-0 bg-muted/50">Media</td>
                   {weekNumbers.map(weekNum => {
-                    const { plannedTotal, trackedTotal, trackedDays } = getWeeklyTotals(weekNum);
-                    const showPlanned = viewMode === 'both' || viewMode === 'planned';
-                    const showTracked = viewMode === 'both' || viewMode === 'tracked';
+                    const stats = getWeeklyTotals(weekNum);
                     
                     return (
                       <td key={weekNum} className={`text-center py-2 ${weekNum === currentWeek ? 'bg-primary/10' : ''}`}>
-                        <div className="text-[10px] space-y-0.5">
-                          {showPlanned && (
+                        {stats && stats.filledDays > 0 ? (
+                          <div className="text-[10px]">
+                            <div className="font-bold">{stats.avgKcal}</div>
                             <div className="text-muted-foreground">
-                              {plannedTotal.kcal.toLocaleString()}
+                              {stats.checkedDays}/{stats.filledDays}
                             </div>
-                          )}
-                          {showTracked && trackedDays > 0 && (
-                            <div className="text-foreground">
-                              {trackedTotal.kcal.toLocaleString()}
-                              <span className="text-[9px] text-muted-foreground ml-1">
-                                ({trackedDays}/7)
-                              </span>
-                            </div>
-                          )}
-                        </div>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-[10px]">-</span>
+                        )}
                       </td>
                     );
                   })}
@@ -204,127 +177,48 @@ export function MacrosOverview() {
         </CardContent>
       </Card>
 
-      {/* Dettaglio settimana selezionata */}
-      {selectedWeek && (
-        <Card>
-          <CardHeader className="py-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              Dettaglio Week {selectedWeek}
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-6 w-6 p-0"
-                onClick={() => setSelectedWeek(null)}
-              >
-                <X className="w-3 h-3" />
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {DAY_NAMES.map((day, dayIdx) => {
-                const plan = getMacrosPlanForWeek(selectedWeek);
-                const planned = plan?.days?.[dayIdx];
-                const tracked = getTrackedMacros(selectedWeek, dayIdx);
-
-                return (
-                  <div 
-                    key={dayIdx} 
-                    className="flex items-center justify-between p-2 rounded-lg bg-muted/30"
-                  >
-                    <span className="font-medium text-sm w-12">{day}</span>
-                    
-                    {/* Pianificato */}
-                    <div className="flex-1 text-center">
-                      {planned ? (
-                        <div className="text-xs text-muted-foreground">
-                          <span className="font-medium">{planned.kcal}</span> kcal
-                          <span className="hidden sm:inline ml-2">
-                            P{planned.protein} C{planned.carbs} G{planned.fat}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
-                    </div>
-
-                    {/* Freccia */}
-                    <div className="px-2">
-                      {planned && tracked ? (
-                        getDiff(planned.kcal, tracked.kcal) >= 0 ? (
-                          <TrendingUp className={`w-4 h-4 ${getDiffColor(getDiff(planned.kcal, tracked.kcal))}`} />
-                        ) : (
-                          <TrendingDown className={`w-4 h-4 ${getDiffColor(getDiff(planned.kcal, tracked.kcal))}`} />
-                        )
-                      ) : (
-                        <span className="w-4" />
-                      )}
-                    </div>
-
-                    {/* Tracciato */}
-                    <div className="flex-1 text-center">
-                      {tracked ? (
-                        <div className={`text-xs ${tracked.checked ? 'text-green-600' : 'text-foreground'}`}>
-                          <span className="font-medium">{tracked.kcal}</span> kcal
-                          <span className="hidden sm:inline ml-2">
-                            P{tracked.protein} C{tracked.carbs} G{tracked.fat}
-                          </span>
-                          {tracked.checked && <Check className="w-3 h-3 inline ml-1" />}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Non tracciato</span>
-                      )}
-                    </div>
-
-                    {/* Differenza */}
-                    {planned && tracked && (
-                      <Badge 
-                        variant="outline" 
-                        className={`text-[10px] w-14 justify-center ${getDiffColor(getDiff(planned.kcal, tracked.kcal))}`}
-                      >
-                        {getDiff(planned.kcal, tracked.kcal) > 0 ? '+' : ''}{getDiff(planned.kcal, tracked.kcal)}%
-                      </Badge>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Summary */}
-            {(() => {
-              const { plannedTotal, trackedTotal, trackedDays } = getWeeklyTotals(selectedWeek);
-              if (trackedDays === 0) return null;
-
+      {/* Azioni per settimana */}
+      <Card>
+        <CardHeader className="py-3">
+          <CardTitle className="text-sm">Azioni</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="flex flex-wrap gap-2">
+            {weekNumbers.map(weekNum => {
+              const stats = getWeeklyTotals(weekNum);
+              const hasData = stats && stats.filledDays > 0;
+              
               return (
-                <div className="mt-4 p-3 rounded-lg bg-muted/50 space-y-2">
-                  <div className="text-sm font-medium">Riepilogo Settimana</div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                    <div>
-                      <div className="text-muted-foreground">Calorie Piano</div>
-                      <div className="font-medium">{plannedTotal.kcal.toLocaleString()}</div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground">Calorie Effettive</div>
-                      <div className="font-medium">{trackedTotal.kcal.toLocaleString()}</div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground">Differenza</div>
-                      <div className={`font-medium ${getDiffColor(getDiff(plannedTotal.kcal, trackedTotal.kcal))}`}>
-                        {getDiff(plannedTotal.kcal, trackedTotal.kcal) > 0 ? '+' : ''}
-                        {getDiff(plannedTotal.kcal, trackedTotal.kcal)}%
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground">Giorni Tracciati</div>
-                      <div className="font-medium">{trackedDays}/7</div>
-                    </div>
-                  </div>
+                <div key={weekNum} className="flex items-center gap-1 p-2 rounded-lg bg-muted/30">
+                  <Badge variant={weekNum === currentWeek ? 'default' : 'outline'} className="text-xs">
+                    W{weekNum}
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={() => handleCopyWeek(weekNum)}
+                    disabled={!hasData}
+                    title="Copia in altra settimana"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 text-red-500 hover:text-red-600"
+                    onClick={() => handleResetWeek(weekNum)}
+                    disabled={!hasData}
+                    title="Reset settimana"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
                 </div>
               );
-            })()}
-          </CardContent>
-        </Card>
-      )}
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Messaggio se non ci sono dati */}
       {weekNumbers.length === 0 && (
@@ -338,4 +232,3 @@ export function MacrosOverview() {
     </div>
   );
 }
-

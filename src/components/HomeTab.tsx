@@ -434,22 +434,22 @@ export function HomeTab({ forceLanding = false, onExitLanding }: HomeTabProps) {
     <div className="space-y-4 sm:space-y-6">
       {/* Switch Dati Demo solo per guest */}
       {!isAuthenticated && (
-        <div className="flex justify-end">
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="demo-mode"
-              checked={hasDemoData()}
-              onCheckedChange={(checked) => {
-                if (checked) {
-                  loadDemoData();
-                } else {
-                  clearDemoData();
-                }
-              }}
-            />
-            <Label htmlFor="demo-mode" className="text-sm">Dati Demo</Label>
-          </div>
+      <div className="flex justify-end">
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="demo-mode"
+            checked={hasDemoData()}
+            onCheckedChange={(checked) => {
+              if (checked) {
+                loadDemoData();
+              } else {
+                clearDemoData();
+              }
+            }}
+          />
+          <Label htmlFor="demo-mode" className="text-sm">Dati Demo</Label>
         </div>
+      </div>
       )}
 
       {/* Top Grid */}

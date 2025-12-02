@@ -203,7 +203,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Attendiamo un attimo e poi verifichiamo/aggiorniamo se necessario
     if (data.user) {
       try {
-        await ensureProfileForUser(data.user, fullName);
+      await ensureProfileForUser(data.user, fullName);
       } catch (err) {
         // Se c'è un errore nel profilo, logghiamolo ma non blocchiamo la registrazione
         console.error('Errore nel controllo del profilo dopo la registrazione:', err);

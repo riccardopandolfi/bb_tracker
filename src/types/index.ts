@@ -265,15 +265,12 @@ export interface PlannedDayMacros {
   kcal: number;     // calcolato automaticamente
 }
 
-// Piano macro per una settimana
+// Piano macro per una settimana (unificato: manuale + cycling)
 export interface WeekMacrosPlan {
   weekNumber: number;
   days: PlannedDayMacros[];  // 7 giorni (0=Lun, 6=Dom)
-}
-
-// Macro effettivamente consumati (tracciati)
-export interface TrackedDayMacros extends PlannedDayMacros {
-  checked: boolean;
+  checked: boolean[];        // 7 boolean per tracking completamento
+  fromCycling?: boolean;     // true se generato da Carb Cycling
 }
 
 // Modalità Carb Cycling
@@ -309,10 +306,10 @@ export interface UserData {
   muscleGroups: string[]; // Gruppi muscolari personalizzati
   muscleGroupColors: Record<string, string>; // Colori per gruppi muscolari personalizzati
   customTechniques: CustomTechnique[]; // Tecniche personalizzate
-  dailyMacros: DailyMacrosWeek | null; // Macro giornalieri settimanali (legacy, per retrocompatibilità)
-  // Nuovo sistema macros multi-settimana
+  dailyMacros: DailyMacrosWeek | null; // Legacy (per migrazione)
+  // Sistema macros multi-settimana unificato
   macrosPlans: WeekMacrosPlan[];      // Piano macro per ogni settimana del programma
-  trackedMacros: Record<string, TrackedDayMacros>;  // Macro tracciati, chiave: "weekNum-dayIndex" es. "1-0"
+  supplements: Supplement[];           // Integratori globali
   carbCyclingTemplates: CarbCyclingTemplate[];  // Template carb cycling salvati
   activeCarbCyclingId: string | null;  // ID del template carb cycling attivo
 }
