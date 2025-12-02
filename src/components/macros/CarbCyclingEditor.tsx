@@ -18,7 +18,7 @@ interface CarbCyclingEditorProps {
 
 export function CarbCyclingEditor({ onApply }: CarbCyclingEditorProps) {
   const { 
-    carbCyclingTemplates, 
+    carbCyclingTemplates = [], 
     saveCarbCyclingTemplate, 
     deleteCarbCyclingTemplate,
     applyCarbCyclingToWeeks,
@@ -26,6 +26,9 @@ export function CarbCyclingEditor({ onApply }: CarbCyclingEditorProps) {
     getCurrentProgram,
     calculateMacrosFromBase
   } = useApp();
+
+  // Assicura che sia sempre un array
+  const templates = carbCyclingTemplates ?? [];
 
   const program = getCurrentProgram();
   const weekNumbers = program ? Object.keys(program.weeks).map(Number).sort((a, b) => a - b) : [];
@@ -107,7 +110,7 @@ export function CarbCyclingEditor({ onApply }: CarbCyclingEditorProps) {
       handleSave();
     }
 
-    const templateId = editingTemplateId || carbCyclingTemplates[carbCyclingTemplates.length - 1]?.id;
+    const templateId = editingTemplateId || templates[templates.length - 1]?.id;
     if (!templateId) return;
 
     applyCarbCyclingToWeeks(
@@ -157,14 +160,14 @@ export function CarbCyclingEditor({ onApply }: CarbCyclingEditorProps) {
   return (
     <div className="space-y-6">
       {/* Template salvati */}
-      {carbCyclingTemplates.length > 0 && (
+      {templates.length > 0 && (
         <Card>
           <CardHeader className="py-3">
             <CardTitle className="text-sm">Template Salvati</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="flex flex-wrap gap-2">
-              {carbCyclingTemplates.map(template => (
+              {templates.map(template => (
                 <Badge
                   key={template.id}
                   variant={editingTemplateId === template.id ? 'default' : 'outline'}
