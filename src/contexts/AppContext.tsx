@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
-import { AppState, Exercise, Week, LoggedSession, CustomTechnique, Program, DailyMacrosWeek, DayMacros, User, UserData, PercentageProgression } from '@/types';
+import { AppState, Exercise, Week, LoggedSession, CustomTechnique, Program, DailyMacrosWeek, DayMacros, User, UserData, PercentageProgression, WeekMacrosPlan, PlannedDayMacros, TrackedDayMacros, CarbCyclingTemplate } from '@/types';
 import { DEFAULT_EXERCISES, MUSCLE_COLORS } from '@/lib/constants';
 import { DEFAULT_MUSCLE_GROUPS } from '@/types';
 import { generateDemoPrograms, generateDemoLoggedSessions } from '@/lib/demoData';
@@ -45,13 +45,29 @@ interface AppContextType extends UserData {
   clearDemoDataSilent: () => void;
   hasDemoData: () => boolean;
 
-  // Daily Macros
+  // Daily Macros (legacy)
   initializeDailyMacros: () => void;
   updateDailyMacros: (dayIndex: number, macros: DayMacros) => void;
   checkDay: (dayIndex: number) => void;
   getCurrentDayIndex: () => number;
   getLastCheckedDayIndex: () => number | null;
   updateSupplements: (supplements: import('@/types').Supplement[]) => void;
+
+  // Macros Multi-Settimana
+  setMacrosPlan: (weekNum: number, days: PlannedDayMacros[]) => void;
+  getMacrosPlanForWeek: (weekNum: number) => WeekMacrosPlan | undefined;
+  trackMacros: (weekNum: number, dayIndex: number, macros: TrackedDayMacros) => void;
+  getTrackedMacros: (weekNum: number, dayIndex: number) => TrackedDayMacros | undefined;
+  getMacrosComparison: (weekNum: number, dayIndex: number) => { planned: PlannedDayMacros | null; tracked: TrackedDayMacros | null };
+  
+  // Carb Cycling
+  saveCarbCyclingTemplate: (template: CarbCyclingTemplate) => void;
+  deleteCarbCyclingTemplate: (templateId: string) => void;
+  setActiveCarbCycling: (templateId: string | null) => void;
+  applyCarbCyclingToWeeks: (templateId: string, weekNumbers: number[], trainingDays?: number[][]) => void;
+  
+  // Utility
+  calculateMacrosFromBase: (baseMacros: { protein: number; carbs: number; fat: number }, multiplier: number) => PlannedDayMacros;
 
   // Helper getters
   getCurrentProgram: () => Program | undefined;
@@ -81,6 +97,11 @@ const createDefaultUserData = (): UserData => ({
   muscleGroupColors: {},
   customTechniques: [],
   dailyMacros: null,
+  // Nuovo sistema macros multi-settimana
+  macrosPlans: [],
+  trackedMacros: {},
+  carbCyclingTemplates: [],
+  activeCarbCyclingId: null,
 });
 
 const defaultUser: User = {
@@ -309,6 +330,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       muscleGroupColors: data.muscleGroupColors || {},
       customTechniques: data.customTechniques || [],
       dailyMacros: data.dailyMacros || null,
+      // Nuovo sistema macros multi-settimana
+      macrosPlans: data.macrosPlans || [],
+      trackedMacros: data.trackedMacros || {},
+      carbCyclingTemplates: data.carbCyclingTemplates || [],
+      activeCarbCyclingId: data.activeCarbCyclingId || null,
     };
 
     return {
@@ -727,6 +753,131 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  // === MACROS MULTI-SETTIMANA ===
+  
+  // Utility per calcolare calorie da macro
+  const calculateMacrosFromBase = (
+    baseMacros: { protein: number; carbs: number; fat: number },
+    multiplier: number
+  ): PlannedDayMacros => {
+    const protein = Math.round(baseMacros.protein * multiplier);
+    const carbs = Math.round(baseMacros.carbs * multiplier);
+    const fat = Math.round(baseMacros.fat * multiplier);
+    const kcal = Math.round(protein * 4 + carbs * 4 + fat * 9);
+    return { protein, carbs, fat, kcal };
+  };
+
+  // Imposta il piano macro per una settimana
+  const setMacrosPlan = (weekNum: number, days: PlannedDayMacros[]) => {
+    updateCurrentUser((prev) => {
+      const existingIndex = prev.macrosPlans.findIndex(p => p.weekNumber === weekNum);
+      const newPlan: WeekMacrosPlan = { weekNumber: weekNum, days };
+      
+      if (existingIndex >= 0) {
+        const newPlans = [...prev.macrosPlans];
+        newPlans[existingIndex] = newPlan;
+        return { macrosPlans: newPlans };
+      } else {
+        return { macrosPlans: [...prev.macrosPlans, newPlan].sort((a, b) => a.weekNumber - b.weekNumber) };
+      }
+    });
+  };
+
+  // Ottiene il piano macro per una settimana
+  const getMacrosPlanForWeek = (weekNum: number): WeekMacrosPlan | undefined => {
+    const userData = state.userData[state.currentUserId];
+    return userData?.macrosPlans?.find(p => p.weekNumber === weekNum);
+  };
+
+  // Traccia i macro effettivamente consumati per un giorno
+  const trackMacros = (weekNum: number, dayIndex: number, macros: TrackedDayMacros) => {
+    const key = `${weekNum}-${dayIndex}`;
+    updateCurrentUser((prev) => ({
+      trackedMacros: { ...prev.trackedMacros, [key]: macros },
+    }));
+  };
+
+  // Ottiene i macro tracciati per un giorno
+  const getTrackedMacros = (weekNum: number, dayIndex: number): TrackedDayMacros | undefined => {
+    const userData = state.userData[state.currentUserId];
+    const key = `${weekNum}-${dayIndex}`;
+    return userData?.trackedMacros?.[key];
+  };
+
+  // Confronta macro pianificati vs tracciati
+  const getMacrosComparison = (weekNum: number, dayIndex: number) => {
+    const plan = getMacrosPlanForWeek(weekNum);
+    const tracked = getTrackedMacros(weekNum, dayIndex);
+    return {
+      planned: plan?.days?.[dayIndex] || null,
+      tracked: tracked || null,
+    };
+  };
+
+  // === CARB CYCLING ===
+
+  // Salva un template carb cycling
+  const saveCarbCyclingTemplate = (template: CarbCyclingTemplate) => {
+    updateCurrentUser((prev) => {
+      const existingIndex = prev.carbCyclingTemplates.findIndex(t => t.id === template.id);
+      if (existingIndex >= 0) {
+        const newTemplates = [...prev.carbCyclingTemplates];
+        newTemplates[existingIndex] = template;
+        return { carbCyclingTemplates: newTemplates };
+      } else {
+        return { carbCyclingTemplates: [...prev.carbCyclingTemplates, template] };
+      }
+    });
+  };
+
+  // Elimina un template carb cycling
+  const deleteCarbCyclingTemplate = (templateId: string) => {
+    updateCurrentUser((prev) => ({
+      carbCyclingTemplates: prev.carbCyclingTemplates.filter(t => t.id !== templateId),
+      activeCarbCyclingId: prev.activeCarbCyclingId === templateId ? null : prev.activeCarbCyclingId,
+    }));
+  };
+
+  // Imposta il carb cycling attivo
+  const setActiveCarbCycling = (templateId: string | null) => {
+    updateCurrentUser(() => ({ activeCarbCyclingId: templateId }));
+  };
+
+  // Applica un template carb cycling alle settimane specificate
+  // trainingDays: array di array, per ogni settimana gli indici dei giorni di allenamento (0-6)
+  const applyCarbCyclingToWeeks = (
+    templateId: string,
+    weekNumbers: number[],
+    trainingDays?: number[][]
+  ) => {
+    const userData = state.userData[state.currentUserId];
+    const template = userData?.carbCyclingTemplates?.find(t => t.id === templateId);
+    if (!template) return;
+
+    weekNumbers.forEach((weekNum, weekIdx) => {
+      const days: PlannedDayMacros[] = [];
+      
+      for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
+        let multiplier = 1.0;
+        
+        if (template.mode === 'per_day' && template.dayMultipliers) {
+          multiplier = template.dayMultipliers[dayIdx] ?? 1.0;
+        } else if (template.mode === 'training_based') {
+          const isTrainingDay = trainingDays?.[weekIdx]?.includes(dayIdx) ?? false;
+          multiplier = isTrainingDay 
+            ? (template.trainingMultiplier ?? 1.0) 
+            : (template.restMultiplier ?? 1.0);
+        }
+        
+        days.push(calculateMacrosFromBase(template.baseMacros, multiplier));
+      }
+      
+      setMacrosPlan(weekNum, days);
+    });
+    
+    setActiveCarbCycling(templateId);
+  };
+
   const resetAllData = () => {
     if (confirm('Cancellare tutti i dati dell\'utente corrente? Questa azione è irreversibile!')) {
       updateCurrentUser(() => createDefaultUserData());
@@ -883,6 +1034,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
         getCurrentDayIndex,
         getLastCheckedDayIndex,
         updateSupplements,
+        // Macros Multi-Settimana
+        setMacrosPlan,
+        getMacrosPlanForWeek,
+        trackMacros,
+        getTrackedMacros,
+        getMacrosComparison,
+        // Carb Cycling
+        saveCarbCyclingTemplate,
+        deleteCarbCyclingTemplate,
+        setActiveCarbCycling,
+        applyCarbCyclingToWeeks,
+        calculateMacrosFromBase,
+        // Helper getters
         getCurrentProgram,
         getCurrentWeeks,
         applyProgressionToAllWeeks,

@@ -255,6 +255,43 @@ export interface DailyMacrosWeek {
   supplements: Supplement[]; // Integratori comuni per tutta la settimana
 }
 
+// Macros Multi-Settimana e Carb Cycling
+
+// Macro pianificati per un giorno (numeri per calcoli più precisi)
+export interface PlannedDayMacros {
+  protein: number;  // grammi
+  carbs: number;    // grammi
+  fat: number;      // grammi
+  kcal: number;     // calcolato automaticamente
+}
+
+// Piano macro per una settimana
+export interface WeekMacrosPlan {
+  weekNumber: number;
+  days: PlannedDayMacros[];  // 7 giorni (0=Lun, 6=Dom)
+}
+
+// Macro effettivamente consumati (tracciati)
+export interface TrackedDayMacros extends PlannedDayMacros {
+  checked: boolean;
+}
+
+// Modalità Carb Cycling
+export type CarbCyclingMode = 'per_day' | 'training_based' | 'custom';
+
+// Template Carb Cycling
+export interface CarbCyclingTemplate {
+  id: string;
+  name: string;
+  baseMacros: { protein: number; carbs: number; fat: number };
+  mode: CarbCyclingMode;
+  // Per mode 'per_day': moltiplicatori per ogni giorno (0-6, Lun-Dom)
+  dayMultipliers?: number[];  // es. [1.2, 0.8, 1.0, 1.2, 0.8, 1.0, 0.8]
+  // Per mode 'training_based'
+  trainingMultiplier?: number;  // es. 1.2 = +20%
+  restMultiplier?: number;      // es. 0.8 = -20%
+}
+
 // User Management
 export interface User {
   id: string;
@@ -272,7 +309,12 @@ export interface UserData {
   muscleGroups: string[]; // Gruppi muscolari personalizzati
   muscleGroupColors: Record<string, string>; // Colori per gruppi muscolari personalizzati
   customTechniques: CustomTechnique[]; // Tecniche personalizzate
-  dailyMacros: DailyMacrosWeek | null; // Macro giornalieri settimanali
+  dailyMacros: DailyMacrosWeek | null; // Macro giornalieri settimanali (legacy, per retrocompatibilità)
+  // Nuovo sistema macros multi-settimana
+  macrosPlans: WeekMacrosPlan[];      // Piano macro per ogni settimana del programma
+  trackedMacros: Record<string, TrackedDayMacros>;  // Macro tracciati, chiave: "weekNum-dayIndex" es. "1-0"
+  carbCyclingTemplates: CarbCyclingTemplate[];  // Template carb cycling salvati
+  activeCarbCyclingId: string | null;  // ID del template carb cycling attivo
 }
 
 // Global State

@@ -134,12 +134,10 @@ export function ProgramSelector() {
                   <Copy className="w-4 h-4 mr-1" />
                   Duplica
                 </Button>
-                {programList.length > 1 && (
-                  <Button variant="outline" size="sm" onClick={handleDeleteProgram}>
-                    <Trash2 className="w-4 h-4 mr-1 text-red-500" />
-                    Elimina
-                  </Button>
-                )}
+                <Button variant="outline" size="sm" onClick={handleDeleteProgram}>
+                  <Trash2 className="w-4 h-4 mr-1 text-red-500" />
+                  Elimina
+                </Button>
               </div>
             </div>
 
