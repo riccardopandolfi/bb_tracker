@@ -29,6 +29,7 @@ interface AppContextType extends UserData {
   setWeeks: (weeks: Record<number, Week>) => void;
   addWeek: (weekNum: number) => void;
   duplicateWeek: (weekNum: number) => void;
+  deleteWeek: (weekNum: number) => void;
   updateWeek: (weekNum: number, week: Week) => void;
   addLoggedSession: (session: LoggedSession) => void;
   updateLoggedSession: (session: LoggedSession) => void;
@@ -594,6 +595,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCurrentWeek(newWeekNum);
   };
 
+  const deleteWeek = (weekNum: number) => {
+    const program = getCurrentProgram();
+    if (!program) return;
+    
+    const weekNumbers = Object.keys(program.weeks).map(Number);
+    if (weekNumbers.length <= 1) {
+      alert('Impossibile eliminare l\'unica settimana del programma.');
+      return;
+    }
+    
+    if (!confirm(`Eliminare la Week ${weekNum}?\n\nLe sessioni loggate relative a questa settimana verranno eliminate.`)) return;
+    
+    const newWeeks = { ...program.weeks };
+    delete newWeeks[weekNum];
+    
+    updateProgram(program.id, { ...program, weeks: newWeeks });
+    
+    // Aggiorna currentWeek se era quella eliminata
+    const userData = state.userData[state.currentUserId];
+    if (userData?.currentWeek === weekNum) {
+      const remainingWeeks = Object.keys(newWeeks).map(Number).sort((a, b) => a - b);
+      setCurrentWeek(remainingWeeks[0] || 1);
+    }
+    
+    // Elimina le sessioni loggate per quella settimana
+    updateCurrentUser((prev) => ({
+      loggedSessions: prev.loggedSessions.filter(
+        s => !(s.programId === program.id && s.weekNum === weekNum)
+      ),
+    }));
+  };
+
   const updateWeek = (weekNum: number, week: Week) => {
     const program = getCurrentProgram();
     if (!program) return;
@@ -1106,6 +1139,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setWeeks,
         addWeek,
         duplicateWeek,
+        deleteWeek,
         updateWeek,
         addLoggedSession,
         updateLoggedSession,

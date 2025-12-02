@@ -175,7 +175,6 @@ export function ProgramsTab() {
                 isActive={isActive}
                 createdDate={createdDate}
                 weekCount={weekCount}
-                programListLength={programList.length}
                 onSelect={() => setCurrentProgram(program.id)}
                 onEdit={() => handleOpenEditModal(program.id)}
                 onDuplicate={() => handleDuplicateProgram(program.id)}
@@ -291,7 +290,6 @@ function ProgramCard({
   isActive,
   createdDate,
   weekCount,
-  programListLength,
   onSelect,
   onEdit,
   onDuplicate,
@@ -301,7 +299,6 @@ function ProgramCard({
   isActive: boolean;
   createdDate: string;
   weekCount: number;
-  programListLength: number;
   onSelect: () => void;
   onEdit: () => void;
   onDuplicate: () => void;
@@ -322,7 +319,6 @@ function ProgramCard({
                   onEdit={onEdit}
                   onDuplicate={onDuplicate}
                   onDelete={onDelete}
-                  canDelete={programListLength > 1}
                 />
               </div>
 
@@ -365,7 +361,6 @@ function ProgramCard({
                 onEdit={onEdit}
                 onDuplicate={onDuplicate}
                 onDelete={onDelete}
-                canDelete={programListLength > 1}
               />
             </div>
 
@@ -410,12 +405,10 @@ function ProgramActionsMenu({
   onEdit,
   onDuplicate,
   onDelete,
-  canDelete
 }: {
   onEdit: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
-  canDelete: boolean;
 }) {
   return (
     <DropdownMenu>
@@ -434,15 +427,13 @@ function ProgramActionsMenu({
           <Copy className="mr-2 h-4 w-4" />
           Duplica
         </DropdownMenuItem>
-        {canDelete && (
-          <DropdownMenuItem
-            onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="text-red-600 focus:text-red-600"
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Elimina
-          </DropdownMenuItem>
-        )}
+        <DropdownMenuItem
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="text-red-600 focus:text-red-600"
+        >
+          <Trash2 className="mr-2 h-4 w-4" />
+          Elimina
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

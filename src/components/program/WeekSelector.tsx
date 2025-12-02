@@ -1,10 +1,10 @@
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
-import { Plus, Copy, Check } from 'lucide-react';
+import { Plus, Copy, Check, Trash2 } from 'lucide-react';
 
 export function WeekSelector() {
-  const { currentWeek, getCurrentWeeks, setCurrentWeek, addWeek, duplicateWeek, loggedSessions, currentProgramId } = useApp();
+  const { currentWeek, getCurrentWeeks, setCurrentWeek, addWeek, duplicateWeek, deleteWeek, loggedSessions, currentProgramId } = useApp();
   const weeks = getCurrentWeeks();
   const weekNumbers = Object.keys(weeks).map(Number).sort((a, b) => a - b);
 
@@ -16,6 +16,8 @@ export function WeekSelector() {
     addWeek(newWeekNum);
     setCurrentWeek(newWeekNum);
   };
+
+  const canDeleteWeek = weekNumbers.length > 1;
 
   return (
     <Card className="card-monetra">
@@ -59,6 +61,17 @@ export function WeekSelector() {
             >
               <Copy className="w-4 h-4 mr-1" />
               Duplica
+            </Button>
+          )}
+          {canDeleteWeek && weeks[currentWeek] && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => deleteWeek(currentWeek)}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Elimina
             </Button>
           )}
         </div>
