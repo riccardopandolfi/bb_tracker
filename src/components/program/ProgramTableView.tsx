@@ -184,7 +184,7 @@ export function ProgramTableView() {
   const [newDayName, setNewDayName] = useState('');
   const [showAddExerciseDialog, setShowAddExerciseDialog] = useState(false);
   const [newExerciseName, setNewExerciseName] = useState('');
-  const [newExerciseMuscleGroup, setNewExerciseMuscleGroup] = useState('');
+  const [newExerciseMuscleGroup, setNewExerciseMuscleGroup] = useState('auto');
   const [selectedWeeksForNewExercise, setSelectedWeeksForNewExercise] = useState<number[]>([]);
   
   // Modal states
@@ -381,7 +381,9 @@ export function ProgramTableView() {
     const libraryEx = exerciseLibrary.find(ex => ex.name === newExerciseName);
     if (!libraryEx) return;
     
-    const muscleGroup = newExerciseMuscleGroup || getMuscleGroupFromLibrary(newExerciseName);
+    const muscleGroup = newExerciseMuscleGroup && newExerciseMuscleGroup !== 'auto'
+      ? newExerciseMuscleGroup
+      : getMuscleGroupFromLibrary(newExerciseName);
     
     const newExercise: ProgramExercise = {
       exerciseName: libraryEx.name,
@@ -585,7 +587,7 @@ export function ProgramTableView() {
         </CardHeader>
         
         <CardContent className="p-0">
-          <div className="w-full overflow-auto max-h-[70vh]">
+          <div className="w-full overflow-auto max-h-[70vh] pb-24">
             <div className="inline-block min-w-max">
               <table className="table-auto border-collapse text-sm">
                 <thead className="sticky top-0 z-20 bg-white">
@@ -833,7 +835,7 @@ export function ProgramTableView() {
                   <SelectValue placeholder="Auto dalla libreria" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Auto dalla libreria</SelectItem>
+                  <SelectItem value="auto">Auto dalla libreria</SelectItem>
                   {muscleGroups.map((mg) => (
                     <SelectItem key={mg} value={mg}>{mg}</SelectItem>
                   ))}
