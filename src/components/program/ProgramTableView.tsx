@@ -6,14 +6,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { Checkbox } from '../ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
 import { getContrastTextColor, adjustColor } from '@/lib/colorUtils';
 import { getExerciseBlocks, createDefaultBlock } from '@/lib/exerciseUtils';
 import { ConfigureExerciseModal } from './ConfigureExerciseModal';
 import { LogSessionModal } from './LogSessionModal';
-import { Pencil, ClipboardList, Plus, Copy, Trash2 } from 'lucide-react';
+import { ClipboardList, Plus, Copy, Trash2 } from 'lucide-react';
 
-// Genera la stringa dello schema per un blocco
+// Genera la stringa dello schema per un blocco (come nella vista card)
 function formatBlockSchema(block: ExerciseBlock): string {
   const sets = block.sets || 0;
   const technique = block.technique || 'Normale';
@@ -40,6 +41,7 @@ function formatBlockSchema(block: ExerciseBlock): string {
     return `${sets} x ${block.repsBase || '?'}`;
   }
   
+  // Tecniche speciali (Rest-Pause, Myo-Reps, etc.)
   if (block.techniqueSchema) {
     return `${sets} x ${block.techniqueSchema}`;
   }
@@ -52,7 +54,7 @@ function formatBlockLoads(block: ExerciseBlock): string {
   const technique = block.technique || 'Normale';
   
   if (technique === 'Ramping') {
-    return block.startLoad || '-';
+    return block.startLoad ? `da ${block.startLoad} kg` : '';
   }
   
   if (technique === 'Progressione a %' && block.percentageProgression) {
@@ -60,7 +62,7 @@ function formatBlockLoads(block: ExerciseBlock): string {
   }
   
   if (technique !== 'Normale' && block.targetLoadsByCluster && block.targetLoadsByCluster.length > 0) {
-    return block.targetLoadsByCluster.map(sl => sl.join('/')).join('-');
+    return block.targetLoadsByCluster.map(sl => sl.join('/')).join('-') + ' kg';
   }
   
   if (block.targetLoads && block.targetLoads.length > 0) {
@@ -71,12 +73,17 @@ function formatBlockLoads(block: ExerciseBlock): string {
     return block.targetLoads.join('-') + ' kg';
   }
   
-  return '-';
+  return '';
 }
 
-// Formatta le note del blocco
-function formatBlockNotes(block: ExerciseBlock): string {
+// Formatta info intensità (RPE, Coeff)
+function formatIntensityInfo(block: ExerciseBlock): string {
   const parts: string[] = [];
+  
+  const technique = block.technique || 'Normale';
+  if (technique !== 'Normale') {
+    parts.push(technique);
+  }
   
   if (block.targetRPE) {
     parts.push(`RPE ${block.targetRPE}`);
@@ -86,7 +93,7 @@ function formatBlockNotes(block: ExerciseBlock): string {
     parts.push(`Coeff ${block.coefficient}`);
   }
   
-  return parts.join('\n');
+  return parts.join(' • ');
 }
 
 // Formatta il resoconto di una sessione loggata
@@ -101,15 +108,8 @@ function formatLoggedSession(session: LoggedSession | undefined): { reps: string
   return { reps, loads: loads ? `${loads} kg` : '', rpe, notes };
 }
 
-// Chiave unica per un esercizio (nome + blocco)
-interface ExerciseKey {
-  exerciseName: string;
-  blockIndex: number;
-  muscleGroup: string;
-}
-
-// Dati per settimana di un esercizio
-interface WeekExerciseData {
+// Dati per settimana di un blocco
+interface WeekBlockData {
   exists: boolean;
   exerciseIndex: number;
   exercise?: ProgramExercise;
@@ -117,7 +117,9 @@ interface WeekExerciseData {
   rest: number;
   schema: string;
   loads: string;
-  notes: string;
+  intensityInfo: string;
+  exerciseNotes: string;
+  blockNotes: string;
 }
 
 // Dati di log per settimana
@@ -129,11 +131,27 @@ interface WeekLogData {
   session?: LoggedSession;
 }
 
-// Riga della tabella
-interface TableRow {
-  key: ExerciseKey;
-  weekData: Record<number, WeekExerciseData>;
+// Riga della tabella (un blocco)
+interface BlockRow {
+  exerciseName: string;
+  blockIndex: number;
+  weekData: Record<number, WeekBlockData>;
   logData: Record<number, WeekLogData>;
+}
+
+// Gruppo di blocchi per esercizio
+interface ExerciseGroup {
+  exerciseName: string;
+  muscleGroup: string;
+  blocks: BlockRow[];
+}
+
+// Gruppo per muscolo
+interface MuscleGroupData {
+  muscleGroup: string;
+  color: string;
+  exercises: ExerciseGroup[];
+  totalBlocks: number;
 }
 
 export function ProgramTableView() {
@@ -144,6 +162,7 @@ export function ProgramTableView() {
     getMuscleColor,
     exercises: exerciseLibrary,
     customTechniques,
+    muscleGroups,
     updateWeek,
     setCurrentWeek,
     addWeek,
@@ -160,76 +179,13 @@ export function ProgramTableView() {
   
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   
-  // Dialog per aggiungere giorno
+  // Dialog states
   const [showAddDayDialog, setShowAddDayDialog] = useState(false);
   const [newDayName, setNewDayName] = useState('');
-  
-  // Funzione per ottenere il gruppo muscolare dalla libreria se non specificato
-  const getMuscleGroupFromLibrary = (exerciseName: string): string => {
-    const libraryExercise = exerciseLibrary.find(ex => ex.name === exerciseName);
-    if (libraryExercise?.muscles && libraryExercise.muscles.length > 0) {
-      // Prendi il muscolo con la percentuale più alta
-      const primaryMuscle = libraryExercise.muscles.reduce((prev, curr) => 
-        curr.percent > prev.percent ? curr : prev
-      );
-      return primaryMuscle.muscle;
-    }
-    return 'Non specificato';
-  };
-  
-  // Handler per aggiungere settimana
-  const handleAddWeek = () => {
-    const newWeekNum = Math.max(...weekNumbers, 0) + 1;
-    addWeek(newWeekNum);
-  };
-  
-  // Handler per duplicare settimana
-  const handleDuplicateWeek = (weekNum: number) => {
-    duplicateWeek(weekNum);
-  };
-  
-  // Handler per eliminare settimana
-  const handleDeleteWeek = (weekNum: number) => {
-    deleteWeek(weekNum);
-  };
-  
-  // Handler per aggiungere giorno a TUTTE le settimane
-  const handleAddDay = () => {
-    if (!newDayName.trim()) {
-      alert('Inserisci un nome per il giorno');
-      return;
-    }
-    
-    const newDay: Day = {
-      name: newDayName.trim(),
-      exercises: [],
-    };
-    
-    // Aggiungi il giorno a tutte le settimane
-    weekNumbers.forEach(weekNum => {
-      const week = weeks[weekNum];
-      if (week) {
-        const updatedWeek = {
-          ...week,
-          days: [...week.days, newDay],
-        };
-        updateWeek(weekNum, updatedWeek);
-      }
-    });
-    
-    // Seleziona il nuovo giorno
-    const firstWeek = weeks[weekNumbers[0]];
-    if (firstWeek) {
-      setSelectedDayIndex(firstWeek.days.length); // Sarà il nuovo indice dopo l'aggiunta
-    }
-    
-    setNewDayName('');
-    setShowAddDayDialog(false);
-  };
-  
-  // Verifica se una settimana ha sessioni loggate
-  const hasLoggedSessions = (weekNum: number) =>
-    loggedSessions.some((s) => s.weekNum === weekNum && s.programId === currentProgramId);
+  const [showAddExerciseDialog, setShowAddExerciseDialog] = useState(false);
+  const [newExerciseName, setNewExerciseName] = useState('');
+  const [newExerciseMuscleGroup, setNewExerciseMuscleGroup] = useState('');
+  const [selectedWeeksForNewExercise, setSelectedWeeksForNewExercise] = useState<number[]>([]);
   
   // Modal states
   const [configModalOpen, setConfigModalOpen] = useState(false);
@@ -239,10 +195,21 @@ export function ProgramTableView() {
   const [selectedBlockIndex, setSelectedBlockIndex] = useState<number | null>(null);
   const [selectedExercise, setSelectedExercise] = useState<ProgramExercise | null>(null);
   
-  // Ottieni i giorni disponibili (unione di tutti i giorni da tutte le settimane)
+  // Funzione per ottenere il gruppo muscolare dalla libreria
+  const getMuscleGroupFromLibrary = (exerciseName: string): string => {
+    const libraryExercise = exerciseLibrary.find(ex => ex.name === exerciseName);
+    if (libraryExercise?.muscles && libraryExercise.muscles.length > 0) {
+      const primaryMuscle = libraryExercise.muscles.reduce((prev, curr) => 
+        curr.percent > prev.percent ? curr : prev
+      );
+      return primaryMuscle.muscle;
+    }
+    return 'Non specificato';
+  };
+  
+  // Ottieni i giorni disponibili
   const availableDays = useMemo(() => {
     const dayNames = new Map<number, string>();
-    
     weekNumbers.forEach(weekNum => {
       const week = weeks[weekNum];
       if (week?.days) {
@@ -253,81 +220,63 @@ export function ProgramTableView() {
         });
       }
     });
-    
     return Array.from(dayNames.entries())
       .sort((a, b) => a[0] - b[0])
       .map(([index, name]) => ({ index, name }));
   }, [weeks, weekNumbers]);
   
-  // Costruisci un registry di TUTTI gli esercizi da TUTTE le settimane per il giorno selezionato
-  const tableRows = useMemo((): TableRow[] => {
+  // Costruisci la struttura dati per la tabella
+  const muscleGroupsData = useMemo((): MuscleGroupData[] => {
     if (!program || weekNumbers.length === 0) return [];
     
-    // Mappa: "exerciseName|blockIndex" -> dati
-    const exerciseRegistry = new Map<string, TableRow>();
+    // Mappa: exerciseName -> ExerciseGroup
+    const exerciseMap = new Map<string, ExerciseGroup>();
     
-    // Prima passata: raccogli tutti gli esercizi unici
+    // Raccogli tutti gli esercizi e blocchi da tutte le settimane
     weekNumbers.forEach(weekNum => {
       const week = weeks[weekNum];
       const day = week?.days?.[selectedDayIndex];
       if (!day) return;
       
-      day.exercises.forEach((exercise) => {
+      day.exercises.forEach((exercise, exerciseIndex) => {
         const blocks = getExerciseBlocks(exercise);
         
-        blocks.forEach((_, blockIndex) => {
-          const keyStr = `${exercise.exerciseName}|${blockIndex}`;
+        if (!exerciseMap.has(exercise.exerciseName)) {
+          const muscleGroup = exercise.muscleGroup && exercise.muscleGroup !== 'Non specificato'
+            ? exercise.muscleGroup
+            : getMuscleGroupFromLibrary(exercise.exerciseName);
           
-          if (!exerciseRegistry.has(keyStr)) {
-            // Determina il gruppo muscolare: prima da exercise.muscleGroup, poi dalla libreria
-            const muscleGroup = exercise.muscleGroup && exercise.muscleGroup !== 'Non specificato'
-              ? exercise.muscleGroup
-              : getMuscleGroupFromLibrary(exercise.exerciseName);
-            
-            exerciseRegistry.set(keyStr, {
-              key: {
-                exerciseName: exercise.exerciseName,
-                blockIndex,
-                muscleGroup,
-              },
-              weekData: {},
-              logData: {},
-            });
-          } else {
-            // Aggiorna muscleGroup se quello esistente è "Non specificato" e questo ha un valore
-            const row = exerciseRegistry.get(keyStr)!;
-            if (row.key.muscleGroup === 'Non specificato') {
-              if (exercise.muscleGroup && exercise.muscleGroup !== 'Non specificato') {
-                row.key.muscleGroup = exercise.muscleGroup;
-              } else {
-                const fromLibrary = getMuscleGroupFromLibrary(exercise.exerciseName);
-                if (fromLibrary !== 'Non specificato') {
-                  row.key.muscleGroup = fromLibrary;
-                }
-              }
-            }
+          exerciseMap.set(exercise.exerciseName, {
+            exerciseName: exercise.exerciseName,
+            muscleGroup,
+            blocks: [],
+          });
+        }
+        
+        const exGroup = exerciseMap.get(exercise.exerciseName)!;
+        
+        // Aggiorna muscleGroup se migliore
+        if (exGroup.muscleGroup === 'Non specificato') {
+          if (exercise.muscleGroup && exercise.muscleGroup !== 'Non specificato') {
+            exGroup.muscleGroup = exercise.muscleGroup;
           }
-        });
-      });
-    });
-    
-    // Seconda passata: popola i dati per ogni settimana
-    weekNumbers.forEach(weekNum => {
-      const week = weeks[weekNum];
-      const day = week?.days?.[selectedDayIndex];
-      
-      exerciseRegistry.forEach((row, keyStr) => {
-        const [exerciseName, blockIndexStr] = keyStr.split('|');
-        const blockIndex = parseInt(blockIndexStr, 10);
+        }
         
-        // Trova l'esercizio in questa settimana
-        const exerciseIndex = day?.exercises.findIndex(ex => ex.exerciseName === exerciseName) ?? -1;
-        const exercise = exerciseIndex >= 0 ? day?.exercises[exerciseIndex] : undefined;
-        const blocks = exercise ? getExerciseBlocks(exercise) : [];
-        const block = blocks[blockIndex];
+        // Assicurati che ci siano abbastanza blocchi
+        while (exGroup.blocks.length < blocks.length) {
+          exGroup.blocks.push({
+            exerciseName: exercise.exerciseName,
+            blockIndex: exGroup.blocks.length,
+            weekData: {},
+            logData: {},
+          });
+        }
         
-        if (exercise && block) {
-          row.weekData[weekNum] = {
+        // Popola i dati per questa settimana
+        blocks.forEach((block, blockIndex) => {
+          const blockRow = exGroup.blocks[blockIndex];
+          
+          blockRow.weekData[weekNum] = {
             exists: true,
             exerciseIndex,
             exercise,
@@ -335,95 +284,168 @@ export function ProgramTableView() {
             rest: block.rest || 0,
             schema: formatBlockSchema(block),
             loads: formatBlockLoads(block),
-            notes: formatBlockNotes(block),
+            intensityInfo: formatIntensityInfo(block),
+            exerciseNotes: exercise.notes || '',
+            blockNotes: block.notes || '',
           };
-        } else {
-          row.weekData[weekNum] = {
-            exists: false,
-            exerciseIndex: -1,
-            rest: 0,
-            schema: '-',
-            loads: '-',
-            notes: '',
-          };
-        }
-        
-        // Trova log
-        const session = loggedSessions.find(
-          s => s.programId === program.id &&
-               s.weekNum === weekNum &&
-               s.exercise === exerciseName &&
-               s.blockIndex === blockIndex &&
-               s.dayIndex === selectedDayIndex
-        );
-        
-        const formatted = formatLoggedSession(session);
-        row.logData[weekNum] = { ...formatted, session };
+          
+          // Log
+          const session = loggedSessions.find(
+            s => s.programId === program.id &&
+                 s.weekNum === weekNum &&
+                 s.exercise === exercise.exerciseName &&
+                 s.blockIndex === blockIndex &&
+                 s.dayIndex === selectedDayIndex
+          );
+          blockRow.logData[weekNum] = formatLoggedSession(session);
+          if (session) blockRow.logData[weekNum].session = session;
+        });
       });
     });
     
-    // Converti in array e ordina per gruppo muscolare
-    return Array.from(exerciseRegistry.values()).sort((a, b) => {
-      if (a.key.muscleGroup !== b.key.muscleGroup) {
-        return a.key.muscleGroup.localeCompare(b.key.muscleGroup);
-      }
-      return a.key.exerciseName.localeCompare(b.key.exerciseName);
+    // Popola weekData mancanti con exists: false
+    exerciseMap.forEach(exGroup => {
+      exGroup.blocks.forEach(blockRow => {
+        weekNumbers.forEach(weekNum => {
+          if (!blockRow.weekData[weekNum]) {
+            blockRow.weekData[weekNum] = {
+              exists: false,
+              exerciseIndex: -1,
+              rest: 0,
+              schema: '-',
+              loads: '',
+              intensityInfo: '',
+              exerciseNotes: '',
+              blockNotes: '',
+            };
+          }
+          if (!blockRow.logData[weekNum]) {
+            blockRow.logData[weekNum] = { reps: '', loads: '', rpe: '', notes: '' };
+          }
+        });
+      });
     });
-  }, [program, weeks, weekNumbers, selectedDayIndex, loggedSessions]);
-  
-  // Raggruppa per gruppo muscolare
-  const groupedRows = useMemo(() => {
-    const groups: { muscleGroup: string; rows: TableRow[]; color: string }[] = [];
-    const groupMap = new Map<string, TableRow[]>();
     
-    tableRows.forEach(row => {
-      const group = row.key.muscleGroup;
-      if (!groupMap.has(group)) {
-        groupMap.set(group, []);
+    // Raggruppa per muscolo
+    const muscleMap = new Map<string, ExerciseGroup[]>();
+    exerciseMap.forEach(exGroup => {
+      const mg = exGroup.muscleGroup;
+      if (!muscleMap.has(mg)) {
+        muscleMap.set(mg, []);
       }
-      groupMap.get(group)!.push(row);
+      muscleMap.get(mg)!.push(exGroup);
     });
     
-    groupMap.forEach((rows, muscleGroup) => {
-      groups.push({
+    // Converti in array finale
+    const result: MuscleGroupData[] = [];
+    muscleMap.forEach((exercises, muscleGroup) => {
+      const totalBlocks = exercises.reduce((sum, ex) => sum + ex.blocks.length, 0);
+      result.push({
         muscleGroup,
-        rows,
         color: getMuscleColor(muscleGroup),
+        exercises,
+        totalBlocks,
       });
     });
     
-    return groups;
-  }, [tableRows, getMuscleColor]);
+    return result.sort((a, b) => a.muscleGroup.localeCompare(b.muscleGroup));
+  }, [program, weeks, weekNumbers, selectedDayIndex, loggedSessions, getMuscleColor, exerciseLibrary]);
   
-  // Handler per aprire il modal di configurazione
-  const handleOpenConfigModal = (weekNum: number, row: TableRow) => {
-    const weekData = row.weekData[weekNum];
+  // Handlers
+  const handleAddWeek = () => {
+    const newWeekNum = Math.max(...weekNumbers, 0) + 1;
+    addWeek(newWeekNum);
+  };
+  
+  const handleAddDay = () => {
+    if (!newDayName.trim()) return;
+    const newDay: Day = { name: newDayName.trim(), exercises: [] };
+    weekNumbers.forEach(weekNum => {
+      const week = weeks[weekNum];
+      if (week) {
+        updateWeek(weekNum, { ...week, days: [...week.days, newDay] });
+      }
+    });
+    const firstWeek = weeks[weekNumbers[0]];
+    if (firstWeek) setSelectedDayIndex(firstWeek.days.length);
+    setNewDayName('');
+    setShowAddDayDialog(false);
+  };
+  
+  const handleAddExercise = () => {
+    if (!newExerciseName || selectedWeeksForNewExercise.length === 0) {
+      alert('Seleziona un esercizio e almeno una settimana');
+      return;
+    }
+    
+    const libraryEx = exerciseLibrary.find(ex => ex.name === newExerciseName);
+    if (!libraryEx) return;
+    
+    const muscleGroup = newExerciseMuscleGroup || getMuscleGroupFromLibrary(newExerciseName);
+    
+    const newExercise: ProgramExercise = {
+      exerciseName: libraryEx.name,
+      exerciseType: libraryEx.type,
+      muscleGroup,
+      blocks: [createDefaultBlock(libraryEx.type)],
+      notes: '',
+    };
+    
+    selectedWeeksForNewExercise.forEach(weekNum => {
+      const week = weeks[weekNum];
+      const day = week?.days?.[selectedDayIndex];
+      if (week && day) {
+        const updatedDay = { ...day, exercises: [...day.exercises, newExercise] };
+        const updatedWeek = {
+          ...week,
+          days: week.days.map((d, i) => i === selectedDayIndex ? updatedDay : d),
+        };
+        updateWeek(weekNum, updatedWeek);
+      }
+    });
+    
+    setNewExerciseName('');
+    setNewExerciseMuscleGroup('');
+    setSelectedWeeksForNewExercise([]);
+    setShowAddExerciseDialog(false);
+  };
+  
+  const toggleWeekSelection = (weekNum: number) => {
+    setSelectedWeeksForNewExercise(prev => 
+      prev.includes(weekNum) 
+        ? prev.filter(w => w !== weekNum)
+        : [...prev, weekNum]
+    );
+  };
+  
+  const hasLoggedSessions = (weekNum: number) =>
+    loggedSessions.some((s) => s.weekNum === weekNum && s.programId === currentProgramId);
+  
+  const handleOpenConfigModal = (weekNum: number, blockRow: BlockRow) => {
+    const weekData = blockRow.weekData[weekNum];
     if (weekData.exists && weekData.exercise) {
       setSelectedWeekNum(weekNum);
       setSelectedExerciseIndex(weekData.exerciseIndex);
-      setSelectedBlockIndex(row.key.blockIndex);
+      setSelectedBlockIndex(blockRow.blockIndex);
       setSelectedExercise(weekData.exercise);
       setCurrentWeek(weekNum);
       setConfigModalOpen(true);
     }
   };
   
-  // Handler per aprire il modal di log
-  const handleOpenLogModal = (weekNum: number, row: TableRow) => {
-    const weekData = row.weekData[weekNum];
+  const handleOpenLogModal = (weekNum: number, blockRow: BlockRow) => {
+    const weekData = blockRow.weekData[weekNum];
     if (weekData.exists) {
       setSelectedWeekNum(weekNum);
       setSelectedExerciseIndex(weekData.exerciseIndex);
-      setSelectedBlockIndex(row.key.blockIndex);
+      setSelectedBlockIndex(blockRow.blockIndex);
       setCurrentWeek(weekNum);
       setLogModalOpen(true);
     }
   };
   
-  // Handler per aggiornare l'esercizio dal modal
   const handleUpdateExercise = (field: keyof ProgramExercise, value: any) => {
     if (selectedWeekNum === null || selectedExerciseIndex === null || !selectedExercise) return;
-    
     const week = weeks[selectedWeekNum];
     const day = week?.days?.[selectedDayIndex];
     if (!day) return;
@@ -435,54 +457,37 @@ export function ProgramTableView() {
       ...day,
       exercises: day.exercises.map((ex, i) => i === selectedExerciseIndex ? updatedExercise : ex),
     };
-    
     const updatedWeek = {
       ...week,
       days: week.days.map((d, i) => i === selectedDayIndex ? updatedDay : d),
     };
-    
     updateWeek(selectedWeekNum, updatedWeek);
   };
   
-  // Handler per aggiornare un blocco
   const handleUpdateBlock = (blockIndex: number, field: keyof ExerciseBlock, value: any) => {
-    if (selectedWeekNum === null || selectedExerciseIndex === null || !selectedExercise) return;
-    
+    if (!selectedExercise) return;
     const blocks = [...(selectedExercise.blocks || [])];
     blocks[blockIndex] = { ...blocks[blockIndex], [field]: value };
-    
     handleUpdateExercise('blocks', blocks);
   };
   
-  // Handler per aggiornamento batch di un blocco
   const handleUpdateBlockBatch = (blockIndex: number, updates: Partial<ExerciseBlock>) => {
-    if (selectedWeekNum === null || selectedExerciseIndex === null || !selectedExercise) return;
-    
+    if (!selectedExercise) return;
     const blocks = [...(selectedExercise.blocks || [])];
     blocks[blockIndex] = { ...blocks[blockIndex], ...updates };
-    
     handleUpdateExercise('blocks', blocks);
   };
   
-  // Handler per aggiungere un blocco
   const handleAddBlock = () => {
     if (!selectedExercise) return;
-    
     const newBlock = createDefaultBlock(selectedExercise.exerciseType || 'resistance');
-    const blocks = [...(selectedExercise.blocks || []), newBlock];
-    
-    handleUpdateExercise('blocks', blocks);
+    handleUpdateExercise('blocks', [...(selectedExercise.blocks || []), newBlock]);
   };
   
-  // Handler per eliminare un blocco
   const handleDeleteBlock = (blockIndex: number) => {
     if (!selectedExercise) return;
-    
     let blocks = (selectedExercise.blocks || []).filter((_, i) => i !== blockIndex);
-    if (blocks.length === 0) {
-      blocks = [createDefaultBlock(selectedExercise.exerciseType || 'resistance')];
-    }
-    
+    if (blocks.length === 0) blocks = [createDefaultBlock(selectedExercise.exerciseType || 'resistance')];
     handleUpdateExercise('blocks', blocks);
   };
   
@@ -530,12 +535,7 @@ export function ProgramTableView() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAddDayDialog(true)}
-                title="Aggiungi giorno"
-              >
+              <Button variant="outline" size="sm" onClick={() => setShowAddDayDialog(true)} title="Aggiungi giorno">
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
@@ -550,75 +550,65 @@ export function ProgramTableView() {
                 variant="outline"
                 size="sm"
                 onClick={() => setCurrentWeek(weekNum)}
-                className={`relative ${currentWeek === weekNum 
+                className={currentWeek === weekNum 
                   ? 'lime-gradient text-black shadow-md' 
-                  : 'bg-muted/50 border border-border text-foreground hover:bg-muted'}`}
+                  : 'bg-muted/50 border border-border text-foreground hover:bg-muted'}
               >
                 W{weekNum}
-                {hasLoggedSessions(weekNum) && (
-                  <span className="ml-1">✓</span>
-                )}
+                {hasLoggedSessions(weekNum) && <span className="ml-1">✓</span>}
               </Button>
             ))}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAddWeek}
-              className="bg-black text-white border-black hover:bg-black/90"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Nuova
+            <Button variant="outline" size="sm" onClick={handleAddWeek} className="bg-black text-white border-black hover:bg-black/90">
+              <Plus className="w-4 h-4 mr-1" />Nuova
             </Button>
             {weekNumbers.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleDuplicateWeek(currentWeek)}
-              >
-                <Copy className="w-4 h-4 mr-1" />
-                Duplica W{currentWeek}
+              <Button variant="outline" size="sm" onClick={() => duplicateWeek(currentWeek)}>
+                <Copy className="w-4 h-4 mr-1" />Duplica W{currentWeek}
               </Button>
             )}
             {weekNumbers.length > 1 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleDeleteWeek(currentWeek)}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                <Trash2 className="w-4 h-4 mr-1" />
-                Elimina W{currentWeek}
+              <Button variant="outline" size="sm" onClick={() => deleteWeek(currentWeek)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                <Trash2 className="w-4 h-4 mr-1" />Elimina W{currentWeek}
               </Button>
             )}
+          </div>
+          
+          {/* Pulsante Aggiungi Esercizio */}
+          <div className="pt-2">
+            <Button variant="outline" size="sm" onClick={() => {
+              setSelectedWeeksForNewExercise([...weekNumbers]);
+              setShowAddExerciseDialog(true);
+            }}>
+              <Plus className="w-4 h-4 mr-1" />Aggiungi Esercizio
+            </Button>
           </div>
         </CardHeader>
         
         <CardContent className="p-0">
-          <div className="w-full overflow-x-auto">
-            <table className="w-full border-collapse min-w-max text-sm">
-              <thead>
-                <tr className="bg-muted/50">
-                  <th className="p-3 text-left font-semibold border-b border-r border-border" style={{ minWidth: '120px' }}>
+          <div className="w-full overflow-auto max-h-[70vh]">
+            <table className="w-full border-collapse text-sm">
+              <thead className="sticky top-0 z-20 bg-white">
+                <tr>
+                  <th className="p-2 text-left font-semibold border-b border-r border-border bg-muted/50 whitespace-nowrap">
                     Gruppo
                   </th>
-                  <th className="p-3 text-left font-semibold border-b border-r border-border" style={{ minWidth: '180px' }}>
+                  <th className="p-2 text-left font-semibold border-b border-r border-border bg-muted/50 whitespace-nowrap">
                     Esercizio
                   </th>
-                  {/* Colonne per ogni settimana: REST | WEEK | RESOCONTO */}
                   {weekNumbers.map((weekNum) => (
                     <th key={`header-${weekNum}`} colSpan={3} className="p-0 border-b border-border">
-                      <div className="bg-primary/20 px-3 py-2 text-center font-bold border-b border-border">
+                      <div className="bg-primary/20 px-2 py-1.5 text-center font-bold border-b border-border text-xs">
                         WEEK {weekNum}
                       </div>
                       <div className="grid grid-cols-3">
-                        <div className="p-2 text-center text-xs font-medium border-r border-border bg-muted/50">
-                          REST
+                        <div className="p-1.5 text-center text-[10px] font-medium border-r border-border bg-muted/50 whitespace-nowrap">
+                          REST / NOTE
                         </div>
-                        <div className="p-2 text-center text-xs font-medium border-r border-border bg-white">
+                        <div className="p-1.5 text-center text-[10px] font-medium border-r border-border bg-white whitespace-nowrap">
                           SCHEMA
                         </div>
-                        <div className="p-2 text-center text-xs font-medium bg-amber-50">
-                          LOG
+                        <div className="p-1.5 text-center text-[10px] font-medium bg-amber-50 whitespace-nowrap">
+                          RESOCONTO
                         </div>
                       </div>
                     </th>
@@ -626,107 +616,123 @@ export function ProgramTableView() {
                 </tr>
               </thead>
               <tbody>
-                {groupedRows.map((group) => (
-                  group.rows.map((row, rowIndex) => (
-                    <tr key={`${row.key.exerciseName}-${row.key.blockIndex}`} className="hover:bg-muted/20">
-                      {/* Gruppo Muscolare - con rowSpan */}
-                      {rowIndex === 0 && (
-                        <td
-                          rowSpan={group.rows.length}
-                          className="p-3 font-bold text-xs border-b border-r border-border align-middle"
-                          style={{
-                            backgroundColor: group.color,
-                            color: getContrastTextColor(group.color),
-                            minWidth: '120px',
-                          }}
-                        >
-                          <span className="uppercase tracking-wide">
-                            {group.muscleGroup}
-                          </span>
-                        </td>
-                      )}
+                {muscleGroupsData.map((mgData) => {
+                  let muscleRowRendered = false;
+                  
+                  return mgData.exercises.map((exGroup) => {
+                    let exerciseRowRendered = false;
+                    
+                    return exGroup.blocks.map((blockRow, blockIdx) => {
+                      const showMuscleCell = !muscleRowRendered;
+                      const showExerciseCell = !exerciseRowRendered;
                       
-                      {/* Nome Esercizio */}
-                      <td className="p-3 border-b border-r border-border bg-white" style={{ minWidth: '180px' }}>
-                        <div className="font-medium text-sm">{row.key.exerciseName}</div>
-                        {row.key.blockIndex > 0 && (
-                          <div className="text-xs text-muted-foreground">
-                            Blocco {row.key.blockIndex + 1}
-                          </div>
-                        )}
-                      </td>
+                      if (showMuscleCell) muscleRowRendered = true;
+                      if (showExerciseCell) exerciseRowRendered = true;
                       
-                      {/* Colonne per ogni settimana */}
-                      {weekNumbers.map((weekNum) => {
-                        const weekData = row.weekData[weekNum];
-                        const logData = row.logData[weekNum];
-                        const hasLog = Boolean(logData?.reps);
-                        
-                        return (
-                          <td key={`data-${weekNum}`} colSpan={3} className="p-0 border-b border-border">
-                            <div className="grid grid-cols-3">
-                              {/* REST */}
-                              <div className="p-2 text-center border-r border-border bg-muted/30 text-xs">
-                                {weekData.exists ? (weekData.rest || '-') : '-'}
-                              </div>
-                              
-                              {/* SCHEMA - Clickable */}
-                              <div 
-                                className={`p-2 border-r border-border bg-white ${weekData.exists ? 'cursor-pointer hover:bg-blue-50' : ''}`}
-                                style={{ minWidth: '140px' }}
-                                onClick={() => weekData.exists && handleOpenConfigModal(weekNum, row)}
-                              >
-                                {weekData.exists ? (
-                                  <div className="space-y-0.5">
-                                    <div className="font-semibold text-xs text-gray-900 flex items-center gap-1">
-                                      {weekData.schema}
-                                      <Pencil className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100" />
-                                    </div>
-                                    {weekData.loads && weekData.loads !== '-' && (
-                                      <div className="text-[11px] text-gray-600">{weekData.loads}</div>
+                      return (
+                        <tr key={`${exGroup.exerciseName}-${blockIdx}`} className="hover:bg-muted/10">
+                          {/* Gruppo Muscolare */}
+                          {showMuscleCell && (
+                            <td
+                              rowSpan={mgData.totalBlocks}
+                              className="p-2 font-bold text-xs border-b border-r border-border align-middle text-center"
+                              style={{
+                                backgroundColor: mgData.color,
+                                color: getContrastTextColor(mgData.color),
+                              }}
+                            >
+                              <span className="uppercase tracking-wide whitespace-pre-wrap">
+                                {mgData.muscleGroup}
+                              </span>
+                            </td>
+                          )}
+                          
+                          {/* Nome Esercizio */}
+                          {showExerciseCell && (
+                            <td
+                              rowSpan={exGroup.blocks.length}
+                              className="p-2 border-b border-r border-border bg-white align-middle"
+                            >
+                              <div className="font-medium text-sm whitespace-pre-wrap">{exGroup.exerciseName}</div>
+                            </td>
+                          )}
+                          
+                          {/* Colonne per ogni settimana */}
+                          {weekNumbers.map((weekNum) => {
+                            const weekData = blockRow.weekData[weekNum];
+                            const logData = blockRow.logData[weekNum];
+                            const hasLog = Boolean(logData?.reps);
+                            
+                            // Combina note per REST/NOTE
+                            const restNotesParts: string[] = [];
+                            if (weekData.rest) restNotesParts.push(`Rest: ${weekData.rest}s`);
+                            if (weekData.exerciseNotes) restNotesParts.push(weekData.exerciseNotes);
+                            if (weekData.blockNotes) restNotesParts.push(weekData.blockNotes);
+                            const restNotesText = restNotesParts.join('\n');
+                            
+                            return (
+                              <td key={`data-${weekNum}`} colSpan={3} className="p-0 border-b border-border">
+                                <div className="grid grid-cols-3">
+                                  {/* REST / NOTE */}
+                                  <div className="p-2 border-r border-border bg-muted/20 text-xs whitespace-pre-wrap">
+                                    {weekData.exists ? (restNotesText || '-') : '-'}
+                                  </div>
+                                  
+                                  {/* SCHEMA */}
+                                  <div 
+                                    className={`p-2 border-r border-border bg-white ${weekData.exists ? 'cursor-pointer hover:bg-blue-50' : ''}`}
+                                    onClick={() => weekData.exists && handleOpenConfigModal(weekNum, blockRow)}
+                                  >
+                                    {weekData.exists ? (
+                                      <div className="space-y-0.5">
+                                        <div className="font-semibold text-xs text-gray-900 whitespace-pre-wrap">
+                                          {weekData.schema}
+                                        </div>
+                                        {weekData.loads && (
+                                          <div className="text-[11px] text-gray-600 whitespace-pre-wrap">{weekData.loads}</div>
+                                        )}
+                                        {weekData.intensityInfo && (
+                                          <div className="text-[10px] text-muted-foreground whitespace-pre-wrap">{weekData.intensityInfo}</div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="text-muted-foreground italic text-xs">-</span>
                                     )}
-                                    {weekData.notes && (
-                                      <div className="text-[10px] text-muted-foreground whitespace-pre-line">{weekData.notes}</div>
+                                  </div>
+                                  
+                                  {/* RESOCONTO */}
+                                  <div 
+                                    className={`p-2 ${weekData.exists ? 'cursor-pointer hover:opacity-80' : ''}`}
+                                    style={hasLog ? resocontoFilledStyle : resocontoEmptyStyle}
+                                    onClick={() => weekData.exists && handleOpenLogModal(weekNum, blockRow)}
+                                  >
+                                    {hasLog ? (
+                                      <div className="space-y-0.5 text-xs whitespace-pre-wrap">
+                                        <div className="font-semibold">{logData.reps}</div>
+                                        {logData.loads && <div className="text-[11px]">{logData.loads}</div>}
+                                        {logData.rpe && <div className="text-[11px]">{logData.rpe}</div>}
+                                        {logData.notes && <div className="text-[10px] italic mt-1">{logData.notes}</div>}
+                                      </div>
+                                    ) : weekData.exists ? (
+                                      <div className="flex items-center justify-center gap-1 text-muted-foreground text-xs">
+                                        <ClipboardList className="w-3 h-3" />
+                                        <span>Log</span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-muted-foreground italic text-xs">-</span>
                                     )}
                                   </div>
-                                ) : (
-                                  <span className="text-muted-foreground italic text-xs">-</span>
-                                )}
-                              </div>
-                              
-                              {/* LOG - Clickable */}
-                              <div 
-                                className={`p-2 ${weekData.exists ? 'cursor-pointer hover:opacity-80' : ''}`}
-                                style={{ 
-                                  ...(hasLog ? resocontoFilledStyle : resocontoEmptyStyle),
-                                  minWidth: '140px',
-                                }}
-                                onClick={() => weekData.exists && handleOpenLogModal(weekNum, row)}
-                              >
-                                {hasLog ? (
-                                  <div className="space-y-0.5 text-xs">
-                                    <div className="font-semibold">{logData.reps}</div>
-                                    {logData.loads && <div className="text-[11px]">{logData.loads}</div>}
-                                    {logData.rpe && <div className="text-[11px]">{logData.rpe}</div>}
-                                  </div>
-                                ) : weekData.exists ? (
-                                  <div className="flex items-center justify-center gap-1 text-muted-foreground text-xs">
-                                    <ClipboardList className="w-3 h-3" />
-                                    <span>Log</span>
-                                  </div>
-                                ) : (
-                                  <span className="text-muted-foreground italic text-xs">-</span>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))
-                ))}
+                                </div>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    });
+                  });
+                })}
                 
-                {tableRows.length === 0 && (
+                {muscleGroupsData.length === 0 && (
                   <tr>
                     <td colSpan={2 + weekNumbers.length * 3} className="p-8 text-center text-muted-foreground">
                       Nessun esercizio in questo giorno
@@ -775,35 +781,91 @@ export function ProgramTableView() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Aggiungi Giorno</DialogTitle>
-            <DialogDescription>
-              Il nuovo giorno verrà aggiunto a tutte le settimane del programma.
-            </DialogDescription>
+            <DialogDescription>Il nuovo giorno verrà aggiunto a tutte le settimane.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="day-name">Nome Giorno</Label>
+            <Input
+              id="day-name"
+              value={newDayName}
+              onChange={(e) => setNewDayName(e.target.value)}
+              placeholder="es. Push, Pull, Legs..."
+              className="mt-1"
+              onKeyDown={(e) => e.key === 'Enter' && handleAddDay()}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddDayDialog(false)}>Annulla</Button>
+            <Button onClick={handleAddDay}><Plus className="w-4 h-4 mr-2" />Aggiungi</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Dialog Aggiungi Esercizio */}
+      <Dialog open={showAddExerciseDialog} onOpenChange={setShowAddExerciseDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Aggiungi Esercizio</DialogTitle>
+            <DialogDescription>Seleziona l'esercizio e le settimane in cui aggiungerlo.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label htmlFor="day-name">Nome Giorno</Label>
-              <Input
-                id="day-name"
-                value={newDayName}
-                onChange={(e) => setNewDayName(e.target.value)}
-                placeholder="es. Push, Pull, Legs, Upper, Lower..."
-                className="mt-1"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleAddDay();
-                  }
-                }}
-                autoFocus
-              />
+              <Label>Esercizio</Label>
+              <Select value={newExerciseName} onValueChange={setNewExerciseName}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Seleziona esercizio" />
+                </SelectTrigger>
+                <SelectContent>
+                  {exerciseLibrary.map((ex) => (
+                    <SelectItem key={ex.name} value={ex.name}>{ex.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label>Gruppo Muscolare (opzionale)</Label>
+              <Select value={newExerciseMuscleGroup} onValueChange={setNewExerciseMuscleGroup}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Auto dalla libreria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Auto dalla libreria</SelectItem>
+                  {muscleGroups.map((mg) => (
+                    <SelectItem key={mg} value={mg}>{mg}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label className="mb-2 block">Settimane</Label>
+              <div className="flex flex-wrap gap-2">
+                {weekNumbers.map((weekNum) => (
+                  <label key={weekNum} className="flex items-center gap-2 px-3 py-1.5 border rounded-md cursor-pointer hover:bg-muted/50">
+                    <Checkbox
+                      checked={selectedWeeksForNewExercise.includes(weekNum)}
+                      onCheckedChange={() => toggleWeekSelection(weekNum)}
+                    />
+                    <span className="text-sm">W{weekNum}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-2">
+                <Button variant="ghost" size="sm" onClick={() => setSelectedWeeksForNewExercise([...weekNumbers])}>
+                  Tutte
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedWeeksForNewExercise([])}>
+                  Nessuna
+                </Button>
+              </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddDayDialog(false)}>
-              Annulla
-            </Button>
-            <Button onClick={handleAddDay}>
-              <Plus className="w-4 h-4 mr-2" />
-              Aggiungi
+            <Button variant="outline" onClick={() => setShowAddExerciseDialog(false)}>Annulla</Button>
+            <Button onClick={handleAddExercise} disabled={!newExerciseName || selectedWeeksForNewExercise.length === 0}>
+              <Plus className="w-4 h-4 mr-2" />Aggiungi
             </Button>
           </DialogFooter>
         </DialogContent>
