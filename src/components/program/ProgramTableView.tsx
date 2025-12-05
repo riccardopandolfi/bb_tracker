@@ -12,7 +12,7 @@ import { getContrastTextColor, adjustColor } from '@/lib/colorUtils';
 import { getExerciseBlocks, createDefaultBlock } from '@/lib/exerciseUtils';
 import { ConfigureExerciseModal } from './ConfigureExerciseModal';
 import { LogSessionModal } from './LogSessionModal';
-import { ClipboardList, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import { ClipboardList, Plus, Trash2, ChevronUp, ChevronDown, X } from 'lucide-react';
 
 // Genera la stringa dello schema per un blocco (come nella vista card)
 function formatBlockSchema(block: ExerciseBlock): string {
@@ -187,6 +187,12 @@ export function ProgramTableView() {
   
   // Blocchi pendenti: exerciseIndex -> numero di righe extra da mostrare
   const [pendingBlocks, setPendingBlocks] = useState<Record<number, number>>({});
+  
+  // Esercizio pendente: riga vuota per aggiungere un nuovo esercizio
+  const [pendingExercise, setPendingExercise] = useState<{
+    muscleGroup: string;
+    exerciseName: string;
+  } | null>(null);
   
   // Funzione per ottenere il gruppo muscolare dalla libreria
   const getMuscleGroupFromLibrary = (exerciseName: string): string => {
@@ -512,6 +518,68 @@ export function ProgramTableView() {
     }));
   };
   
+  // Rimuove una riga blocco pendente per un esercizio
+  const handleRemovePendingBlock = (exerciseIndex: number) => {
+    setPendingBlocks(prev => {
+      const current = prev[exerciseIndex] || 0;
+      if (current <= 1) {
+        const updated = { ...prev };
+        delete updated[exerciseIndex];
+        return updated;
+      }
+      return { ...prev, [exerciseIndex]: current - 1 };
+    });
+  };
+  
+  // Aggiunge una riga esercizio pendente
+  const handleAddPendingExercise = () => {
+    setPendingExercise({ muscleGroup: '', exerciseName: '' });
+  };
+  
+  // Rimuove la riga esercizio pendente
+  const handleRemovePendingExercise = () => {
+    setPendingExercise(null);
+  };
+  
+  // Crea un esercizio effettivo in una settimana specifica (dalla riga pendente)
+  const handleCreateExerciseInWeek = (weekNum: number) => {
+    if (!program || !pendingExercise || !pendingExercise.exerciseName) return;
+    
+    const libraryEx = exerciseLibrary.find(ex => ex.name === pendingExercise.exerciseName);
+    if (!libraryEx) return;
+    
+    const muscleGroup = pendingExercise.muscleGroup || getMuscleGroupFromLibrary(pendingExercise.exerciseName);
+    
+    const week = weeks[weekNum];
+    if (!week) return;
+    
+    const newDays = week.days.map(d => ({ 
+      ...d, 
+      exercises: d.exercises.map(ex => ({ ...ex, blocks: [...ex.blocks] }))
+    }));
+    
+    while (newDays.length <= selectedDayIndex) {
+      newDays.push({ name: `Giorno ${newDays.length + 1}`, exercises: [] });
+    }
+    
+    const newExercise: ProgramExercise = {
+      exerciseName: libraryEx.name,
+      exerciseType: libraryEx.type,
+      muscleGroup,
+      blocks: [createDefaultBlock(libraryEx.type)],
+      notes: '',
+    };
+    
+    newDays[selectedDayIndex] = {
+      ...newDays[selectedDayIndex],
+      exercises: [...newDays[selectedDayIndex].exercises, newExercise],
+    };
+    
+    updateWeek(weekNum, { ...week, days: newDays });
+    
+    // Non rimuoviamo pendingExercise così l'utente può continuare ad aggiungere lo stesso esercizio ad altre settimane
+  };
+  
   // Crea un blocco effettivo in una settimana specifica
   const handleCreateBlockInWeek = (weekNum: number, exerciseIndex: number, blockIndex: number) => {
     if (!program) return;
@@ -701,11 +769,20 @@ export function ProgramTableView() {
           
           {/* Azioni */}
           <div className="flex flex-wrap gap-2 items-center pt-2 border-t">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleAddPendingExercise}
+              disabled={pendingExercise !== null}
+              className="border-green-500 text-green-600 hover:bg-green-50"
+            >
+              <Plus className="w-4 h-4 mr-1" />Aggiungi Riga Esercizio
+            </Button>
             <Button variant="outline" size="sm" onClick={() => {
               setSelectedWeeksForNewExercise([...weekNumbers]);
               setShowAddExerciseDialog(true);
             }}>
-              <Plus className="w-4 h-4 mr-1" />Aggiungi Esercizio
+              <Plus className="w-4 h-4 mr-1" />Aggiungi con Dialog
             </Button>
             <Button variant="outline" size="sm" onClick={handleAddWeek} className="bg-black text-white border-black hover:bg-black/90">
               <Plus className="w-4 h-4 mr-1" />Nuova Settimana
@@ -755,9 +832,16 @@ export function ProgramTableView() {
                       const isFirstExercise = instanceIdx === 0;
                       const isLastExercise = instanceIdx === totalExercises - 1;
                       
+                      // Determina se questo blocco è "pendente" (non esiste in nessuna settimana)
+                      const isPendingBlock = weekNumbers.every(wn => !blockRow.weekData[wn]?.exists);
+                      const hasPendingBlocks = (pendingBlocks[instance.exerciseIndex] || 0) > 0;
+                      
                       return (
-                        <tr key={`${instance.exerciseIndex}-${blockIdx}`} className="hover:bg-muted/10">
-                          {/* Numero ordine e frecce */}
+                        <tr 
+                          key={`${instance.exerciseIndex}-${blockIdx}`} 
+                          className={`hover:bg-muted/10 ${isPendingBlock ? 'bg-green-50/30 border-l-2 border-l-green-400' : ''}`}
+                        >
+                          {/* Numero ordine e frecce / Pulsante annulla per blocchi pendenti */}
                           {isFirstBlock && (
                             <td
                               rowSpan={instance.blocks.length}
@@ -781,6 +865,16 @@ export function ProgramTableView() {
                                 >
                                   <ChevronDown className="w-4 h-4" />
                                 </button>
+                                {/* Pulsante per rimuovere blocchi pendenti */}
+                                {hasPendingBlocks && (
+                                  <button
+                                    onClick={() => handleRemovePendingBlock(instance.exerciseIndex)}
+                                    className="p-0.5 rounded text-red-500 hover:text-red-700 hover:bg-red-50 mt-1"
+                                    title="Rimuovi riga pendente"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
                               </div>
                             </td>
                           )}
@@ -931,7 +1025,85 @@ export function ProgramTableView() {
                     })
                   ))}
                   
-                  {exerciseInstances.length === 0 && (
+                  {/* Riga esercizio pendente */}
+                  {pendingExercise !== null && (
+                    <tr className="bg-green-50/50 border-2 border-dashed border-green-300">
+                      {/* Colonna # con pulsante annulla */}
+                      <td className="px-1 py-2 border-b border-r border-green-300 align-middle text-center">
+                        <button
+                          onClick={handleRemovePendingExercise}
+                          className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                          title="Annulla"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </td>
+                      
+                      {/* Colonna Gruppo Muscolare - Dropdown */}
+                      <td className="p-2 border-b border-r border-green-300 align-middle">
+                        <Select
+                          value={pendingExercise.muscleGroup || 'auto'}
+                          onValueChange={(value) => setPendingExercise(prev => prev ? { ...prev, muscleGroup: value === 'auto' ? '' : value } : null)}
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue placeholder="Gruppo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="auto">Auto</SelectItem>
+                            {muscleGroups.map((mg) => (
+                              <SelectItem key={mg} value={mg}>{mg}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      
+                      {/* Colonna Esercizio - Dropdown */}
+                      <td className="p-2 border-b border-r border-green-300 align-middle">
+                        <Select
+                          value={pendingExercise.exerciseName || ''}
+                          onValueChange={(value) => setPendingExercise(prev => prev ? { ...prev, exerciseName: value } : null)}
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue placeholder="Seleziona esercizio..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {exerciseLibrary.map((ex) => (
+                              <SelectItem key={ex.name} value={ex.name}>{ex.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      
+                      {/* Colonne settimane - Click per creare */}
+                      {weekNumbers.map((weekNum) => (
+                        <td key={`pending-${weekNum}`} colSpan={3} className="p-0 border-b border-green-300">
+                          <div className="grid grid-cols-3">
+                            <div className="p-2 border-r border-green-200 bg-green-50/30 text-xs text-center">-</div>
+                            <div 
+                              className={`p-2 border-r border-green-200 ${
+                                pendingExercise.exerciseName 
+                                  ? 'bg-green-100 cursor-pointer hover:bg-green-200' 
+                                  : 'bg-gray-100'
+                              }`}
+                              onClick={() => pendingExercise.exerciseName && handleCreateExerciseInWeek(weekNum)}
+                            >
+                              {pendingExercise.exerciseName ? (
+                                <div className="flex items-center justify-center gap-1 text-green-700 text-xs font-medium">
+                                  <Plus className="w-3 h-3" />
+                                  <span>Crea</span>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground italic text-xs">-</span>
+                              )}
+                            </div>
+                            <div className="p-2 bg-green-50/30 text-xs text-center">-</div>
+                          </div>
+                        </td>
+                      ))}
+                    </tr>
+                  )}
+                  
+                  {exerciseInstances.length === 0 && !pendingExercise && (
                     <tr>
                       <td colSpan={3 + weekNumbers.length * 3} className="p-8 text-center text-muted-foreground">
                         Nessun esercizio in questo giorno
