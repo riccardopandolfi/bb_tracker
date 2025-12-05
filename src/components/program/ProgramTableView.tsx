@@ -586,36 +586,37 @@ export function ProgramTableView() {
         
         <CardContent className="p-0">
           <div className="w-full overflow-auto max-h-[70vh]">
-            <table className="w-full border-collapse text-sm">
-              <thead className="sticky top-0 z-20 bg-white">
-                <tr>
-                  <th className="p-2 text-left font-semibold border-b border-r border-border bg-muted/50 whitespace-nowrap">
-                    Gruppo
-                  </th>
-                  <th className="p-2 text-left font-semibold border-b border-r border-border bg-muted/50 whitespace-nowrap">
-                    Esercizio
-                  </th>
-                  {weekNumbers.map((weekNum) => (
-                    <th key={`header-${weekNum}`} colSpan={3} className="p-0 border-b border-border">
-                      <div className="bg-primary/20 px-2 py-1.5 text-center font-bold border-b border-border text-xs">
-                        WEEK {weekNum}
-                      </div>
-                      <div className="grid grid-cols-3">
-                        <div className="p-1.5 text-center text-[10px] font-medium border-r border-border bg-muted/50 whitespace-nowrap">
-                          REST / NOTE
-                        </div>
-                        <div className="p-1.5 text-center text-[10px] font-medium border-r border-border bg-white whitespace-nowrap">
-                          SCHEMA
-                        </div>
-                        <div className="p-1.5 text-center text-[10px] font-medium bg-amber-50 whitespace-nowrap">
-                          RESOCONTO
-                        </div>
-                      </div>
+            <div className="inline-block min-w-max">
+              <table className="table-auto border-collapse text-sm">
+                <thead className="sticky top-0 z-20 bg-white">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-semibold border-b border-r border-border bg-muted/50">
+                      Gruppo
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
+                    <th className="px-3 py-2 text-left font-semibold border-b border-r border-border bg-muted/50">
+                      Esercizio
+                    </th>
+                    {weekNumbers.map((weekNum) => (
+                      <th key={`header-${weekNum}`} colSpan={3} className="p-0 border-b border-border">
+                        <div className="bg-primary/20 px-2 py-1.5 text-center font-bold border-b border-border text-xs">
+                          WEEK {weekNum}
+                        </div>
+                        <div className="grid grid-cols-3">
+                          <div className="p-1.5 text-center text-[10px] font-medium border-r border-border bg-muted/50">
+                            REST / NOTE
+                          </div>
+                          <div className="p-1.5 text-center text-[10px] font-medium border-r border-border bg-white">
+                            SCHEMA
+                          </div>
+                          <div className="p-1.5 text-center text-[10px] font-medium bg-amber-50">
+                            RESOCONTO
+                          </div>
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
                 {muscleGroupsData.map((mgData) => {
                   let muscleRowRendered = false;
                   
@@ -741,6 +742,7 @@ export function ProgramTableView() {
                 )}
               </tbody>
             </table>
+            </div>
           </div>
         </CardContent>
       </Card>
