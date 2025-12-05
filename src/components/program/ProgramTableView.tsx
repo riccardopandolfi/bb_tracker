@@ -1,23 +1,25 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { ExerciseBlock, LoggedSession } from '@/types';
+import { ExerciseBlock, LoggedSession, ProgramExercise, DEFAULT_TECHNIQUES } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { getContrastTextColor, adjustColor } from '@/lib/colorUtils';
+import { getExerciseBlocks, createDefaultBlock } from '@/lib/exerciseUtils';
+import { ConfigureExerciseModal } from './ConfigureExerciseModal';
+import { LogSessionModal } from './LogSessionModal';
+import { Pencil, ClipboardList } from 'lucide-react';
 
-// Genera la stringa dello schema per un blocco (es. "3 x 12-10-8" o "3 x 8/10")
+// Genera la stringa dello schema per un blocco
 function formatBlockSchema(block: ExerciseBlock): string {
   const sets = block.sets || 0;
   const technique = block.technique || 'Normale';
   
-  // Per tecnica Ramping
   if (technique === 'Ramping') {
     const startLoad = block.startLoad || '?';
     const increment = block.increment ? `+${block.increment}` : '';
     return `Ramping ${block.repsBase || '?'}@${startLoad}${increment}`;
   }
   
-  // Per Progressione a %
   if (technique === 'Progressione a %' && block.percentageProgression) {
     const prog = block.percentageProgression;
     const week1 = prog.weeks?.[0];
@@ -27,7 +29,6 @@ function formatBlockSchema(block: ExerciseBlock): string {
     }
   }
   
-  // Per tecnica normale con reps personalizzate
   if (technique === 'Normale') {
     if (block.targetReps && block.targetReps.length > 0) {
       return `${sets} x ${block.targetReps.join('-')}`;
@@ -35,7 +36,6 @@ function formatBlockSchema(block: ExerciseBlock): string {
     return `${sets} x ${block.repsBase || '?'}`;
   }
   
-  // Per tecniche speciali (Rest-Pause, Myo-Reps, etc.)
   if (block.techniqueSchema) {
     return `${sets} x ${block.techniqueSchema}`;
   }
@@ -56,12 +56,10 @@ function formatBlockLoads(block: ExerciseBlock): string {
   }
   
   if (technique !== 'Normale' && block.targetLoadsByCluster && block.targetLoadsByCluster.length > 0) {
-    // Per tecniche speciali mostra i carichi per cluster
-    return block.targetLoadsByCluster.map(sl => sl.join('/')).join(' • ');
+    return block.targetLoadsByCluster.map(sl => sl.join('/')).join('-');
   }
   
   if (block.targetLoads && block.targetLoads.length > 0) {
-    // Controlla se tutti i carichi sono uguali
     const uniqueLoads = [...new Set(block.targetLoads)];
     if (uniqueLoads.length === 1) {
       return `${uniqueLoads[0]} kg`;
@@ -99,28 +97,39 @@ function formatLoggedSession(session: LoggedSession | undefined): { reps: string
   return { reps, loads: loads ? `${loads} kg` : '', rpe, notes };
 }
 
-interface ExerciseRowData {
+// Chiave unica per un esercizio (nome + blocco)
+interface ExerciseKey {
   exerciseName: string;
-  muscleGroup: string;
-  exerciseIndex: number;
   blockIndex: number;
+  muscleGroup: string;
+}
+
+// Dati per settimana di un esercizio
+interface WeekExerciseData {
+  exists: boolean;
+  exerciseIndex: number;
+  exercise?: ProgramExercise;
+  block?: ExerciseBlock;
   rest: number;
-  weekData: {
-    weekNum: number;
-    schema: string;
-    loads: string;
-    notes: string;
-    rest: number;
-    block?: ExerciseBlock;
-  }[];
-  loggedData: {
-    weekNum: number;
-    reps: string;
-    loads: string;
-    rpe: string;
-    notes: string;
-    session?: LoggedSession;
-  }[];
+  schema: string;
+  loads: string;
+  notes: string;
+}
+
+// Dati di log per settimana
+interface WeekLogData {
+  reps: string;
+  loads: string;
+  rpe: string;
+  notes: string;
+  session?: LoggedSession;
+}
+
+// Riga della tabella
+interface TableRow {
+  key: ExerciseKey;
+  weekData: Record<number, WeekExerciseData>;
+  logData: Record<number, WeekLogData>;
 }
 
 export function ProgramTableView() {
@@ -128,100 +137,155 @@ export function ProgramTableView() {
     getCurrentProgram, 
     getCurrentWeeks, 
     loggedSessions,
-    getMuscleColor 
+    getMuscleColor,
+    exercises: exerciseLibrary,
+    customTechniques,
+    updateWeek,
+    setCurrentWeek,
   } = useApp();
   
   const program = getCurrentProgram();
   const weeks = getCurrentWeeks();
   const weekNumbers = Object.keys(weeks).map(Number).sort((a, b) => a - b);
+  const allTechniques = [...DEFAULT_TECHNIQUES, ...customTechniques.map(t => t.name)];
   
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   
-  // Ottieni i giorni disponibili dal primo giorno con dati
+  // Modal states
+  const [configModalOpen, setConfigModalOpen] = useState(false);
+  const [logModalOpen, setLogModalOpen] = useState(false);
+  const [selectedWeekNum, setSelectedWeekNum] = useState<number | null>(null);
+  const [selectedExerciseIndex, setSelectedExerciseIndex] = useState<number | null>(null);
+  const [selectedBlockIndex, setSelectedBlockIndex] = useState<number | null>(null);
+  const [selectedExercise, setSelectedExercise] = useState<ProgramExercise | null>(null);
+  
+  // Ottieni i giorni disponibili (unione di tutti i giorni da tutte le settimane)
   const availableDays = useMemo(() => {
-    if (weekNumbers.length === 0) return [];
-    const firstWeek = weeks[weekNumbers[0]];
-    return firstWeek?.days || [];
+    const dayNames = new Map<number, string>();
+    
+    weekNumbers.forEach(weekNum => {
+      const week = weeks[weekNum];
+      if (week?.days) {
+        week.days.forEach((day, index) => {
+          if (!dayNames.has(index) || !dayNames.get(index)) {
+            dayNames.set(index, day.name || `Giorno ${index + 1}`);
+          }
+        });
+      }
+    });
+    
+    return Array.from(dayNames.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([index, name]) => ({ index, name }));
   }, [weeks, weekNumbers]);
   
-  // Costruisci i dati delle righe per il giorno selezionato
-  const rowsData = useMemo((): ExerciseRowData[] => {
-    if (!program || availableDays.length === 0) return [];
+  // Costruisci un registry di TUTTI gli esercizi da TUTTE le settimane per il giorno selezionato
+  const tableRows = useMemo((): TableRow[] => {
+    if (!program || weekNumbers.length === 0) return [];
     
-    const rows: ExerciseRowData[] = [];
-    const day = availableDays[selectedDayIndex];
-    if (!day) return [];
+    // Mappa: "exerciseName|blockIndex" -> dati
+    const exerciseRegistry = new Map<string, TableRow>();
     
-    day.exercises.forEach((exercise, exerciseIndex) => {
-      const blocks = exercise.blocks || [];
+    // Prima passata: raccogli tutti gli esercizi unici
+    weekNumbers.forEach(weekNum => {
+      const week = weeks[weekNum];
+      const day = week?.days?.[selectedDayIndex];
+      if (!day) return;
       
-      blocks.forEach((block, blockIndex) => {
-        const weekData: ExerciseRowData['weekData'] = [];
-        const loggedData: ExerciseRowData['loggedData'] = [];
+      day.exercises.forEach((exercise) => {
+        const blocks = getExerciseBlocks(exercise);
         
-        weekNumbers.forEach((weekNum) => {
-          const weekExercises = weeks[weekNum]?.days[selectedDayIndex]?.exercises || [];
-          const weekExercise = weekExercises[exerciseIndex];
-          const weekBlock = weekExercise?.blocks?.[blockIndex];
+        blocks.forEach((_, blockIndex) => {
+          const keyStr = `${exercise.exerciseName}|${blockIndex}`;
           
-          if (weekBlock) {
-            weekData.push({
-              weekNum,
-              schema: formatBlockSchema(weekBlock),
-              loads: formatBlockLoads(weekBlock),
-              notes: formatBlockNotes(weekBlock),
-              rest: weekBlock.rest || block.rest || 0,
-              block: weekBlock,
-            });
-          } else {
-            weekData.push({
-              weekNum,
-              schema: '-',
-              loads: '-',
-              notes: '',
-              rest: block.rest || 0,
+          if (!exerciseRegistry.has(keyStr)) {
+            exerciseRegistry.set(keyStr, {
+              key: {
+                exerciseName: exercise.exerciseName,
+                blockIndex,
+                muscleGroup: exercise.muscleGroup || 'Non specificato',
+              },
+              weekData: {},
+              logData: {},
             });
           }
           
-          // Trova la sessione loggata per questo esercizio/blocco/settimana
-          const session = loggedSessions.find(
-            s => s.programId === program.id &&
-                 s.weekNum === weekNum &&
-                 s.exercise === exercise.exerciseName &&
-                 s.blockIndex === blockIndex &&
-                 s.dayIndex === selectedDayIndex
-          );
-          
-          const formatted = formatLoggedSession(session);
-          loggedData.push({
-            weekNum,
-            ...formatted,
-            session,
-          });
-        });
-        
-        rows.push({
-          exerciseName: exercise.exerciseName,
-          muscleGroup: exercise.muscleGroup || 'Non specificato',
-          exerciseIndex,
-          blockIndex,
-          rest: block.rest || 0,
-          weekData,
-          loggedData,
+          // Aggiorna muscleGroup se non è "Non specificato"
+          const row = exerciseRegistry.get(keyStr)!;
+          if (exercise.muscleGroup && exercise.muscleGroup !== 'Non specificato') {
+            row.key.muscleGroup = exercise.muscleGroup;
+          }
         });
       });
     });
     
-    return rows;
-  }, [program, weeks, weekNumbers, selectedDayIndex, loggedSessions, availableDays]);
-  
-  // Raggruppa le righe per gruppo muscolare
-  const groupedRows = useMemo(() => {
-    const groups: { muscleGroup: string; rows: ExerciseRowData[]; color: string }[] = [];
-    const groupMap = new Map<string, ExerciseRowData[]>();
+    // Seconda passata: popola i dati per ogni settimana
+    weekNumbers.forEach(weekNum => {
+      const week = weeks[weekNum];
+      const day = week?.days?.[selectedDayIndex];
+      
+      exerciseRegistry.forEach((row, keyStr) => {
+        const [exerciseName, blockIndexStr] = keyStr.split('|');
+        const blockIndex = parseInt(blockIndexStr, 10);
+        
+        // Trova l'esercizio in questa settimana
+        const exerciseIndex = day?.exercises.findIndex(ex => ex.exerciseName === exerciseName) ?? -1;
+        const exercise = exerciseIndex >= 0 ? day?.exercises[exerciseIndex] : undefined;
+        const blocks = exercise ? getExerciseBlocks(exercise) : [];
+        const block = blocks[blockIndex];
+        
+        if (exercise && block) {
+          row.weekData[weekNum] = {
+            exists: true,
+            exerciseIndex,
+            exercise,
+            block,
+            rest: block.rest || 0,
+            schema: formatBlockSchema(block),
+            loads: formatBlockLoads(block),
+            notes: formatBlockNotes(block),
+          };
+        } else {
+          row.weekData[weekNum] = {
+            exists: false,
+            exerciseIndex: -1,
+            rest: 0,
+            schema: '-',
+            loads: '-',
+            notes: '',
+          };
+        }
+        
+        // Trova log
+        const session = loggedSessions.find(
+          s => s.programId === program.id &&
+               s.weekNum === weekNum &&
+               s.exercise === exerciseName &&
+               s.blockIndex === blockIndex &&
+               s.dayIndex === selectedDayIndex
+        );
+        
+        const formatted = formatLoggedSession(session);
+        row.logData[weekNum] = { ...formatted, session };
+      });
+    });
     
-    rowsData.forEach(row => {
-      const group = row.muscleGroup;
+    // Converti in array e ordina per gruppo muscolare
+    return Array.from(exerciseRegistry.values()).sort((a, b) => {
+      if (a.key.muscleGroup !== b.key.muscleGroup) {
+        return a.key.muscleGroup.localeCompare(b.key.muscleGroup);
+      }
+      return a.key.exerciseName.localeCompare(b.key.exerciseName);
+    });
+  }, [program, weeks, weekNumbers, selectedDayIndex, loggedSessions]);
+  
+  // Raggruppa per gruppo muscolare
+  const groupedRows = useMemo(() => {
+    const groups: { muscleGroup: string; rows: TableRow[]; color: string }[] = [];
+    const groupMap = new Map<string, TableRow[]>();
+    
+    tableRows.forEach(row => {
+      const group = row.key.muscleGroup;
       if (!groupMap.has(group)) {
         groupMap.set(group, []);
       }
@@ -237,7 +301,98 @@ export function ProgramTableView() {
     });
     
     return groups;
-  }, [rowsData, getMuscleColor]);
+  }, [tableRows, getMuscleColor]);
+  
+  // Handler per aprire il modal di configurazione
+  const handleOpenConfigModal = (weekNum: number, row: TableRow) => {
+    const weekData = row.weekData[weekNum];
+    if (weekData.exists && weekData.exercise) {
+      setSelectedWeekNum(weekNum);
+      setSelectedExerciseIndex(weekData.exerciseIndex);
+      setSelectedBlockIndex(row.key.blockIndex);
+      setSelectedExercise(weekData.exercise);
+      setCurrentWeek(weekNum);
+      setConfigModalOpen(true);
+    }
+  };
+  
+  // Handler per aprire il modal di log
+  const handleOpenLogModal = (weekNum: number, row: TableRow) => {
+    const weekData = row.weekData[weekNum];
+    if (weekData.exists) {
+      setSelectedWeekNum(weekNum);
+      setSelectedExerciseIndex(weekData.exerciseIndex);
+      setSelectedBlockIndex(row.key.blockIndex);
+      setCurrentWeek(weekNum);
+      setLogModalOpen(true);
+    }
+  };
+  
+  // Handler per aggiornare l'esercizio dal modal
+  const handleUpdateExercise = (field: keyof ProgramExercise, value: any) => {
+    if (selectedWeekNum === null || selectedExerciseIndex === null || !selectedExercise) return;
+    
+    const week = weeks[selectedWeekNum];
+    const day = week?.days?.[selectedDayIndex];
+    if (!day) return;
+    
+    const updatedExercise = { ...selectedExercise, [field]: value };
+    setSelectedExercise(updatedExercise);
+    
+    const updatedDay = {
+      ...day,
+      exercises: day.exercises.map((ex, i) => i === selectedExerciseIndex ? updatedExercise : ex),
+    };
+    
+    const updatedWeek = {
+      ...week,
+      days: week.days.map((d, i) => i === selectedDayIndex ? updatedDay : d),
+    };
+    
+    updateWeek(selectedWeekNum, updatedWeek);
+  };
+  
+  // Handler per aggiornare un blocco
+  const handleUpdateBlock = (blockIndex: number, field: keyof ExerciseBlock, value: any) => {
+    if (selectedWeekNum === null || selectedExerciseIndex === null || !selectedExercise) return;
+    
+    const blocks = [...(selectedExercise.blocks || [])];
+    blocks[blockIndex] = { ...blocks[blockIndex], [field]: value };
+    
+    handleUpdateExercise('blocks', blocks);
+  };
+  
+  // Handler per aggiornamento batch di un blocco
+  const handleUpdateBlockBatch = (blockIndex: number, updates: Partial<ExerciseBlock>) => {
+    if (selectedWeekNum === null || selectedExerciseIndex === null || !selectedExercise) return;
+    
+    const blocks = [...(selectedExercise.blocks || [])];
+    blocks[blockIndex] = { ...blocks[blockIndex], ...updates };
+    
+    handleUpdateExercise('blocks', blocks);
+  };
+  
+  // Handler per aggiungere un blocco
+  const handleAddBlock = () => {
+    if (!selectedExercise) return;
+    
+    const newBlock = createDefaultBlock(selectedExercise.exerciseType || 'resistance');
+    const blocks = [...(selectedExercise.blocks || []), newBlock];
+    
+    handleUpdateExercise('blocks', blocks);
+  };
+  
+  // Handler per eliminare un blocco
+  const handleDeleteBlock = (blockIndex: number) => {
+    if (!selectedExercise) return;
+    
+    let blocks = (selectedExercise.blocks || []).filter((_, i) => i !== blockIndex);
+    if (blocks.length === 0) {
+      blocks = [createDefaultBlock(selectedExercise.exerciseType || 'resistance')];
+    }
+    
+    handleUpdateExercise('blocks', blocks);
+  };
   
   if (!program || weekNumbers.length === 0) {
     return (
@@ -249,203 +404,219 @@ export function ProgramTableView() {
     );
   }
   
-  // Stile per le celle resoconto (colorate in magenta chiaro)
   const resocontoFilledStyle = {
     backgroundColor: adjustColor('#d946ef', 0.85),
     color: '#831843',
   };
   
   const resocontoEmptyStyle = {
-    backgroundColor: '#fef3c7', // amber-100
+    backgroundColor: '#fef3c7',
   };
   
   return (
-    <Card className="card-monetra">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <CardTitle className="font-heading text-lg">Vista Tabellare</CardTitle>
-          
-          {/* Selettore Giorno */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Giorno:</span>
-            <Select
-              value={selectedDayIndex.toString()}
-              onValueChange={(v) => setSelectedDayIndex(parseInt(v, 10))}
-            >
-              <SelectTrigger className="w-[220px]">
-                <SelectValue placeholder="Seleziona giorno" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableDays.map((day, index) => (
-                  <SelectItem key={index} value={index.toString()}>
-                    {day.name || `Giorno ${index + 1}`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+    <>
+      <Card className="card-monetra">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <CardTitle className="font-heading text-lg">Vista Tabellare</CardTitle>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Giorno:</span>
+              <Select
+                value={selectedDayIndex.toString()}
+                onValueChange={(v) => setSelectedDayIndex(parseInt(v, 10))}
+              >
+                <SelectTrigger className="w-[220px]">
+                  <SelectValue placeholder="Seleziona giorno" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableDays.map(({ index, name }) => (
+                    <SelectItem key={index} value={index.toString()}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="p-0">
-        <div className="w-full overflow-x-auto">
-          <table className="w-full border-collapse min-w-max text-sm">
-            <thead>
-              <tr className="bg-muted/50">
-                <th className="p-3 text-left font-semibold border-b border-r border-border sticky left-0 bg-muted/50 z-10">
-                  Gruppo
-                </th>
-                <th className="p-3 text-left font-semibold border-b border-r border-border sticky left-[150px] bg-muted/50 z-10">
-                  Esercizio
-                </th>
-                {weekNumbers.map((weekNum) => (
-                  <th key={`rest-${weekNum}`} colSpan={1} className="p-3 text-center font-semibold border-b border-r border-border bg-muted">
-                    REST
+        </CardHeader>
+        
+        <CardContent className="p-0">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full border-collapse min-w-max text-sm">
+              <thead>
+                <tr className="bg-muted/50">
+                  <th className="p-3 text-left font-semibold border-b border-r border-border" style={{ minWidth: '120px' }}>
+                    Gruppo
                   </th>
-                ))}
-                {weekNumbers.map((weekNum) => (
-                  <th key={`week-${weekNum}`} colSpan={1} className="p-3 text-center font-semibold border-b border-r border-border bg-primary/10">
-                    WEEK {weekNum}
+                  <th className="p-3 text-left font-semibold border-b border-r border-border" style={{ minWidth: '180px' }}>
+                    Esercizio
                   </th>
-                ))}
-                {weekNumbers.map((weekNum) => (
-                  <th key={`resoconto-${weekNum}`} colSpan={1} className="p-3 text-center font-semibold border-b border-r border-border bg-amber-50">
-                    RESOCONTO
-                  </th>
-                ))}
-              </tr>
-              {/* Seconda riga header per chiarire la struttura */}
-              <tr className="bg-muted/30 text-xs">
-                <th className="p-2 border-b border-r border-border sticky left-0 bg-muted/30 z-10"></th>
-                <th className="p-2 border-b border-r border-border sticky left-[150px] bg-muted/30 z-10"></th>
-                {weekNumbers.map((weekNum) => (
-                  <th key={`rest-sub-${weekNum}`} className="p-2 text-center border-b border-r border-border text-muted-foreground">
-                    W{weekNum}
-                  </th>
-                ))}
-                {weekNumbers.map((weekNum) => (
-                  <th key={`week-sub-${weekNum}`} className="p-2 text-center border-b border-r border-border text-muted-foreground">
-                    Schema
-                  </th>
-                ))}
-                {weekNumbers.map((weekNum) => (
-                  <th key={`res-sub-${weekNum}`} className="p-2 text-center border-b border-r border-border text-muted-foreground">
-                    W{weekNum}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {groupedRows.map((group) => (
-                group.rows.map((row, rowIndex) => (
-                  <tr key={`${row.exerciseName}-${row.blockIndex}`} className="hover:bg-muted/20">
-                    {/* Gruppo Muscolare - con rowSpan */}
-                    {rowIndex === 0 && (
-                      <td
-                        rowSpan={group.rows.length}
-                        className="p-3 font-bold text-sm border-b border-r border-border align-middle sticky left-0 z-10"
-                        style={{
-                          backgroundColor: group.color,
-                          color: getContrastTextColor(group.color),
-                          minWidth: '150px',
-                          maxWidth: '150px',
-                        }}
-                      >
-                        <span className="uppercase tracking-wide text-xs">
-                          {group.muscleGroup}
-                        </span>
-                      </td>
-                    )}
-                    
-                    {/* Nome Esercizio */}
-                    <td className="p-3 border-b border-r border-border sticky left-[150px] bg-white z-10" style={{ minWidth: '200px' }}>
-                      <div className="font-medium">{row.exerciseName}</div>
-                      {row.blockIndex > 0 && (
-                        <div className="text-xs text-muted-foreground">
-                          Blocco {row.blockIndex + 1}
+                  {/* Colonne per ogni settimana: REST | WEEK | RESOCONTO */}
+                  {weekNumbers.map((weekNum) => (
+                    <th key={`header-${weekNum}`} colSpan={3} className="p-0 border-b border-border">
+                      <div className="bg-primary/20 px-3 py-2 text-center font-bold border-b border-border">
+                        WEEK {weekNum}
+                      </div>
+                      <div className="grid grid-cols-3">
+                        <div className="p-2 text-center text-xs font-medium border-r border-border bg-muted/50">
+                          REST
                         </div>
-                      )}
-                    </td>
-                    
-                    {/* REST per ogni settimana */}
-                    {weekNumbers.map((weekNum, weekIndex) => (
-                      <td key={`rest-${weekNum}`} className="p-3 text-center border-b border-r border-border bg-muted/30" style={{ minWidth: '80px' }}>
-                        {row.weekData[weekIndex]?.rest || row.rest || '-'}
-                      </td>
-                    ))}
-                    
-                    {/* WEEK - Schema per ogni settimana */}
-                    {weekNumbers.map((weekNum, weekIndex) => {
-                      const weekData = row.weekData[weekIndex];
-                      return (
-                        <td key={`week-${weekNum}`} className="p-3 border-b border-r border-border bg-white" style={{ minWidth: '200px' }}>
-                          <div className="space-y-1">
-                            <div className="font-semibold text-gray-900">
-                              {weekData?.schema || '-'}
-                            </div>
-                            {weekData?.loads && weekData.loads !== '-' && (
-                              <div className="text-gray-600 text-xs">
-                                {weekData.loads}
-                              </div>
-                            )}
-                            {weekData?.notes && (
-                              <div className="text-muted-foreground whitespace-pre-line text-[11px] leading-tight">
-                                {weekData.notes}
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                      );
-                    })}
-                    
-                    {/* RESOCONTO per ogni settimana */}
-                    {weekNumbers.map((weekNum, weekIndex) => {
-                      const loggedData = row.loggedData[weekIndex];
-                      const hasData = loggedData?.reps;
-                      
-                      return (
-                        <td 
-                          key={`res-${weekNum}`} 
-                          className="p-3 border-b border-r border-border"
-                          style={{ 
-                            ...(hasData ? resocontoFilledStyle : resocontoEmptyStyle),
-                            minWidth: '200px' 
+                        <div className="p-2 text-center text-xs font-medium border-r border-border bg-white">
+                          SCHEMA
+                        </div>
+                        <div className="p-2 text-center text-xs font-medium bg-amber-50">
+                          LOG
+                        </div>
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {groupedRows.map((group) => (
+                  group.rows.map((row, rowIndex) => (
+                    <tr key={`${row.key.exerciseName}-${row.key.blockIndex}`} className="hover:bg-muted/20">
+                      {/* Gruppo Muscolare - con rowSpan */}
+                      {rowIndex === 0 && (
+                        <td
+                          rowSpan={group.rows.length}
+                          className="p-3 font-bold text-xs border-b border-r border-border align-middle"
+                          style={{
+                            backgroundColor: group.color,
+                            color: getContrastTextColor(group.color),
+                            minWidth: '120px',
                           }}
                         >
-                          {hasData ? (
-                            <div className="space-y-0.5 text-xs">
-                              <div className="font-semibold">{loggedData.reps}</div>
-                              {loggedData.loads && (
-                                <div>{loggedData.loads}</div>
-                              )}
-                              {loggedData.rpe && (
-                                <div>{loggedData.rpe}</div>
-                              )}
-                              {loggedData.notes && (
-                                <div className="text-[10px] opacity-80">{loggedData.notes}</div>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground italic">-</span>
-                          )}
+                          <span className="uppercase tracking-wide">
+                            {group.muscleGroup}
+                          </span>
                         </td>
-                      );
-                    })}
+                      )}
+                      
+                      {/* Nome Esercizio */}
+                      <td className="p-3 border-b border-r border-border bg-white" style={{ minWidth: '180px' }}>
+                        <div className="font-medium text-sm">{row.key.exerciseName}</div>
+                        {row.key.blockIndex > 0 && (
+                          <div className="text-xs text-muted-foreground">
+                            Blocco {row.key.blockIndex + 1}
+                          </div>
+                        )}
+                      </td>
+                      
+                      {/* Colonne per ogni settimana */}
+                      {weekNumbers.map((weekNum) => {
+                        const weekData = row.weekData[weekNum];
+                        const logData = row.logData[weekNum];
+                        const hasLog = Boolean(logData?.reps);
+                        
+                        return (
+                          <td key={`data-${weekNum}`} colSpan={3} className="p-0 border-b border-border">
+                            <div className="grid grid-cols-3">
+                              {/* REST */}
+                              <div className="p-2 text-center border-r border-border bg-muted/30 text-xs">
+                                {weekData.exists ? (weekData.rest || '-') : '-'}
+                              </div>
+                              
+                              {/* SCHEMA - Clickable */}
+                              <div 
+                                className={`p-2 border-r border-border bg-white ${weekData.exists ? 'cursor-pointer hover:bg-blue-50' : ''}`}
+                                style={{ minWidth: '140px' }}
+                                onClick={() => weekData.exists && handleOpenConfigModal(weekNum, row)}
+                              >
+                                {weekData.exists ? (
+                                  <div className="space-y-0.5">
+                                    <div className="font-semibold text-xs text-gray-900 flex items-center gap-1">
+                                      {weekData.schema}
+                                      <Pencil className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100" />
+                                    </div>
+                                    {weekData.loads && weekData.loads !== '-' && (
+                                      <div className="text-[11px] text-gray-600">{weekData.loads}</div>
+                                    )}
+                                    {weekData.notes && (
+                                      <div className="text-[10px] text-muted-foreground whitespace-pre-line">{weekData.notes}</div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground italic text-xs">-</span>
+                                )}
+                              </div>
+                              
+                              {/* LOG - Clickable */}
+                              <div 
+                                className={`p-2 ${weekData.exists ? 'cursor-pointer hover:opacity-80' : ''}`}
+                                style={{ 
+                                  ...(hasLog ? resocontoFilledStyle : resocontoEmptyStyle),
+                                  minWidth: '140px',
+                                }}
+                                onClick={() => weekData.exists && handleOpenLogModal(weekNum, row)}
+                              >
+                                {hasLog ? (
+                                  <div className="space-y-0.5 text-xs">
+                                    <div className="font-semibold">{logData.reps}</div>
+                                    {logData.loads && <div className="text-[11px]">{logData.loads}</div>}
+                                    {logData.rpe && <div className="text-[11px]">{logData.rpe}</div>}
+                                  </div>
+                                ) : weekData.exists ? (
+                                  <div className="flex items-center justify-center gap-1 text-muted-foreground text-xs">
+                                    <ClipboardList className="w-3 h-3" />
+                                    <span>Log</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground italic text-xs">-</span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))
+                ))}
+                
+                {tableRows.length === 0 && (
+                  <tr>
+                    <td colSpan={2 + weekNumbers.length * 3} className="p-8 text-center text-muted-foreground">
+                      Nessun esercizio in questo giorno
+                    </td>
                   </tr>
-                ))
-              ))}
-              
-              {rowsData.length === 0 && (
-                <tr>
-                  <td colSpan={2 + weekNumbers.length * 3} className="p-8 text-center text-muted-foreground">
-                    Nessun esercizio in questo giorno
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </CardContent>
-    </Card>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Modal Configurazione Esercizio */}
+      {selectedExercise && selectedExerciseIndex !== null && (
+        <ConfigureExerciseModal
+          open={configModalOpen}
+          onOpenChange={setConfigModalOpen}
+          exercise={selectedExercise}
+          exerciseIndex={selectedExerciseIndex}
+          dayIndex={selectedDayIndex}
+          exerciseLibrary={exerciseLibrary}
+          allTechniques={allTechniques}
+          customTechniques={customTechniques}
+          onUpdate={handleUpdateExercise}
+          onUpdateBlock={handleUpdateBlock}
+          onUpdateBlockBatch={handleUpdateBlockBatch}
+          onAddBlock={handleAddBlock}
+          onDeleteBlock={handleDeleteBlock}
+          initialBlockIndex={selectedBlockIndex}
+        />
+      )}
+      
+      {/* Modal Log Sessione */}
+      {selectedExerciseIndex !== null && (
+        <LogSessionModal
+          open={logModalOpen}
+          onOpenChange={setLogModalOpen}
+          dayIndex={selectedDayIndex}
+          exerciseIndex={selectedExerciseIndex}
+          blockIndex={selectedBlockIndex}
+        />
+      )}
+    </>
   );
 }
