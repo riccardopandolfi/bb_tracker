@@ -1,13 +1,17 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { ExerciseBlock, LoggedSession, ProgramExercise, DEFAULT_TECHNIQUES } from '@/types';
+import { ExerciseBlock, LoggedSession, ProgramExercise, DEFAULT_TECHNIQUES, Day } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
 import { getContrastTextColor, adjustColor } from '@/lib/colorUtils';
 import { getExerciseBlocks, createDefaultBlock } from '@/lib/exerciseUtils';
 import { ConfigureExerciseModal } from './ConfigureExerciseModal';
 import { LogSessionModal } from './LogSessionModal';
-import { Pencil, ClipboardList } from 'lucide-react';
+import { Pencil, ClipboardList, Plus, Copy, Trash2 } from 'lucide-react';
 
 // Genera la stringa dello schema per un blocco
 function formatBlockSchema(block: ExerciseBlock): string {
@@ -142,6 +146,11 @@ export function ProgramTableView() {
     customTechniques,
     updateWeek,
     setCurrentWeek,
+    addWeek,
+    duplicateWeek,
+    deleteWeek,
+    currentProgramId,
+    currentWeek,
   } = useApp();
   
   const program = getCurrentProgram();
@@ -150,6 +159,77 @@ export function ProgramTableView() {
   const allTechniques = [...DEFAULT_TECHNIQUES, ...customTechniques.map(t => t.name)];
   
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+  
+  // Dialog per aggiungere giorno
+  const [showAddDayDialog, setShowAddDayDialog] = useState(false);
+  const [newDayName, setNewDayName] = useState('');
+  
+  // Funzione per ottenere il gruppo muscolare dalla libreria se non specificato
+  const getMuscleGroupFromLibrary = (exerciseName: string): string => {
+    const libraryExercise = exerciseLibrary.find(ex => ex.name === exerciseName);
+    if (libraryExercise?.muscles && libraryExercise.muscles.length > 0) {
+      // Prendi il muscolo con la percentuale più alta
+      const primaryMuscle = libraryExercise.muscles.reduce((prev, curr) => 
+        curr.percent > prev.percent ? curr : prev
+      );
+      return primaryMuscle.muscle;
+    }
+    return 'Non specificato';
+  };
+  
+  // Handler per aggiungere settimana
+  const handleAddWeek = () => {
+    const newWeekNum = Math.max(...weekNumbers, 0) + 1;
+    addWeek(newWeekNum);
+  };
+  
+  // Handler per duplicare settimana
+  const handleDuplicateWeek = (weekNum: number) => {
+    duplicateWeek(weekNum);
+  };
+  
+  // Handler per eliminare settimana
+  const handleDeleteWeek = (weekNum: number) => {
+    deleteWeek(weekNum);
+  };
+  
+  // Handler per aggiungere giorno a TUTTE le settimane
+  const handleAddDay = () => {
+    if (!newDayName.trim()) {
+      alert('Inserisci un nome per il giorno');
+      return;
+    }
+    
+    const newDay: Day = {
+      name: newDayName.trim(),
+      exercises: [],
+    };
+    
+    // Aggiungi il giorno a tutte le settimane
+    weekNumbers.forEach(weekNum => {
+      const week = weeks[weekNum];
+      if (week) {
+        const updatedWeek = {
+          ...week,
+          days: [...week.days, newDay],
+        };
+        updateWeek(weekNum, updatedWeek);
+      }
+    });
+    
+    // Seleziona il nuovo giorno
+    const firstWeek = weeks[weekNumbers[0]];
+    if (firstWeek) {
+      setSelectedDayIndex(firstWeek.days.length); // Sarà il nuovo indice dopo l'aggiunta
+    }
+    
+    setNewDayName('');
+    setShowAddDayDialog(false);
+  };
+  
+  // Verifica se una settimana ha sessioni loggate
+  const hasLoggedSessions = (weekNum: number) =>
+    loggedSessions.some((s) => s.weekNum === weekNum && s.programId === currentProgramId);
   
   // Modal states
   const [configModalOpen, setConfigModalOpen] = useState(false);
@@ -199,21 +279,33 @@ export function ProgramTableView() {
           const keyStr = `${exercise.exerciseName}|${blockIndex}`;
           
           if (!exerciseRegistry.has(keyStr)) {
+            // Determina il gruppo muscolare: prima da exercise.muscleGroup, poi dalla libreria
+            const muscleGroup = exercise.muscleGroup && exercise.muscleGroup !== 'Non specificato'
+              ? exercise.muscleGroup
+              : getMuscleGroupFromLibrary(exercise.exerciseName);
+            
             exerciseRegistry.set(keyStr, {
               key: {
                 exerciseName: exercise.exerciseName,
                 blockIndex,
-                muscleGroup: exercise.muscleGroup || 'Non specificato',
+                muscleGroup,
               },
               weekData: {},
               logData: {},
             });
-          }
-          
-          // Aggiorna muscleGroup se non è "Non specificato"
-          const row = exerciseRegistry.get(keyStr)!;
-          if (exercise.muscleGroup && exercise.muscleGroup !== 'Non specificato') {
-            row.key.muscleGroup = exercise.muscleGroup;
+          } else {
+            // Aggiorna muscleGroup se quello esistente è "Non specificato" e questo ha un valore
+            const row = exerciseRegistry.get(keyStr)!;
+            if (row.key.muscleGroup === 'Non specificato') {
+              if (exercise.muscleGroup && exercise.muscleGroup !== 'Non specificato') {
+                row.key.muscleGroup = exercise.muscleGroup;
+              } else {
+                const fromLibrary = getMuscleGroupFromLibrary(exercise.exerciseName);
+                if (fromLibrary !== 'Non specificato') {
+                  row.key.muscleGroup = fromLibrary;
+                }
+              }
+            }
           }
         });
       });
@@ -416,7 +508,8 @@ export function ProgramTableView() {
   return (
     <>
       <Card className="card-monetra">
-        <CardHeader className="pb-4">
+        <CardHeader className="pb-4 space-y-4">
+          {/* Titolo e Selettore Giorno */}
           <div className="flex items-center justify-between flex-wrap gap-4">
             <CardTitle className="font-heading text-lg">Vista Tabellare</CardTitle>
             
@@ -437,7 +530,66 @@ export function ProgramTableView() {
                   ))}
                 </SelectContent>
               </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddDayDialog(true)}
+                title="Aggiungi giorno"
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
             </div>
+          </div>
+          
+          {/* Week Selector */}
+          <div className="flex flex-wrap gap-2 items-center pt-2 border-t">
+            <span className="text-sm font-medium mr-2 font-heading">Settimana:</span>
+            {weekNumbers.map((weekNum) => (
+              <Button
+                key={weekNum}
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentWeek(weekNum)}
+                className={`relative ${currentWeek === weekNum 
+                  ? 'lime-gradient text-black shadow-md' 
+                  : 'bg-muted/50 border border-border text-foreground hover:bg-muted'}`}
+              >
+                W{weekNum}
+                {hasLoggedSessions(weekNum) && (
+                  <span className="ml-1">✓</span>
+                )}
+              </Button>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAddWeek}
+              className="bg-black text-white border-black hover:bg-black/90"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Nuova
+            </Button>
+            {weekNumbers.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDuplicateWeek(currentWeek)}
+              >
+                <Copy className="w-4 h-4 mr-1" />
+                Duplica W{currentWeek}
+              </Button>
+            )}
+            {weekNumbers.length > 1 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDeleteWeek(currentWeek)}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="w-4 h-4 mr-1" />
+                Elimina W{currentWeek}
+              </Button>
+            )}
           </div>
         </CardHeader>
         
@@ -617,6 +769,45 @@ export function ProgramTableView() {
           blockIndex={selectedBlockIndex}
         />
       )}
+      
+      {/* Dialog Aggiungi Giorno */}
+      <Dialog open={showAddDayDialog} onOpenChange={setShowAddDayDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Aggiungi Giorno</DialogTitle>
+            <DialogDescription>
+              Il nuovo giorno verrà aggiunto a tutte le settimane del programma.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="day-name">Nome Giorno</Label>
+              <Input
+                id="day-name"
+                value={newDayName}
+                onChange={(e) => setNewDayName(e.target.value)}
+                placeholder="es. Push, Pull, Legs, Upper, Lower..."
+                className="mt-1"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleAddDay();
+                  }
+                }}
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddDayDialog(false)}>
+              Annulla
+            </Button>
+            <Button onClick={handleAddDay}>
+              <Plus className="w-4 h-4 mr-2" />
+              Aggiungi
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
