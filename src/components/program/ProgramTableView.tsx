@@ -185,6 +185,9 @@ export function ProgramTableView() {
   const [selectedBlockIndex, setSelectedBlockIndex] = useState<number | null>(null);
   const [selectedExercise, setSelectedExercise] = useState<ProgramExercise | null>(null);
   
+  // Blocchi pendenti: exerciseIndex -> numero di righe extra da mostrare
+  const [pendingBlocks, setPendingBlocks] = useState<Record<number, number>>({});
+  
   // Funzione per ottenere il gruppo muscolare dalla libreria
   const getMuscleGroupFromLibrary = (exerciseName: string): string => {
     const libraryExercise = exerciseLibrary.find(ex => ex.name === exerciseName);
@@ -265,6 +268,10 @@ export function ProgramTableView() {
           maxBlocks = Math.max(maxBlocks, blocks.length);
         }
       });
+      
+      // Aggiungi blocchi pendenti (righe extra non ancora create)
+      const pending = pendingBlocks[exerciseIndex] || 0;
+      maxBlocks += pending;
       
       // Crea le righe per ogni blocco
       const blockRows: BlockRow[] = [];
@@ -351,7 +358,7 @@ export function ProgramTableView() {
     }
     
     return instances;
-  }, [program, weeks, weekNumbers, selectedDayIndex, loggedSessions, getMuscleColor, exerciseLibrary]);
+  }, [program, weeks, weekNumbers, selectedDayIndex, loggedSessions, getMuscleColor, exerciseLibrary, pendingBlocks]);
   
   // Handlers
   const handleAddWeek = () => {
@@ -495,6 +502,79 @@ export function ProgramTableView() {
         ? prev.filter(w => w !== weekNum)
         : [...prev, weekNum]
     );
+  };
+  
+  // Aggiunge una riga blocco pendente (vuota) per un esercizio
+  const handleAddPendingBlock = (exerciseIndex: number) => {
+    setPendingBlocks(prev => ({
+      ...prev,
+      [exerciseIndex]: (prev[exerciseIndex] || 0) + 1,
+    }));
+  };
+  
+  // Crea un blocco effettivo in una settimana specifica
+  const handleCreateBlockInWeek = (weekNum: number, exerciseIndex: number, blockIndex: number) => {
+    if (!program) return;
+    
+    const week = weeks[weekNum];
+    const day = week?.days?.[selectedDayIndex];
+    const exercise = day?.exercises?.[exerciseIndex];
+    
+    if (!week || !day || !exercise) return;
+    
+    // Copia i blocchi esistenti e aggiungi il nuovo alla posizione corretta
+    const existingBlocks = getExerciseBlocks(exercise);
+    const newBlocks = [...existingBlocks];
+    
+    // Se blockIndex è oltre la lunghezza attuale, aggiungi blocchi vuoti fino a raggiungerlo
+    while (newBlocks.length <= blockIndex) {
+      newBlocks.push(createDefaultBlock(exercise.exerciseType || 'resistance'));
+    }
+    
+    // Aggiorna l'esercizio con i nuovi blocchi
+    const updatedExercise = { ...exercise, blocks: newBlocks };
+    
+    const updatedDay = {
+      ...day,
+      exercises: day.exercises.map((ex, i) => i === exerciseIndex ? updatedExercise : ex),
+    };
+    
+    const updatedWeek = {
+      ...week,
+      days: week.days.map((d, i) => i === selectedDayIndex ? updatedDay : d),
+    };
+    
+    updateWeek(weekNum, updatedWeek);
+    
+    // Riduci il contatore dei blocchi pendenti se necessario
+    const currentPending = pendingBlocks[exerciseIndex] || 0;
+    if (currentPending > 0) {
+      // Conta quanti blocchi reali esistono ora
+      const realBlocksCount = newBlocks.length;
+      // Ricalcola quanti pendenti servono ancora
+      const totalNeeded = blockIndex + 1;
+      const newPending = Math.max(0, totalNeeded - realBlocksCount);
+      
+      if (newPending !== currentPending) {
+        setPendingBlocks(prev => {
+          const updated = { ...prev };
+          if (newPending === 0) {
+            delete updated[exerciseIndex];
+          } else {
+            updated[exerciseIndex] = newPending;
+          }
+          return updated;
+        });
+      }
+    }
+    
+    // Apri il modal per configurare il blocco appena creato
+    setSelectedWeekNum(weekNum);
+    setSelectedExerciseIndex(exerciseIndex);
+    setSelectedBlockIndex(blockIndex);
+    setSelectedExercise(updatedExercise);
+    setCurrentWeek(weekNum);
+    setConfigModalOpen(true);
   };
   
   const handleOpenConfigModal = (weekNum: number, instance: ExerciseInstance, blockRow: BlockRow) => {
@@ -729,16 +809,28 @@ export function ProgramTableView() {
                             >
                               <div className="flex items-center justify-between gap-1">
                                 <div className="font-medium text-sm whitespace-pre-wrap">{instance.exerciseName}</div>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteExercise(instance.exerciseIndex, instance.exerciseName);
-                                  }}
-                                  className="opacity-0 group-hover/exercise:opacity-100 p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-opacity"
-                                  title="Elimina esercizio"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
+                                <div className="flex items-center gap-0.5 opacity-0 group-hover/exercise:opacity-100 transition-opacity">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleAddPendingBlock(instance.exerciseIndex);
+                                    }}
+                                    className="p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded"
+                                    title="Aggiungi blocco"
+                                  >
+                                    <Plus className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteExercise(instance.exerciseIndex, instance.exerciseName);
+                                    }}
+                                    className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                                    title="Elimina esercizio"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
                               </div>
                             </td>
                           )}
@@ -748,6 +840,11 @@ export function ProgramTableView() {
                             const weekData = blockRow.weekData[weekNum];
                             const logData = blockRow.logData[weekNum];
                             const hasLog = Boolean(logData?.reps);
+                            
+                            // Verifica se l'esercizio esiste in questa settimana (anche se questo blocco specifico no)
+                            const exerciseExistsInWeek = weekData.exerciseIndex >= 0;
+                            // Blocco può essere creato se l'esercizio esiste ma il blocco no
+                            const canCreateBlock = !weekData.exists && exerciseExistsInWeek;
                             
                             // Combina note per REST/NOTE
                             const restNotesParts: string[] = [];
@@ -766,8 +863,20 @@ export function ProgramTableView() {
                                   
                                   {/* SCHEMA */}
                                   <div 
-                                    className={`p-2 border-r border-border bg-white ${weekData.exists ? 'cursor-pointer hover:bg-blue-50' : ''}`}
-                                    onClick={() => weekData.exists && handleOpenConfigModal(weekNum, instance, blockRow)}
+                                    className={`p-2 border-r border-border ${
+                                      weekData.exists 
+                                        ? 'bg-white cursor-pointer hover:bg-blue-50' 
+                                        : canCreateBlock 
+                                          ? 'bg-gray-50 cursor-pointer hover:bg-green-50 border-dashed border-green-300'
+                                          : 'bg-white'
+                                    }`}
+                                    onClick={() => {
+                                      if (weekData.exists) {
+                                        handleOpenConfigModal(weekNum, instance, blockRow);
+                                      } else if (canCreateBlock) {
+                                        handleCreateBlockInWeek(weekNum, instance.exerciseIndex, blockRow.blockIndex);
+                                      }
+                                    }}
                                   >
                                     {weekData.exists ? (
                                       <div className="space-y-0.5">
@@ -780,6 +889,11 @@ export function ProgramTableView() {
                                         {weekData.intensityInfo && (
                                           <div className="text-[10px] text-muted-foreground whitespace-pre-wrap">{weekData.intensityInfo}</div>
                                         )}
+                                      </div>
+                                    ) : canCreateBlock ? (
+                                      <div className="flex items-center justify-center gap-1 text-green-600 text-xs">
+                                        <Plus className="w-3 h-3" />
+                                        <span>Crea</span>
                                       </div>
                                     ) : (
                                       <span className="text-muted-foreground italic text-xs">-</span>
