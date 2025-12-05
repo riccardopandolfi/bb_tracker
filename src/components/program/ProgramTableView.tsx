@@ -3,7 +3,7 @@ import { useApp } from '@/contexts/AppContext';
 import { ExerciseBlock, LoggedSession } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { TableViewRow } from './TableViewRow';
+import { getContrastTextColor, adjustColor } from '@/lib/colorUtils';
 
 // Genera la stringa dello schema per un blocco (es. "3 x 12-10-8" o "3 x 8/10")
 function formatBlockSchema(block: ExerciseBlock): string {
@@ -76,10 +76,6 @@ function formatBlockLoads(block: ExerciseBlock): string {
 function formatBlockNotes(block: ExerciseBlock): string {
   const parts: string[] = [];
   
-  if (block.technique && block.technique !== 'Normale') {
-    parts.push(block.technique);
-  }
-  
   if (block.targetRPE) {
     parts.push(`RPE ${block.targetRPE}`);
   }
@@ -88,55 +84,42 @@ function formatBlockNotes(block: ExerciseBlock): string {
     parts.push(`Coeff ${block.coefficient}`);
   }
   
-  if (block.notes) {
-    parts.push(block.notes);
-  }
-  
   return parts.join('\n');
 }
 
 // Formatta il resoconto di una sessione loggata
-function formatLoggedSession(session: LoggedSession | undefined): string {
-  if (!session) return '';
+function formatLoggedSession(session: LoggedSession | undefined): { reps: string; loads: string; rpe: string; notes: string } {
+  if (!session) return { reps: '', loads: '', rpe: '', notes: '' };
   
   const reps = session.sets.map(s => s.reps).join('-');
-  const loads = session.sets.map(s => s.load).join('-');
+  const loads = session.sets.map(s => s.load).filter(l => l && l !== '0').join('-');
+  const rpe = session.avgRPE ? `RPE ${session.avgRPE.toFixed(1)}` : '';
+  const notes = session.notes || '';
   
-  let result = reps;
-  if (loads && loads !== '-') {
-    result += `\n${loads} kg`;
-  }
-  
-  if (session.avgRPE) {
-    result += `\nRPE ${session.avgRPE.toFixed(1)}`;
-  }
-  
-  if (session.notes) {
-    result += `\n${session.notes}`;
-  }
-  
-  return result;
+  return { reps, loads: loads ? `${loads} kg` : '', rpe, notes };
 }
 
 interface ExerciseRowData {
   exerciseName: string;
   muscleGroup: string;
   exerciseIndex: number;
-  blocks: {
-    blockIndex: number;
+  blockIndex: number;
+  rest: number;
+  weekData: {
+    weekNum: number;
+    schema: string;
+    loads: string;
+    notes: string;
     rest: number;
-    weekData: {
-      weekNum: number;
-      schema: string;
-      loads: string;
-      notes: string;
-      block?: ExerciseBlock;
-    }[];
-    loggedData: {
-      weekNum: number;
-      resoconto: string;
-      session?: LoggedSession;
-    }[];
+    block?: ExerciseBlock;
+  }[];
+  loggedData: {
+    weekNum: number;
+    reps: string;
+    loads: string;
+    rpe: string;
+    notes: string;
+    session?: LoggedSession;
   }[];
 }
 
@@ -173,8 +156,8 @@ export function ProgramTableView() {
       const blocks = exercise.blocks || [];
       
       blocks.forEach((block, blockIndex) => {
-        const weekData: ExerciseRowData['blocks'][0]['weekData'] = [];
-        const loggedData: ExerciseRowData['blocks'][0]['loggedData'] = [];
+        const weekData: ExerciseRowData['weekData'] = [];
+        const loggedData: ExerciseRowData['loggedData'] = [];
         
         weekNumbers.forEach((weekNum) => {
           const weekExercises = weeks[weekNum]?.days[selectedDayIndex]?.exercises || [];
@@ -187,6 +170,7 @@ export function ProgramTableView() {
               schema: formatBlockSchema(weekBlock),
               loads: formatBlockLoads(weekBlock),
               notes: formatBlockNotes(weekBlock),
+              rest: weekBlock.rest || block.rest || 0,
               block: weekBlock,
             });
           } else {
@@ -195,6 +179,7 @@ export function ProgramTableView() {
               schema: '-',
               loads: '-',
               notes: '',
+              rest: block.rest || 0,
             });
           }
           
@@ -207,9 +192,10 @@ export function ProgramTableView() {
                  s.dayIndex === selectedDayIndex
           );
           
+          const formatted = formatLoggedSession(session);
           loggedData.push({
             weekNum,
-            resoconto: formatLoggedSession(session),
+            ...formatted,
             session,
           });
         });
@@ -218,12 +204,10 @@ export function ProgramTableView() {
           exerciseName: exercise.exerciseName,
           muscleGroup: exercise.muscleGroup || 'Non specificato',
           exerciseIndex,
-          blocks: [{
-            blockIndex,
-            rest: block.rest || 0,
-            weekData,
-            loggedData,
-          }],
+          blockIndex,
+          rest: block.rest || 0,
+          weekData,
+          loggedData,
         });
       });
     });
@@ -233,18 +217,27 @@ export function ProgramTableView() {
   
   // Raggruppa le righe per gruppo muscolare
   const groupedRows = useMemo(() => {
-    const groups: Record<string, ExerciseRowData[]> = {};
+    const groups: { muscleGroup: string; rows: ExerciseRowData[]; color: string }[] = [];
+    const groupMap = new Map<string, ExerciseRowData[]>();
     
     rowsData.forEach(row => {
       const group = row.muscleGroup;
-      if (!groups[group]) {
-        groups[group] = [];
+      if (!groupMap.has(group)) {
+        groupMap.set(group, []);
       }
-      groups[group].push(row);
+      groupMap.get(group)!.push(row);
+    });
+    
+    groupMap.forEach((rows, muscleGroup) => {
+      groups.push({
+        muscleGroup,
+        rows,
+        color: getMuscleColor(muscleGroup),
+      });
     });
     
     return groups;
-  }, [rowsData]);
+  }, [rowsData, getMuscleColor]);
   
   if (!program || weekNumbers.length === 0) {
     return (
@@ -255,6 +248,16 @@ export function ProgramTableView() {
       </Card>
     );
   }
+  
+  // Stile per le celle resoconto (colorate in magenta chiaro)
+  const resocontoFilledStyle = {
+    backgroundColor: adjustColor('#d946ef', 0.85),
+    color: '#831843',
+  };
+  
+  const resocontoEmptyStyle = {
+    backgroundColor: '#fef3c7', // amber-100
+  };
   
   return (
     <Card className="card-monetra">
@@ -269,7 +272,7 @@ export function ProgramTableView() {
               value={selectedDayIndex.toString()}
               onValueChange={(v) => setSelectedDayIndex(parseInt(v, 10))}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[220px]">
                 <SelectValue placeholder="Seleziona giorno" />
               </SelectTrigger>
               <SelectContent>
@@ -286,58 +289,163 @@ export function ProgramTableView() {
       
       <CardContent className="p-0">
         <div className="w-full overflow-x-auto">
-          <div className="min-w-max">
-            {/* Header della tabella */}
-            <div className="grid border-b border-border bg-muted/50 sticky top-0 z-10"
-                 style={{ 
-                   gridTemplateColumns: `150px 200px ${weekNumbers.map(() => '80px 200px 200px').join(' ')}` 
-                 }}>
-              <div className="p-3 font-semibold text-sm border-r border-border">
-                Gruppo
-              </div>
-              <div className="p-3 font-semibold text-sm border-r border-border">
-                Esercizio
-              </div>
-              {weekNumbers.map((weekNum) => (
-                <div key={weekNum} className="contents">
-                  <div className="p-3 font-semibold text-sm border-r border-border text-center bg-muted">
+          <table className="w-full border-collapse min-w-max text-sm">
+            <thead>
+              <tr className="bg-muted/50">
+                <th className="p-3 text-left font-semibold border-b border-r border-border sticky left-0 bg-muted/50 z-10">
+                  Gruppo
+                </th>
+                <th className="p-3 text-left font-semibold border-b border-r border-border sticky left-[150px] bg-muted/50 z-10">
+                  Esercizio
+                </th>
+                {weekNumbers.map((weekNum) => (
+                  <th key={`rest-${weekNum}`} colSpan={1} className="p-3 text-center font-semibold border-b border-r border-border bg-muted">
                     REST
-                  </div>
-                  <div className="p-3 font-semibold text-sm border-r border-border text-center bg-primary/10">
-                    WEEK {weekNum}
-                  </div>
-                  <div className="p-3 font-semibold text-sm border-r border-border text-center bg-amber-50">
-                    RESOCONTO
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            {/* Corpo della tabella */}
-            {Object.entries(groupedRows).map(([muscleGroup, rows]) => (
-              <div key={muscleGroup}>
-                {rows.map((row, rowIndex) => (
-                  <TableViewRow
-                    key={`${row.exerciseName}-${row.blocks[0]?.blockIndex || 0}-${rowIndex}`}
-                    row={row}
-                    weekNumbers={weekNumbers}
-                    muscleColor={getMuscleColor(muscleGroup)}
-                    isFirstInGroup={rowIndex === 0}
-                    groupRowCount={rows.length}
-                  />
+                  </th>
                 ))}
-              </div>
-            ))}
-            
-            {rowsData.length === 0 && (
-              <div className="p-8 text-center text-muted-foreground">
-                Nessun esercizio in questo giorno
-              </div>
-            )}
-          </div>
+                {weekNumbers.map((weekNum) => (
+                  <th key={`week-${weekNum}`} colSpan={1} className="p-3 text-center font-semibold border-b border-r border-border bg-primary/10">
+                    WEEK {weekNum}
+                  </th>
+                ))}
+                {weekNumbers.map((weekNum) => (
+                  <th key={`resoconto-${weekNum}`} colSpan={1} className="p-3 text-center font-semibold border-b border-r border-border bg-amber-50">
+                    RESOCONTO
+                  </th>
+                ))}
+              </tr>
+              {/* Seconda riga header per chiarire la struttura */}
+              <tr className="bg-muted/30 text-xs">
+                <th className="p-2 border-b border-r border-border sticky left-0 bg-muted/30 z-10"></th>
+                <th className="p-2 border-b border-r border-border sticky left-[150px] bg-muted/30 z-10"></th>
+                {weekNumbers.map((weekNum) => (
+                  <th key={`rest-sub-${weekNum}`} className="p-2 text-center border-b border-r border-border text-muted-foreground">
+                    W{weekNum}
+                  </th>
+                ))}
+                {weekNumbers.map((weekNum) => (
+                  <th key={`week-sub-${weekNum}`} className="p-2 text-center border-b border-r border-border text-muted-foreground">
+                    Schema
+                  </th>
+                ))}
+                {weekNumbers.map((weekNum) => (
+                  <th key={`res-sub-${weekNum}`} className="p-2 text-center border-b border-r border-border text-muted-foreground">
+                    W{weekNum}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {groupedRows.map((group) => (
+                group.rows.map((row, rowIndex) => (
+                  <tr key={`${row.exerciseName}-${row.blockIndex}`} className="hover:bg-muted/20">
+                    {/* Gruppo Muscolare - con rowSpan */}
+                    {rowIndex === 0 && (
+                      <td
+                        rowSpan={group.rows.length}
+                        className="p-3 font-bold text-sm border-b border-r border-border align-middle sticky left-0 z-10"
+                        style={{
+                          backgroundColor: group.color,
+                          color: getContrastTextColor(group.color),
+                          minWidth: '150px',
+                          maxWidth: '150px',
+                        }}
+                      >
+                        <span className="uppercase tracking-wide text-xs">
+                          {group.muscleGroup}
+                        </span>
+                      </td>
+                    )}
+                    
+                    {/* Nome Esercizio */}
+                    <td className="p-3 border-b border-r border-border sticky left-[150px] bg-white z-10" style={{ minWidth: '200px' }}>
+                      <div className="font-medium">{row.exerciseName}</div>
+                      {row.blockIndex > 0 && (
+                        <div className="text-xs text-muted-foreground">
+                          Blocco {row.blockIndex + 1}
+                        </div>
+                      )}
+                    </td>
+                    
+                    {/* REST per ogni settimana */}
+                    {weekNumbers.map((weekNum, weekIndex) => (
+                      <td key={`rest-${weekNum}`} className="p-3 text-center border-b border-r border-border bg-muted/30" style={{ minWidth: '80px' }}>
+                        {row.weekData[weekIndex]?.rest || row.rest || '-'}
+                      </td>
+                    ))}
+                    
+                    {/* WEEK - Schema per ogni settimana */}
+                    {weekNumbers.map((weekNum, weekIndex) => {
+                      const weekData = row.weekData[weekIndex];
+                      return (
+                        <td key={`week-${weekNum}`} className="p-3 border-b border-r border-border bg-white" style={{ minWidth: '200px' }}>
+                          <div className="space-y-1">
+                            <div className="font-semibold text-gray-900">
+                              {weekData?.schema || '-'}
+                            </div>
+                            {weekData?.loads && weekData.loads !== '-' && (
+                              <div className="text-gray-600 text-xs">
+                                {weekData.loads}
+                              </div>
+                            )}
+                            {weekData?.notes && (
+                              <div className="text-muted-foreground whitespace-pre-line text-[11px] leading-tight">
+                                {weekData.notes}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      );
+                    })}
+                    
+                    {/* RESOCONTO per ogni settimana */}
+                    {weekNumbers.map((weekNum, weekIndex) => {
+                      const loggedData = row.loggedData[weekIndex];
+                      const hasData = loggedData?.reps;
+                      
+                      return (
+                        <td 
+                          key={`res-${weekNum}`} 
+                          className="p-3 border-b border-r border-border"
+                          style={{ 
+                            ...(hasData ? resocontoFilledStyle : resocontoEmptyStyle),
+                            minWidth: '200px' 
+                          }}
+                        >
+                          {hasData ? (
+                            <div className="space-y-0.5 text-xs">
+                              <div className="font-semibold">{loggedData.reps}</div>
+                              {loggedData.loads && (
+                                <div>{loggedData.loads}</div>
+                              )}
+                              {loggedData.rpe && (
+                                <div>{loggedData.rpe}</div>
+                              )}
+                              {loggedData.notes && (
+                                <div className="text-[10px] opacity-80">{loggedData.notes}</div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground italic">-</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))
+              ))}
+              
+              {rowsData.length === 0 && (
+                <tr>
+                  <td colSpan={2 + weekNumbers.length * 3} className="p-8 text-center text-muted-foreground">
+                    Nessun esercizio in questo giorno
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </CardContent>
     </Card>
   );
 }
-
