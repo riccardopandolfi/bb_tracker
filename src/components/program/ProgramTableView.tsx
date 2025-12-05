@@ -186,6 +186,7 @@ export function ProgramTableView() {
   const [newExerciseName, setNewExerciseName] = useState('');
   const [newExerciseMuscleGroup, setNewExerciseMuscleGroup] = useState('auto');
   const [selectedWeeksForNewExercise, setSelectedWeeksForNewExercise] = useState<number[]>([]);
+  const [draggingExercise, setDraggingExercise] = useState<string | null>(null);
   
   // Modal states
   const [configModalOpen, setConfigModalOpen] = useState(false);
@@ -385,25 +386,41 @@ export function ProgramTableView() {
       ? newExerciseMuscleGroup
       : getMuscleGroupFromLibrary(newExerciseName);
     
-    const newExercise: ProgramExercise = {
-      exerciseName: libraryEx.name,
-      exerciseType: libraryEx.type,
-      muscleGroup,
-      blocks: [createDefaultBlock(libraryEx.type)],
-      notes: '',
-    };
-    
+    // Per ogni settimana selezionata, aggiungi in fondo l'esercizio (clonato) nel giorno selezionato.
     selectedWeeksForNewExercise.forEach(weekNum => {
       const week = weeks[weekNum];
-      const day = week?.days?.[selectedDayIndex];
-      if (week && day) {
-        const updatedDay = { ...day, exercises: [...day.exercises, newExercise] };
-        const updatedWeek = {
-          ...week,
-          days: week.days.map((d, i) => i === selectedDayIndex ? updatedDay : d),
-        };
-        updateWeek(weekNum, updatedWeek);
+      // Se il giorno non esiste in quella settimana, crealo
+      let day = week?.days?.[selectedDayIndex];
+      if (!week) return;
+      if (!day) {
+        const fallbackName =
+          weeks[weekNumbers[0]]?.days?.[selectedDayIndex]?.name ||
+          `Giorno ${selectedDayIndex + 1}`;
+        day = { name: fallbackName, exercises: [] };
       }
+      const newExercise: ProgramExercise = {
+        exerciseName: libraryEx.name,
+        exerciseType: libraryEx.type,
+        muscleGroup,
+        blocks: [createDefaultBlock(libraryEx.type)],
+        notes: '',
+      };
+      const updatedDay = { ...day, exercises: [...day.exercises, newExercise] };
+      const updatedWeek = {
+        ...week,
+        days: week.days.map((d, i) => {
+          if (!week.days[i] && i === selectedDayIndex) return updatedDay;
+          return i === selectedDayIndex ? updatedDay : d;
+        }),
+      };
+      // Se il giorno è stato creato (array troppo corto), estendi l'array
+      if (selectedDayIndex >= updatedWeek.days.length) {
+        const padded = [...updatedWeek.days];
+        while (padded.length <= selectedDayIndex) padded.push({ name: `Giorno ${padded.length + 1}`, exercises: [] });
+        padded[selectedDayIndex] = updatedDay;
+        updatedWeek.days = padded;
+      }
+      updateWeek(weekNum, updatedWeek);
     });
     
     setNewExerciseName('');
@@ -418,6 +435,31 @@ export function ProgramTableView() {
         ? prev.filter(w => w !== weekNum)
         : [...prev, weekNum]
     );
+  };
+
+  // Drag & Drop per riordinare gli esercizi (per nome) nel giorno selezionato, su tutte le settimane selezionate
+  const reorderExercisesAcrossWeeks = (sourceName: string, targetName: string) => {
+    if (sourceName === targetName) return;
+    weekNumbers.forEach((weekNum) => {
+      const week = weeks[weekNum];
+      const day = week?.days?.[selectedDayIndex];
+      if (!week || !day) return;
+
+      const exercises = [...day.exercises];
+      const fromIdx = exercises.findIndex((ex) => ex.exerciseName === sourceName);
+      const toIdx = exercises.findIndex((ex) => ex.exerciseName === targetName);
+      if (fromIdx === -1 || toIdx === -1) return;
+
+      const [moved] = exercises.splice(fromIdx, 1);
+      exercises.splice(toIdx, 0, moved);
+
+      const updatedDay = { ...day, exercises };
+      const updatedWeek = {
+        ...week,
+        days: week.days.map((d, i) => (i === selectedDayIndex ? updatedDay : d)),
+      };
+      updateWeek(weekNum, updatedWeek);
+    });
   };
   
   const hasLoggedSessions = (weekNum: number) =>
@@ -633,7 +675,30 @@ export function ProgramTableView() {
                       if (showExerciseCell) exerciseRowRendered = true;
                       
                       return (
-                        <tr key={`${exGroup.exerciseName}-${blockIdx}`} className="hover:bg-muted/10">
+                        <tr
+                          key={`${exGroup.exerciseName}-${blockIdx}`}
+                          className="hover:bg-muted/10"
+                          draggable={showExerciseCell} // solo sulla prima riga dell'esercizio
+                          onDragStart={(e) => {
+                            if (showExerciseCell) {
+                              setDraggingExercise(exGroup.exerciseName);
+                              e.dataTransfer.setData('text/plain', exGroup.exerciseName);
+                            }
+                          }}
+                          onDragOver={(e) => {
+                            if (draggingExercise && draggingExercise !== exGroup.exerciseName) {
+                              e.preventDefault();
+                            }
+                          }}
+                          onDrop={(e) => {
+                            const source = draggingExercise || e.dataTransfer.getData('text/plain');
+                            if (source && source !== exGroup.exerciseName) {
+                              reorderExercisesAcrossWeeks(source, exGroup.exerciseName);
+                            }
+                            setDraggingExercise(null);
+                          }}
+                          onDragEnd={() => setDraggingExercise(null)}
+                        >
                           {/* Gruppo Muscolare */}
                           {showMuscleCell && (
                             <td
