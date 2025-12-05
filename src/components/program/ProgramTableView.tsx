@@ -157,6 +157,7 @@ export function ProgramTableView() {
     customTechniques,
     muscleGroups,
     updateWeek,
+    updateProgram,
     setCurrentWeek,
     addWeek,
   } = useApp();
@@ -380,21 +381,24 @@ export function ProgramTableView() {
     }
     
     const libraryEx = exerciseLibrary.find(ex => ex.name === newExerciseName);
-    if (!libraryEx) return;
+    if (!libraryEx || !program) return;
     
     const muscleGroup = newExerciseMuscleGroup && newExerciseMuscleGroup !== 'auto'
       ? newExerciseMuscleGroup
       : getMuscleGroupFromLibrary(newExerciseName);
     
-    // Prepara TUTTE le modifiche in modo sincrono prima di applicarle
-    const updates: { weekNum: number; updatedWeek: typeof weeks[number] }[] = [];
+    // Costruisci TUTTE le settimane modificate in un'unica operazione
+    const newWeeks = { ...program.weeks };
     
     selectedWeeksForNewExercise.forEach(weekNum => {
-      const week = weeks[weekNum];
+      const week = newWeeks[weekNum];
       if (!week) return;
       
       // Crea copia profonda dei days
-      const newDays = week.days.map(d => ({ ...d, exercises: [...d.exercises] }));
+      const newDays = week.days.map(d => ({ 
+        ...d, 
+        exercises: d.exercises.map(ex => ({ ...ex, blocks: [...ex.blocks] }))
+      }));
       
       // Estendi se necessario
       while (newDays.length <= selectedDayIndex) {
@@ -417,21 +421,11 @@ export function ProgramTableView() {
         exercises: [...newDays[selectedDayIndex].exercises, newExercise],
       };
       
-      updates.push({
-        weekNum,
-        updatedWeek: { ...week, days: newDays },
-      });
+      newWeeks[weekNum] = { ...week, days: newDays };
     });
     
-    // Applica tutte le modifiche con delay
-    const applyUpdates = async () => {
-      for (const { weekNum, updatedWeek } of updates) {
-        updateWeek(weekNum, updatedWeek);
-        await new Promise(resolve => setTimeout(resolve, 20));
-      }
-    };
-    
-    applyUpdates();
+    // Applica TUTTE le modifiche in un'unica chiamata
+    updateProgram(program.id, { ...program, weeks: newWeeks });
     
     setNewExerciseName('');
     setNewExerciseMuscleGroup('auto');
@@ -442,9 +436,12 @@ export function ProgramTableView() {
   // Elimina esercizio da tutte le settimane (per exerciseIndex)
   const handleDeleteExercise = (exerciseIndex: number, exerciseName: string) => {
     if (!confirm(`Eliminare "${exerciseName}" da tutte le settimane?`)) return;
+    if (!program) return;
+    
+    const newWeeks = { ...program.weeks };
     
     weekNumbers.forEach(weekNum => {
-      const week = weeks[weekNum];
+      const week = newWeeks[weekNum];
       const day = week?.days?.[selectedDayIndex];
       if (!week || !day) return;
       
@@ -455,20 +452,24 @@ export function ProgramTableView() {
       const filteredExercises = day.exercises.filter((_, i) => i !== exerciseIndex);
       
       const updatedDay = { ...day, exercises: filteredExercises };
-      const updatedWeek = {
+      newWeeks[weekNum] = {
         ...week,
         days: week.days.map((d, i) => i === selectedDayIndex ? updatedDay : d),
       };
-      updateWeek(weekNum, updatedWeek);
     });
+    
+    updateProgram(program.id, { ...program, weeks: newWeeks });
   };
   
   // Sposta esercizio su/giù
   const handleMoveExercise = (exerciseIndex: number, direction: 'up' | 'down') => {
+    if (!program) return;
     const newIndex = direction === 'up' ? exerciseIndex - 1 : exerciseIndex + 1;
     
+    const newWeeks = { ...program.weeks };
+    
     weekNumbers.forEach(weekNum => {
-      const week = weeks[weekNum];
+      const week = newWeeks[weekNum];
       const day = week?.days?.[selectedDayIndex];
       if (!week || !day) return;
       
@@ -479,12 +480,13 @@ export function ProgramTableView() {
       exercises.splice(newIndex, 0, moved);
       
       const updatedDay = { ...day, exercises };
-      const updatedWeek = {
+      newWeeks[weekNum] = {
         ...week,
         days: week.days.map((d, i) => i === selectedDayIndex ? updatedDay : d),
       };
-      updateWeek(weekNum, updatedWeek);
     });
+    
+    updateProgram(program.id, { ...program, weeks: newWeeks });
   };
   
   const toggleWeekSelection = (weekNum: number) => {
