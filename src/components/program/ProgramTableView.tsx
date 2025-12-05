@@ -12,7 +12,7 @@ import { getContrastTextColor, adjustColor } from '@/lib/colorUtils';
 import { getExerciseBlocks, createDefaultBlock } from '@/lib/exerciseUtils';
 import { ConfigureExerciseModal } from './ConfigureExerciseModal';
 import { LogSessionModal } from './LogSessionModal';
-import { ClipboardList, Plus, Copy, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import { ClipboardList, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 
 // Genera la stringa dello schema per un blocco (come nella vista card)
 function formatBlockSchema(block: ExerciseBlock): string {
@@ -159,10 +159,6 @@ export function ProgramTableView() {
     updateWeek,
     setCurrentWeek,
     addWeek,
-    duplicateWeek,
-    deleteWeek,
-    currentProgramId,
-    currentWeek,
   } = useApp();
   
   const program = getCurrentProgram();
@@ -218,31 +214,52 @@ export function ProgramTableView() {
       .map(([index, name]) => ({ index, name }));
   }, [weeks, weekNumbers]);
   
-  // Costruisci la lista di esercizi mantenendo l'ORDINE dell'array
-  // Usa la prima settimana come riferimento per l'ordine
+  // Costruisci la lista di esercizi raccogliendo da TUTTE le settimane
   const exerciseInstances = useMemo((): ExerciseInstance[] => {
     if (!program || weekNumbers.length === 0) return [];
     
-    // Usa la prima settimana come riferimento per l'ordine degli esercizi
-    const referenceWeek = weeks[weekNumbers[0]];
-    const referenceDay = referenceWeek?.days?.[selectedDayIndex];
-    if (!referenceDay) return [];
+    // Trova il numero massimo di esercizi tra tutte le settimane
+    let maxExercises = 0;
+    weekNumbers.forEach(weekNum => {
+      const week = weeks[weekNum];
+      const day = week?.days?.[selectedDayIndex];
+      if (day?.exercises) {
+        maxExercises = Math.max(maxExercises, day.exercises.length);
+      }
+    });
+    
+    if (maxExercises === 0) return [];
     
     const instances: ExerciseInstance[] = [];
     
-    // Per ogni esercizio nell'ordine dell'array della prima settimana
-    referenceDay.exercises.forEach((refExercise, exerciseIndex) => {
-      const muscleGroup = refExercise.muscleGroup && refExercise.muscleGroup !== 'Non specificato'
-        ? refExercise.muscleGroup
-        : getMuscleGroupFromLibrary(refExercise.exerciseName);
+    // Per ogni slot di esercizio (0, 1, 2, ...)
+    for (let exerciseIndex = 0; exerciseIndex < maxExercises; exerciseIndex++) {
+      // Trova il primo esercizio non-null in questo slot per prendere nome e muscolo
+      let exerciseName = '';
+      let muscleGroup = 'Non specificato';
       
-      // Trova il numero massimo di blocchi per questo esercizio tra tutte le settimane
-      let maxBlocks = getExerciseBlocks(refExercise).length;
+      for (const weekNum of weekNumbers) {
+        const week = weeks[weekNum];
+        const day = week?.days?.[selectedDayIndex];
+        const exercise = day?.exercises?.[exerciseIndex];
+        if (exercise) {
+          exerciseName = exercise.exerciseName;
+          muscleGroup = exercise.muscleGroup && exercise.muscleGroup !== 'Non specificato'
+            ? exercise.muscleGroup
+            : getMuscleGroupFromLibrary(exercise.exerciseName);
+          break;
+        }
+      }
+      
+      if (!exerciseName) continue; // Nessun esercizio in questo slot
+      
+      // Trova il numero massimo di blocchi per questo slot tra tutte le settimane
+      let maxBlocks = 1;
       weekNumbers.forEach(weekNum => {
         const week = weeks[weekNum];
         const day = week?.days?.[selectedDayIndex];
         const exercise = day?.exercises?.[exerciseIndex];
-        if (exercise && exercise.exerciseName === refExercise.exerciseName) {
+        if (exercise) {
           const blocks = getExerciseBlocks(exercise);
           maxBlocks = Math.max(maxBlocks, blocks.length);
         }
@@ -263,8 +280,7 @@ export function ProgramTableView() {
           const day = week?.days?.[selectedDayIndex];
           const exercise = day?.exercises?.[exerciseIndex];
           
-          // Verifica che l'esercizio in questa posizione sia lo stesso (stesso nome)
-          if (exercise && exercise.exerciseName === refExercise.exerciseName) {
+          if (exercise) {
             const blocks = getExerciseBlocks(exercise);
             const block = blocks[blockIndex];
             
@@ -306,7 +322,7 @@ export function ProgramTableView() {
               blockRow.logData[weekNum] = { reps: '', loads: '', rpe: '', notes: '' };
             }
           } else {
-            // L'esercizio in questa posizione è diverso o non esiste
+            // Nessun esercizio in questo slot per questa settimana
             blockRow.weekData[weekNum] = {
               exists: false,
               exerciseIndex: -1,
@@ -326,12 +342,12 @@ export function ProgramTableView() {
       
       instances.push({
         exerciseIndex,
-        exerciseName: refExercise.exerciseName,
+        exerciseName,
         muscleGroup,
         color: getMuscleColor(muscleGroup),
         blocks: blockRows,
       });
-    });
+    }
     
     return instances;
   }, [program, weeks, weekNumbers, selectedDayIndex, loggedSessions, getMuscleColor, exerciseLibrary]);
@@ -370,34 +386,48 @@ export function ProgramTableView() {
       ? newExerciseMuscleGroup
       : getMuscleGroupFromLibrary(newExerciseName);
     
-    // Applica le modifiche con delay per evitare batching
+    // Prepara TUTTE le modifiche in modo sincrono prima di applicarle
+    const updates: { weekNum: number; updatedWeek: typeof weeks[number] }[] = [];
+    
+    selectedWeeksForNewExercise.forEach(weekNum => {
+      const week = weeks[weekNum];
+      if (!week) return;
+      
+      // Crea copia profonda dei days
+      const newDays = week.days.map(d => ({ ...d, exercises: [...d.exercises] }));
+      
+      // Estendi se necessario
+      while (newDays.length <= selectedDayIndex) {
+        newDays.push({ name: `Giorno ${newDays.length + 1}`, exercises: [] });
+      }
+      
+      // Crea nuovo esercizio
+      const newExercise: ProgramExercise = {
+        exerciseName: libraryEx.name,
+        exerciseType: libraryEx.type,
+        muscleGroup,
+        blocks: [createDefaultBlock(libraryEx.type)],
+        notes: '',
+      };
+      
+      // Aggiungi al giorno
+      newDays[selectedDayIndex] = {
+        ...newDays[selectedDayIndex],
+        name: newDays[selectedDayIndex].name || `Giorno ${selectedDayIndex + 1}`,
+        exercises: [...newDays[selectedDayIndex].exercises, newExercise],
+      };
+      
+      updates.push({
+        weekNum,
+        updatedWeek: { ...week, days: newDays },
+      });
+    });
+    
+    // Applica tutte le modifiche con delay
     const applyUpdates = async () => {
-      for (const weekNum of selectedWeeksForNewExercise) {
-        const week = weeks[weekNum];
-        if (!week) continue;
-        
-        const newDays = [...week.days];
-        while (newDays.length <= selectedDayIndex) {
-          newDays.push({ name: `Giorno ${newDays.length + 1}`, exercises: [] });
-        }
-        
-        const newExercise: ProgramExercise = {
-          exerciseName: libraryEx.name,
-          exerciseType: libraryEx.type,
-          muscleGroup,
-          blocks: [createDefaultBlock(libraryEx.type)],
-          notes: '',
-        };
-        
-        const existingDay = newDays[selectedDayIndex];
-        newDays[selectedDayIndex] = {
-          ...existingDay,
-          name: existingDay.name || `Giorno ${selectedDayIndex + 1}`,
-          exercises: [...existingDay.exercises, newExercise],
-        };
-        
-        updateWeek(weekNum, { ...week, days: newDays });
-        await new Promise(resolve => setTimeout(resolve, 10));
+      for (const { weekNum, updatedWeek } of updates) {
+        updateWeek(weekNum, updatedWeek);
+        await new Promise(resolve => setTimeout(resolve, 20));
       }
     };
     
@@ -464,9 +494,6 @@ export function ProgramTableView() {
         : [...prev, weekNum]
     );
   };
-  
-  const hasLoggedSessions = (weekNum: number) =>
-    loggedSessions.some((s) => s.weekNum === weekNum && s.programId === currentProgramId);
   
   const handleOpenConfigModal = (weekNum: number, instance: ExerciseInstance, blockRow: BlockRow) => {
     const weekData = blockRow.weekData[weekNum];
@@ -590,45 +617,16 @@ export function ProgramTableView() {
             </div>
           </div>
           
-          {/* Week Selector */}
+          {/* Azioni */}
           <div className="flex flex-wrap gap-2 items-center pt-2 border-t">
-            <span className="text-sm font-medium mr-2 font-heading">Settimana:</span>
-            {weekNumbers.map((weekNum) => (
-              <Button
-                key={weekNum}
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentWeek(weekNum)}
-                className={currentWeek === weekNum 
-                  ? 'lime-gradient text-black shadow-md' 
-                  : 'bg-muted/50 border border-border text-foreground hover:bg-muted'}
-              >
-                W{weekNum}
-                {hasLoggedSessions(weekNum) && <span className="ml-1">✓</span>}
-              </Button>
-            ))}
-            <Button variant="outline" size="sm" onClick={handleAddWeek} className="bg-black text-white border-black hover:bg-black/90">
-              <Plus className="w-4 h-4 mr-1" />Nuova
-            </Button>
-            {weekNumbers.length > 0 && (
-              <Button variant="outline" size="sm" onClick={() => duplicateWeek(currentWeek)}>
-                <Copy className="w-4 h-4 mr-1" />Duplica W{currentWeek}
-              </Button>
-            )}
-            {weekNumbers.length > 1 && (
-              <Button variant="outline" size="sm" onClick={() => deleteWeek(currentWeek)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                <Trash2 className="w-4 h-4 mr-1" />Elimina W{currentWeek}
-              </Button>
-            )}
-          </div>
-          
-          {/* Pulsante Aggiungi Esercizio */}
-          <div className="pt-2">
             <Button variant="outline" size="sm" onClick={() => {
               setSelectedWeeksForNewExercise([...weekNumbers]);
               setShowAddExerciseDialog(true);
             }}>
               <Plus className="w-4 h-4 mr-1" />Aggiungi Esercizio
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleAddWeek} className="bg-black text-white border-black hover:bg-black/90">
+              <Plus className="w-4 h-4 mr-1" />Nuova Settimana
             </Button>
           </div>
         </CardHeader>
