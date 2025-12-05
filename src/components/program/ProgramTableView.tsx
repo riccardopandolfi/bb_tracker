@@ -580,6 +580,74 @@ export function ProgramTableView() {
     // Non rimuoviamo pendingExercise così l'utente può continuare ad aggiungere lo stesso esercizio ad altre settimane
   };
   
+  // Crea l'esercizio in una settimana dove non esiste, copiandolo da un'altra settimana
+  const handleCreateExerciseFromExisting = (weekNum: number, instance: ExerciseInstance) => {
+    if (!program) return;
+    
+    // Trova l'esercizio in un'altra settimana per copiare le info base
+    let sourceExercise: ProgramExercise | null = null;
+    for (const wn of weekNumbers) {
+      if (wn === weekNum) continue;
+      const week = weeks[wn];
+      const day = week?.days?.[selectedDayIndex];
+      const exercise = day?.exercises?.[instance.exerciseIndex];
+      if (exercise && exercise.exerciseName === instance.exerciseName) {
+        sourceExercise = exercise;
+        break;
+      }
+    }
+    
+    if (!sourceExercise) return;
+    
+    const libraryEx = exerciseLibrary.find(ex => ex.name === instance.exerciseName);
+    
+    const week = weeks[weekNum];
+    if (!week) return;
+    
+    const newDays = week.days.map(d => ({ 
+      ...d, 
+      exercises: d.exercises.map(ex => ({ ...ex, blocks: [...ex.blocks] }))
+    }));
+    
+    while (newDays.length <= selectedDayIndex) {
+      newDays.push({ name: `Giorno ${newDays.length + 1}`, exercises: [] });
+    }
+    
+    // Crea il nuovo esercizio con un blocco di default
+    const newExercise: ProgramExercise = {
+      exerciseName: instance.exerciseName,
+      exerciseType: libraryEx?.type || sourceExercise.exerciseType || 'resistance',
+      muscleGroup: instance.muscleGroup,
+      blocks: [createDefaultBlock(libraryEx?.type || sourceExercise.exerciseType || 'resistance')],
+      notes: '',
+    };
+    
+    // Inserisci l'esercizio nella stessa posizione (exerciseIndex)
+    const exercises = [...newDays[selectedDayIndex].exercises];
+    // Se la posizione è oltre la lunghezza, aggiungi alla fine
+    if (instance.exerciseIndex >= exercises.length) {
+      exercises.push(newExercise);
+    } else {
+      // Inserisci nella posizione corretta
+      exercises.splice(instance.exerciseIndex, 0, newExercise);
+    }
+    
+    newDays[selectedDayIndex] = {
+      ...newDays[selectedDayIndex],
+      exercises,
+    };
+    
+    updateWeek(weekNum, { ...week, days: newDays });
+    
+    // Apri il modal per configurare
+    setSelectedWeekNum(weekNum);
+    setSelectedExerciseIndex(instance.exerciseIndex);
+    setSelectedBlockIndex(0);
+    setSelectedExercise(newExercise);
+    setCurrentWeek(weekNum);
+    setConfigModalOpen(true);
+  };
+  
   // Crea un blocco effettivo in una settimana specifica
   const handleCreateBlockInWeek = (weekNum: number, exerciseIndex: number, blockIndex: number) => {
     if (!program) return;
@@ -939,6 +1007,8 @@ export function ProgramTableView() {
                             const exerciseExistsInWeek = weekData.exerciseIndex >= 0;
                             // Blocco può essere creato se l'esercizio esiste ma il blocco no
                             const canCreateBlock = !weekData.exists && exerciseExistsInWeek;
+                            // Esercizio può essere creato se non esiste in questa settimana (solo per il primo blocco)
+                            const canCreateExercise = !exerciseExistsInWeek && blockRow.blockIndex === 0;
                             
                             // Combina note per REST/NOTE
                             const restNotesParts: string[] = [];
@@ -962,13 +1032,17 @@ export function ProgramTableView() {
                                         ? 'bg-white cursor-pointer hover:bg-blue-50' 
                                         : canCreateBlock 
                                           ? 'bg-gray-50 cursor-pointer hover:bg-green-50 border-dashed border-green-300'
-                                          : 'bg-white'
+                                          : canCreateExercise
+                                            ? 'bg-amber-50 cursor-pointer hover:bg-amber-100 border-dashed border-amber-400'
+                                            : 'bg-white'
                                     }`}
                                     onClick={() => {
                                       if (weekData.exists) {
                                         handleOpenConfigModal(weekNum, instance, blockRow);
                                       } else if (canCreateBlock) {
                                         handleCreateBlockInWeek(weekNum, instance.exerciseIndex, blockRow.blockIndex);
+                                      } else if (canCreateExercise) {
+                                        handleCreateExerciseFromExisting(weekNum, instance);
                                       }
                                     }}
                                   >
@@ -986,6 +1060,11 @@ export function ProgramTableView() {
                                       </div>
                                     ) : canCreateBlock ? (
                                       <div className="flex items-center justify-center gap-1 text-green-600 text-xs">
+                                        <Plus className="w-3 h-3" />
+                                        <span>Blocco</span>
+                                      </div>
+                                    ) : canCreateExercise ? (
+                                      <div className="flex items-center justify-center gap-1 text-amber-600 text-xs">
                                         <Plus className="w-3 h-3" />
                                         <span>Crea</span>
                                       </div>
@@ -1075,31 +1154,50 @@ export function ProgramTableView() {
                       </td>
                       
                       {/* Colonne settimane - Click per creare */}
-                      {weekNumbers.map((weekNum) => (
-                        <td key={`pending-${weekNum}`} colSpan={3} className="p-0 border-b border-green-300">
-                          <div className="grid grid-cols-3">
-                            <div className="p-2 border-r border-green-200 bg-green-50/30 text-xs text-center">-</div>
-                            <div 
-                              className={`p-2 border-r border-green-200 ${
-                                pendingExercise.exerciseName 
-                                  ? 'bg-green-100 cursor-pointer hover:bg-green-200' 
-                                  : 'bg-gray-100'
-                              }`}
-                              onClick={() => pendingExercise.exerciseName && handleCreateExerciseInWeek(weekNum)}
-                            >
-                              {pendingExercise.exerciseName ? (
-                                <div className="flex items-center justify-center gap-1 text-green-700 text-xs font-medium">
-                                  <Plus className="w-3 h-3" />
-                                  <span>Crea</span>
-                                </div>
-                              ) : (
-                                <span className="text-muted-foreground italic text-xs">-</span>
-                              )}
+                      {weekNumbers.map((weekNum) => {
+                        // Verifica se l'esercizio esiste già in questa settimana
+                        const week = weeks[weekNum];
+                        const day = week?.days?.[selectedDayIndex];
+                        const exerciseAlreadyExists = day?.exercises?.some(
+                          ex => ex.exerciseName === pendingExercise.exerciseName
+                        ) || false;
+                        
+                        return (
+                          <td key={`pending-${weekNum}`} colSpan={3} className="p-0 border-b border-green-300">
+                            <div className="grid grid-cols-3">
+                              <div className="p-2 border-r border-green-200 bg-green-50/30 text-xs text-center">-</div>
+                              <div 
+                                className={`p-2 border-r border-green-200 ${
+                                  !pendingExercise.exerciseName 
+                                    ? 'bg-gray-100'
+                                    : exerciseAlreadyExists
+                                      ? 'bg-emerald-200'
+                                      : 'bg-green-100 cursor-pointer hover:bg-green-200'
+                                }`}
+                                onClick={() => {
+                                  if (pendingExercise.exerciseName && !exerciseAlreadyExists) {
+                                    handleCreateExerciseInWeek(weekNum);
+                                  }
+                                }}
+                              >
+                                {!pendingExercise.exerciseName ? (
+                                  <span className="text-muted-foreground italic text-xs">-</span>
+                                ) : exerciseAlreadyExists ? (
+                                  <div className="flex items-center justify-center gap-1 text-emerald-700 text-xs font-medium">
+                                    <span>✓ Fatto</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center justify-center gap-1 text-green-700 text-xs font-medium">
+                                    <Plus className="w-3 h-3" />
+                                    <span>Crea</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="p-2 bg-green-50/30 text-xs text-center">-</div>
                             </div>
-                            <div className="p-2 bg-green-50/30 text-xs text-center">-</div>
-                          </div>
-                        </td>
-                      ))}
+                          </td>
+                        );
+                      })}
                     </tr>
                   )}
                   
