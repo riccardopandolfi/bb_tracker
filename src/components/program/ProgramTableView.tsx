@@ -192,6 +192,7 @@ export function ProgramTableView() {
   const [pendingExercise, setPendingExercise] = useState<{
     muscleGroup: string;
     exerciseName: string;
+    createdInWeeks: number[]; // Settimane dove è stato già creato tramite questa riga
   } | null>(null);
   
   // Funzione per ottenere il gruppo muscolare dalla libreria
@@ -533,7 +534,7 @@ export function ProgramTableView() {
   
   // Aggiunge una riga esercizio pendente
   const handleAddPendingExercise = () => {
-    setPendingExercise({ muscleGroup: '', exerciseName: '' });
+    setPendingExercise({ muscleGroup: '', exerciseName: '', createdInWeeks: [] });
   };
   
   // Rimuove la riga esercizio pendente
@@ -577,7 +578,11 @@ export function ProgramTableView() {
     
     updateWeek(weekNum, { ...week, days: newDays });
     
-    // Non rimuoviamo pendingExercise così l'utente può continuare ad aggiungere lo stesso esercizio ad altre settimane
+    // Aggiungi la settimana a createdInWeeks per mostrare "Fatto"
+    setPendingExercise(prev => prev ? {
+      ...prev,
+      createdInWeeks: [...prev.createdInWeeks, weekNum],
+    } : null);
   };
   
   // Crea l'esercizio in una settimana dove non esiste, copiandolo da un'altra settimana
@@ -1155,12 +1160,8 @@ export function ProgramTableView() {
                       
                       {/* Colonne settimane - Click per creare */}
                       {weekNumbers.map((weekNum) => {
-                        // Verifica se l'esercizio esiste già in questa settimana
-                        const week = weeks[weekNum];
-                        const day = week?.days?.[selectedDayIndex];
-                        const exerciseAlreadyExists = day?.exercises?.some(
-                          ex => ex.exerciseName === pendingExercise.exerciseName
-                        ) || false;
+                        // Verifica se è già stato creato tramite QUESTA riga pendente
+                        const alreadyCreatedHere = pendingExercise.createdInWeeks.includes(weekNum);
                         
                         return (
                           <td key={`pending-${weekNum}`} colSpan={3} className="p-0 border-b border-green-300">
@@ -1170,19 +1171,19 @@ export function ProgramTableView() {
                                 className={`p-2 border-r border-green-200 ${
                                   !pendingExercise.exerciseName 
                                     ? 'bg-gray-100'
-                                    : exerciseAlreadyExists
+                                    : alreadyCreatedHere
                                       ? 'bg-emerald-200'
                                       : 'bg-green-100 cursor-pointer hover:bg-green-200'
                                 }`}
                                 onClick={() => {
-                                  if (pendingExercise.exerciseName && !exerciseAlreadyExists) {
+                                  if (pendingExercise.exerciseName && !alreadyCreatedHere) {
                                     handleCreateExerciseInWeek(weekNum);
                                   }
                                 }}
                               >
                                 {!pendingExercise.exerciseName ? (
                                   <span className="text-muted-foreground italic text-xs">-</span>
-                                ) : exerciseAlreadyExists ? (
+                                ) : alreadyCreatedHere ? (
                                   <div className="flex items-center justify-center gap-1 text-emerald-700 text-xs font-medium">
                                     <span>✓ Fatto</span>
                                   </div>
