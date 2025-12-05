@@ -5,7 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
-import { Plus, Calendar, AlertCircle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Plus, Calendar, AlertCircle, Tag } from 'lucide-react';
 import { ExerciseBlockCard } from './ExerciseBlockCard';
 import { getExerciseBlocks, validateProgression } from '@/lib/exerciseUtils';
 import { usesPercentageProgression } from '@/lib/techniques';
@@ -44,7 +45,7 @@ export function ConfigureExerciseModal({
   onDeleteBlock,
   initialBlockIndex,
 }: ConfigureExerciseModalProps) {
-  const { applyProgressionToAllWeeks } = useApp();
+  const { applyProgressionToAllWeeks, muscleGroups } = useApp();
   const [showProgressionConfirm, setShowProgressionConfirm] = useState(false);
   const blockRefs = useRef<(HTMLDivElement | null)[]>([]);
   
@@ -197,7 +198,37 @@ export function ConfigureExerciseModal({
           </TabsContent>
 
           {/* Tab Note */}
-          <TabsContent value="notes" className="flex-1 overflow-y-auto p-4">
+          <TabsContent value="notes" className="flex-1 overflow-y-auto p-4 space-y-4">
+            {/* Gruppo Muscolare per Vista Tabellare */}
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <Label className="text-sm font-semibold mb-2 flex items-center gap-2">
+                <Tag className="w-4 h-4" />
+                Gruppo Muscolare (per Vista Tabellare)
+              </Label>
+              <Select
+                value={exercise.muscleGroup || ''}
+                onValueChange={(value) => onUpdate('muscleGroup', value)}
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Seleziona gruppo muscolare">
+                    {exercise.muscleGroup || 'Non specificato'}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Non specificato</SelectItem>
+                  {muscleGroups.map((group) => (
+                    <SelectItem key={group} value={group}>
+                      {group}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-2">
+                Questo campo viene usato per raggruppare gli esercizi nella vista tabellare.
+              </p>
+            </div>
+            
+            {/* Note Esercizio */}
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <Label className="text-sm font-semibold mb-2 block">
                 📝 Note Esercizio

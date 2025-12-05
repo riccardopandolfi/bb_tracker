@@ -149,6 +149,7 @@ export interface ExerciseBlock {
 export interface ProgramExercise {
   exerciseName: string;
   exerciseType: ExerciseType; // 'resistance' o 'cardio'
+  muscleGroup?: string; // Gruppo muscolare manuale per vista tabellare
   
   blocks: ExerciseBlock[]; // Array di blocchi di metodologie
   
