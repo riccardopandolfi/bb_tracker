@@ -206,8 +206,8 @@ export function ConfigureExerciseModal({
                 Gruppo Muscolare (per Vista Tabellare)
               </Label>
               <Select
-                value={exercise.muscleGroup || ''}
-                onValueChange={(value) => onUpdate('muscleGroup', value)}
+                value={exercise.muscleGroup || 'unspecified'}
+                onValueChange={(value) => onUpdate('muscleGroup', value === 'unspecified' ? '' : value)}
               >
                 <SelectTrigger className="h-10">
                   <SelectValue placeholder="Seleziona gruppo muscolare">
@@ -215,7 +215,7 @@ export function ConfigureExerciseModal({
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Non specificato</SelectItem>
+                  <SelectItem value="unspecified">Non specificato</SelectItem>
                   {muscleGroups.map((group) => (
                     <SelectItem key={group} value={group}>
                       {group}

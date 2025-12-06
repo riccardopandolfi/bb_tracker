@@ -1054,18 +1054,81 @@ export function ProgramTableView() {
   const handleSaveSchemaNote = () => {
     if (!schemaNotesDialog || !program) return;
     
-    const { weekNum, exerciseIndex, blockIndex, note } = schemaNotesDialog;
+    const { weekNum, exerciseIndex, blockIndex, note, exerciseName } = schemaNotesDialog;
     
     const week = weeks[weekNum];
-    const day = week?.days?.[selectedDayIndex];
-    const exercise = day?.exercises?.[exerciseIndex];
-    
-    if (!week || !day || !exercise) {
+    if (!week) {
       setSchemaNotesDialog(null);
       return;
     }
     
-    // Ottieni i blocchi esistenti
+    const day = week.days?.[selectedDayIndex];
+    const exercise = day?.exercises?.[exerciseIndex];
+    
+    // Se l'esercizio non esiste in questa settimana, dobbiamo crearlo prima
+    if (!exercise) {
+      // Trova l'esercizio in un'altra settimana per copiare le info base
+      let sourceExercise: ProgramExercise | null = null;
+      for (const wn of weekNumbers) {
+        if (wn === weekNum) continue;
+        const w = weeks[wn];
+        const d = w?.days?.[selectedDayIndex];
+        if (d?.exercises) {
+          const ex = d.exercises.find(e => e.exerciseName === exerciseName);
+          if (ex) {
+            sourceExercise = ex;
+            break;
+          }
+        }
+      }
+      
+      if (!sourceExercise) {
+        setSchemaNotesDialog(null);
+        return;
+      }
+      
+      const libraryEx = exerciseLibrary.find(ex => ex.name === exerciseName);
+      
+      // Prepara i giorni
+      const newDays = week.days ? week.days.map(d => ({ 
+        ...d, 
+        exercises: d.exercises.map(ex => ({ ...ex, blocks: [...ex.blocks] }))
+      })) : [];
+      
+      while (newDays.length <= selectedDayIndex) {
+        newDays.push({ name: `Giorno ${newDays.length + 1}`, exercises: [] });
+      }
+      
+      // Crea il nuovo esercizio con un blocco che contiene solo la nota
+      const newExercise: ProgramExercise = {
+        exerciseName: exerciseName,
+        exerciseType: libraryEx?.type || sourceExercise.exerciseType || 'resistance',
+        muscleGroup: sourceExercise.muscleGroup,
+        blocks: [{
+          schemaNote: note || undefined,
+        }],
+        notes: '',
+      };
+      
+      // Inserisci l'esercizio nella posizione corretta
+      const exercises = [...newDays[selectedDayIndex].exercises];
+      if (exerciseIndex >= exercises.length) {
+        exercises.push(newExercise);
+      } else {
+        exercises.splice(exerciseIndex, 0, newExercise);
+      }
+      
+      newDays[selectedDayIndex] = {
+        ...newDays[selectedDayIndex],
+        exercises,
+      };
+      
+      updateWeek(weekNum, { ...week, days: newDays });
+      setSchemaNotesDialog(null);
+      return;
+    }
+    
+    // L'esercizio esiste - aggiorna il blocco con la nota
     const existingBlocks = getExerciseBlocks(exercise);
     const newBlocks = [...existingBlocks];
     
