@@ -745,6 +745,78 @@ export function ProgramTableView() {
     updateProgram(program.id, { ...program, weeks: newWeeks });
   };
   
+  // Incolla blocco su cella vuota (crea prima l'esercizio/blocco se necessario)
+  const handlePasteBlockToEmpty = (weekNum: number, exerciseIndex: number, blockIndex: number, exerciseName: string) => {
+    if (!clipboard || !program) return;
+    
+    const week = weeks[weekNum];
+    if (!week) return;
+    
+    const day = week.days?.[selectedDayIndex];
+    if (!day) return;
+    
+    const exercise = day.exercises?.[exerciseIndex];
+    
+    if (exercise) {
+      // L'esercizio esiste, aggiungi solo il blocco
+      const newBlocks = [...exercise.blocks];
+      while (newBlocks.length <= blockIndex) {
+        newBlocks.push(createDefaultBlock(exercise.exerciseType || 'resistance'));
+      }
+      // Sovrascrivi con i dati della clipboard
+      newBlocks[blockIndex] = { ...clipboard.block };
+      
+      const updatedExercise = { ...exercise, blocks: newBlocks };
+      const updatedExercises = day.exercises.map((ex, i) => i === exerciseIndex ? updatedExercise : ex);
+      const updatedDay = { ...day, exercises: updatedExercises };
+      
+      updateWeek(weekNum, { ...week, days: week.days.map((d, i) => i === selectedDayIndex ? updatedDay : d) });
+    } else {
+      // L'esercizio non esiste, cerca il template da un'altra settimana
+      let sourceExercise: ProgramExercise | null = null;
+      for (const wn of weekNumbers) {
+        const w = weeks[wn];
+        const d = w?.days?.[selectedDayIndex];
+        const ex = d?.exercises?.[exerciseIndex];
+        if (ex && ex.exerciseName === exerciseName) {
+          sourceExercise = ex;
+          break;
+        }
+      }
+      
+      if (!sourceExercise) return;
+      
+      // Crea nuovo esercizio con il blocco dalla clipboard
+      const newExercise: ProgramExercise = {
+        exerciseName: sourceExercise.exerciseName,
+        exerciseType: sourceExercise.exerciseType,
+        muscleGroup: sourceExercise.muscleGroup,
+        blocks: [{ ...clipboard.block }],
+        notes: sourceExercise.notes || '',
+      };
+      
+      // Aggiungi blocchi vuoti se necessario
+      while (newExercise.blocks.length <= blockIndex) {
+        newExercise.blocks.push(createDefaultBlock(sourceExercise.exerciseType || 'resistance'));
+      }
+      newExercise.blocks[blockIndex] = { ...clipboard.block };
+      
+      const updatedExercises = [...day.exercises];
+      // Inserisci nella posizione corretta
+      while (updatedExercises.length <= exerciseIndex) {
+        updatedExercises.push(newExercise);
+      }
+      if (updatedExercises.length > exerciseIndex && !updatedExercises[exerciseIndex]) {
+        updatedExercises[exerciseIndex] = newExercise;
+      } else {
+        updatedExercises.splice(exerciseIndex, 0, newExercise);
+      }
+      
+      const updatedDay = { ...day, exercises: updatedExercises };
+      updateWeek(weekNum, { ...week, days: week.days.map((d, i) => i === selectedDayIndex ? updatedDay : d) });
+    }
+  };
+  
   const toggleWeekSelection = (weekNum: number) => {
     setSelectedWeeksForNewExercise(prev => 
       prev.includes(weekNum) 
@@ -1316,14 +1388,12 @@ export function ProgramTableView() {
                                   <ContextMenu>
                                     <ContextMenuTrigger asChild>
                                       <div 
-                                        className={`p-2 border-r border-border relative group ${
+                                        className={`p-2 border-r relative group ${
                                           weekData.exists 
-                                            ? 'bg-white cursor-pointer hover:bg-blue-50' 
-                                            : canCreateBlock 
-                                              ? 'bg-gray-50 cursor-pointer hover:bg-green-50 border-dashed border-green-300'
-                                              : canCreateExercise
-                                                ? 'bg-amber-50 cursor-pointer hover:bg-amber-100 border-dashed border-amber-400'
-                                                : 'bg-white'
+                                            ? 'bg-white cursor-pointer hover:bg-blue-50 border-border' 
+                                            : (canCreateBlock || canCreateExercise)
+                                              ? 'bg-transparent cursor-pointer hover:bg-gray-50 border-dashed border-gray-300'
+                                              : 'bg-white border-border'
                                         }`}
                                         onClick={() => {
                                           if (weekData.exists) {
@@ -1359,50 +1429,67 @@ export function ProgramTableView() {
                                               <div className="text-[10px] text-muted-foreground whitespace-pre-wrap">{weekData.intensityInfo}</div>
                                             )}
                                           </div>
-                                        ) : canCreateBlock ? (
-                                          <div className="flex items-center justify-center gap-1 text-green-600 text-xs">
-                                            <Plus className="w-3 h-3" />
-                                            <span>Blocco</span>
-                                          </div>
-                                        ) : canCreateExercise ? (
-                                          <div className="flex items-center justify-center gap-1 text-amber-600 text-xs">
-                                            <Plus className="w-3 h-3" />
-                                            <span>Crea</span>
-                                          </div>
                                         ) : (
                                           <span className="text-muted-foreground italic text-xs">-</span>
                                         )}
                                       </div>
                                     </ContextMenuTrigger>
-                                    {weekData.exists && (
-                                      <ContextMenuContent>
-                                        <ContextMenuItem onClick={() => handleCopyBlock(weekNum, weekData.exerciseIndex, blockRow.blockIndex, instance.exerciseName)}>
-                                          <Copy className="w-4 h-4 mr-2" />
-                                          Copia blocco
-                                        </ContextMenuItem>
-                                        <ContextMenuItem 
-                                          onClick={() => handlePasteBlock(weekNum, weekData.exerciseIndex, blockRow.blockIndex)}
-                                          disabled={!clipboard}
-                                        >
-                                          <Clipboard className="w-4 h-4 mr-2" />
-                                          Incolla blocco
-                                          {clipboard && <span className="ml-auto text-xs text-muted-foreground">(da {clipboard.exerciseName})</span>}
-                                        </ContextMenuItem>
-                                        <ContextMenuSeparator />
-                                        <ContextMenuItem onClick={() => handleApplyBlockToAllWeeks(weekNum, weekData.exerciseIndex, blockRow.blockIndex, instance.exerciseName)}>
-                                          <CopyCheck className="w-4 h-4 mr-2" />
-                                          Applica a tutte le settimane
-                                        </ContextMenuItem>
-                                        <ContextMenuSeparator />
-                                        <ContextMenuItem 
-                                          onClick={() => handleOpenDeleteBlockDialog(weekNum, weekData.exerciseIndex, blockRow.blockIndex, instance.exerciseName)}
-                                          className="text-red-600"
-                                        >
-                                          <Trash2 className="w-4 h-4 mr-2" />
-                                          Elimina blocco
-                                        </ContextMenuItem>
-                                      </ContextMenuContent>
-                                    )}
+                                    {/* Menu contestuale - disponibile sia per celle piene che vuote */}
+                                    <ContextMenuContent>
+                                      {weekData.exists ? (
+                                        <>
+                                          <ContextMenuItem onClick={() => handleCopyBlock(weekNum, weekData.exerciseIndex, blockRow.blockIndex, instance.exerciseName)}>
+                                            <Copy className="w-4 h-4 mr-2" />
+                                            Copia blocco
+                                          </ContextMenuItem>
+                                          <ContextMenuItem 
+                                            onClick={() => handlePasteBlock(weekNum, weekData.exerciseIndex, blockRow.blockIndex)}
+                                            disabled={!clipboard}
+                                          >
+                                            <Clipboard className="w-4 h-4 mr-2" />
+                                            Incolla blocco
+                                            {clipboard && <span className="ml-auto text-xs text-muted-foreground">(da {clipboard.exerciseName})</span>}
+                                          </ContextMenuItem>
+                                          <ContextMenuSeparator />
+                                          <ContextMenuItem onClick={() => handleApplyBlockToAllWeeks(weekNum, weekData.exerciseIndex, blockRow.blockIndex, instance.exerciseName)}>
+                                            <CopyCheck className="w-4 h-4 mr-2" />
+                                            Applica a tutte le settimane
+                                          </ContextMenuItem>
+                                          <ContextMenuSeparator />
+                                          <ContextMenuItem 
+                                            onClick={() => handleOpenDeleteBlockDialog(weekNum, weekData.exerciseIndex, blockRow.blockIndex, instance.exerciseName)}
+                                            className="text-red-600"
+                                          >
+                                            <Trash2 className="w-4 h-4 mr-2" />
+                                            Elimina blocco
+                                          </ContextMenuItem>
+                                        </>
+                                      ) : (canCreateBlock || canCreateExercise) && (
+                                        <>
+                                          <ContextMenuItem 
+                                            onClick={() => {
+                                              if (canCreateBlock) {
+                                                handleCreateBlockInWeek(weekNum, instance.exerciseIndex, blockRow.blockIndex);
+                                              } else if (canCreateExercise) {
+                                                handleCreateExerciseFromExisting(weekNum, instance);
+                                              }
+                                            }}
+                                          >
+                                            <Plus className="w-4 h-4 mr-2" />
+                                            Crea blocco vuoto
+                                          </ContextMenuItem>
+                                          {clipboard && (
+                                            <ContextMenuItem 
+                                              onClick={() => handlePasteBlockToEmpty(weekNum, instance.exerciseIndex, blockRow.blockIndex, instance.exerciseName)}
+                                            >
+                                              <Clipboard className="w-4 h-4 mr-2" />
+                                              Incolla blocco
+                                              <span className="ml-auto text-xs text-muted-foreground">(da {clipboard.exerciseName})</span>
+                                            </ContextMenuItem>
+                                          )}
+                                        </>
+                                      )}
+                                    </ContextMenuContent>
                                   </ContextMenu>
                                   
                                   {/* RESOCONTO */}
