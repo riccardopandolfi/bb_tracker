@@ -336,13 +336,14 @@ export function ProgramTableView() {
                 blockNotes: block.notes || '',
               };
               
-              // Log
+              // Log - usa exerciseIndex se disponibile per distinguere esercizi con stesso nome
               const session = loggedSessions.find(
                 s => s.programId === program.id &&
                      s.weekNum === weekNum &&
                      s.exercise === exercise.exerciseName &&
                      s.blockIndex === blockIndex &&
-                     s.dayIndex === selectedDayIndex
+                     s.dayIndex === selectedDayIndex &&
+                     (s.exerciseIndex === undefined || s.exerciseIndex === exerciseIndex)
               );
               blockRow.logData[weekNum] = formatLoggedSession(session);
               if (session) blockRow.logData[weekNum].session = session;
@@ -892,11 +893,9 @@ export function ProgramTableView() {
     
     updateWeek(weekNum, { ...week, days: newDays });
     
-    // Aggiungi la settimana a createdInWeeks per mostrare "Fatto"
-    setPendingExercise(prev => prev ? {
-      ...prev,
-      createdInWeeks: [...prev.createdInWeeks, weekNum],
-    } : null);
+    // Rimuovi la riga pending - l'esercizio apparirà nella tabella normale
+    // dove l'utente potrà aggiungere blocchi ad altre settimane
+    setPendingExercise(null);
   };
   
   // Crea l'esercizio in una settimana dove non esiste, copiandolo da un'altra settimana
@@ -1572,22 +1571,24 @@ export function ProgramTableView() {
                         </Select>
                       </td>
                       
-                      {/* Colonne settimane - Click per creare */}
+                      {/* Colonne settimane - Click per creare (celle vuote/tratteggiato) */}
                       {weekNumbers.map((weekNum) => {
                         // Verifica se è già stato creato tramite QUESTA riga pendente
                         const alreadyCreatedHere = pendingExercise.createdInWeeks.includes(weekNum);
                         
                         return (
-                          <td key={`pending-${weekNum}`} colSpan={3} className="p-0 border-b border-green-300">
+                          <td key={`pending-${weekNum}`} colSpan={3} className="p-0 border-b border-dashed border-gray-300">
                             <div className="grid grid-cols-3">
-                              <div className="p-2 border-r border-green-200 bg-green-50/30 text-xs text-center">-</div>
+                              {/* REST - sempre vuoto per pending */}
+                              <div className="p-2 border-r border-dashed border-gray-200 text-xs text-center text-muted-foreground">-</div>
+                              {/* SCHEMA - cliccabile se esercizio selezionato */}
                               <div 
-                                className={`p-2 border-r border-green-200 ${
+                                className={`p-2 border-r border-dashed border-gray-200 ${
                                   !pendingExercise.exerciseName 
-                                    ? 'bg-gray-100'
+                                    ? 'bg-transparent'
                                     : alreadyCreatedHere
-                                      ? 'bg-emerald-200'
-                                      : 'bg-green-100 cursor-pointer hover:bg-green-200'
+                                      ? 'bg-emerald-50'
+                                      : 'bg-transparent cursor-pointer hover:bg-gray-50'
                                 }`}
                                 onClick={() => {
                                   if (pendingExercise.exerciseName && !alreadyCreatedHere) {
@@ -1595,20 +1596,14 @@ export function ProgramTableView() {
                                   }
                                 }}
                               >
-                                {!pendingExercise.exerciseName ? (
-                                  <span className="text-muted-foreground italic text-xs">-</span>
-                                ) : alreadyCreatedHere ? (
-                                  <div className="flex items-center justify-center gap-1 text-emerald-700 text-xs font-medium">
-                                    <span>✓ Fatto</span>
-                                  </div>
+                                {alreadyCreatedHere ? (
+                                  <span className="text-emerald-600 text-xs">✓</span>
                                 ) : (
-                                  <div className="flex items-center justify-center gap-1 text-green-700 text-xs font-medium">
-                                    <Plus className="w-3 h-3" />
-                                    <span>Crea</span>
-                                  </div>
+                                  <span className="text-muted-foreground italic text-xs">-</span>
                                 )}
                               </div>
-                              <div className="p-2 bg-green-50/30 text-xs text-center">-</div>
+                              {/* RESOCONTO - sempre vuoto per pending */}
+                              <div className="p-2 text-xs text-center text-muted-foreground">-</div>
                             </div>
                           </td>
                         );

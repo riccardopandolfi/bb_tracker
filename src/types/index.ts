@@ -217,6 +217,7 @@ export interface LoggedSession {
   // Informazioni sul giorno
   dayIndex?: number; // Indice del giorno nella settimana (0-based)
   dayName?: string; // Nome del giorno (es. "Push", "Pull", "Legs")
+  exerciseIndex?: number; // Posizione dell'esercizio nell'array del giorno (per distinguere duplicati)
   
   // Dati del blocco loggato
   blockIndex: number; // Indice del blocco nell'esercizio (0, 1, 2...)

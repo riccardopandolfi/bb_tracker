@@ -186,6 +186,7 @@ export function LogSessionModal({
       exercise: exercise.exerciseName,
       dayIndex: dayIndex,
       dayName: day?.name,
+      exerciseIndex: exerciseIndex, // Per distinguere esercizi con stesso nome in posizioni diverse
       blockIndex: currentBlockIndex !== null ? currentBlockIndex : 0,
       technique: block.technique,
       techniqueSchema: block.techniqueSchema || '',
