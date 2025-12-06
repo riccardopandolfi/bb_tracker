@@ -104,6 +104,11 @@ export function CarbCyclingEditor({ onApply }: CarbCyclingEditorProps) {
       return;
     }
 
+    if (!templateName.trim()) {
+      alert('Inserisci un nome per il template');
+      return;
+    }
+
     // Mostra conferma
     const weekList = selectedWeeks.map(w => `Week ${w}`).join(', ');
     const confirmed = confirm(
@@ -112,21 +117,33 @@ export function CarbCyclingEditor({ onApply }: CarbCyclingEditorProps) {
     
     if (!confirmed) return;
 
-    // Salva prima se non salvato
-    if (!editingTemplateId) {
-      handleSave();
-    }
+    // Genera ID se nuovo template, oppure usa quello esistente
+    const templateId = editingTemplateId || crypto.randomUUID();
+    
+    // Crea/aggiorna il template
+    const template: CarbCyclingTemplate = {
+      id: templateId,
+      name: templateName.trim(),
+      baseMacros,
+      mode,
+      dayMultipliers: mode === 'per_day' ? dayMultipliers : undefined,
+      trainingMultiplier: mode === 'training_based' ? trainingMultiplier : undefined,
+      restMultiplier: mode === 'training_based' ? restMultiplier : undefined,
+    };
 
-    const templateId = editingTemplateId || templates[templates.length - 1]?.id;
-    if (!templateId) return;
+    // Salva il template
+    saveCarbCyclingTemplate(template);
+    setEditingTemplateId(templateId);
 
-    applyCarbCyclingToWeeks(
-      templateId, 
-      selectedWeeks, 
-      mode === 'training_based' ? trainingDaysPerWeek : undefined
-    );
-
-    onApply?.();
+    // Applica alle settimane (usa un piccolo delay per assicurarsi che lo state sia aggiornato)
+    setTimeout(() => {
+      applyCarbCyclingToWeeks(
+        templateId, 
+        selectedWeeks, 
+        mode === 'training_based' ? trainingDaysPerWeek : undefined
+      );
+      onApply?.();
+    }, 50);
   };
 
   // Toggle settimana
