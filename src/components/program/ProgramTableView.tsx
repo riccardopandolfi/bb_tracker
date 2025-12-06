@@ -12,7 +12,8 @@ import { getContrastTextColor, adjustColor } from '@/lib/colorUtils';
 import { getExerciseBlocks, createDefaultBlock } from '@/lib/exerciseUtils';
 import { ConfigureExerciseModal } from './ConfigureExerciseModal';
 import { LogSessionModal } from './LogSessionModal';
-import { ClipboardList, Plus, Trash2, ChevronUp, ChevronDown, X } from 'lucide-react';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '../ui/context-menu';
+import { ClipboardList, Plus, Trash2, ChevronUp, ChevronDown, X, Copy, Clipboard, CopyCheck } from 'lucide-react';
 
 // Genera la stringa dello schema per un blocco (come nella vista card)
 function formatBlockSchema(block: ExerciseBlock): string {
@@ -193,6 +194,28 @@ export function ProgramTableView() {
     muscleGroup: string;
     exerciseName: string;
     createdInWeeks: number[]; // Settimane dove è stato già creato tramite questa riga
+  } | null>(null);
+  
+  // Editing inline del REST
+  const [editingRest, setEditingRest] = useState<{
+    weekNum: number;
+    exerciseIndex: number;
+    blockIndex: number;
+    value: string;
+  } | null>(null);
+  
+  // Dialog cancellazione granulare
+  const [deleteBlockDialog, setDeleteBlockDialog] = useState<{
+    weekNum: number;
+    exerciseIndex: number;
+    blockIndex: number;
+    exerciseName: string;
+  } | null>(null);
+  
+  // Clipboard interna per copia/incolla blocchi
+  const [clipboard, setClipboard] = useState<{
+    block: ExerciseBlock;
+    exerciseName: string;
   } | null>(null);
   
   // Funzione per ottenere il gruppo muscolare dalla libreria
@@ -497,6 +520,225 @@ export function ProgramTableView() {
       newWeeks[weekNum] = {
         ...week,
         days: week.days.map((d, i) => i === selectedDayIndex ? updatedDay : d),
+      };
+    });
+    
+    updateProgram(program.id, { ...program, weeks: newWeeks });
+  };
+  
+  // === EDITING INLINE REST ===
+  const handleStartEditRest = (weekNum: number, exerciseIndex: number, blockIndex: number, currentRest: number) => {
+    setEditingRest({
+      weekNum,
+      exerciseIndex,
+      blockIndex,
+      value: currentRest.toString(),
+    });
+  };
+  
+  const handleSaveRest = () => {
+    if (!editingRest || !program) return;
+    
+    const { weekNum, exerciseIndex, blockIndex, value } = editingRest;
+    const newRest = parseInt(value) || 0;
+    
+    const week = weeks[weekNum];
+    if (!week) {
+      setEditingRest(null);
+      return;
+    }
+    
+    const day = week.days?.[selectedDayIndex];
+    if (!day) {
+      setEditingRest(null);
+      return;
+    }
+    
+    const exercise = day.exercises[exerciseIndex];
+    if (!exercise) {
+      setEditingRest(null);
+      return;
+    }
+    
+    // Aggiorna il blocco con il nuovo rest
+    const updatedBlocks = exercise.blocks.map((block, i) => 
+      i === blockIndex ? { ...block, rest: newRest } : block
+    );
+    
+    const updatedExercise = { ...exercise, blocks: updatedBlocks };
+    const updatedExercises = day.exercises.map((ex, i) => 
+      i === exerciseIndex ? updatedExercise : ex
+    );
+    
+    const updatedDay = { ...day, exercises: updatedExercises };
+    const updatedDays = week.days.map((d, i) => 
+      i === selectedDayIndex ? updatedDay : d
+    );
+    
+    updateWeek(weekNum, { ...week, days: updatedDays });
+    setEditingRest(null);
+  };
+  
+  const handleCancelEditRest = () => {
+    setEditingRest(null);
+  };
+  
+  const handleRestKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSaveRest();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCancelEditRest();
+    }
+  };
+  
+  // === CANCELLAZIONE GRANULARE ===
+  const handleOpenDeleteBlockDialog = (weekNum: number, exerciseIndex: number, blockIndex: number, exerciseName: string) => {
+    setDeleteBlockDialog({ weekNum, exerciseIndex, blockIndex, exerciseName });
+  };
+  
+  const handleDeleteBlockInWeek = (allWeeks: boolean) => {
+    if (!deleteBlockDialog || !program) return;
+    
+    const { weekNum, exerciseIndex, blockIndex, exerciseName } = deleteBlockDialog;
+    
+    if (allWeeks) {
+      // Cancella da tutte le settimane
+      const newWeeks = { ...program.weeks };
+      
+      weekNumbers.forEach(wNum => {
+        const week = newWeeks[wNum];
+        const day = week?.days?.[selectedDayIndex];
+        if (!week || !day) return;
+        
+        const exercise = day.exercises[exerciseIndex];
+        if (!exercise || exercise.exerciseName !== exerciseName) return;
+        
+        if (exercise.blocks.length <= 1) {
+          // Se è l'ultimo blocco, rimuovi l'esercizio
+          const filteredExercises = day.exercises.filter((_, i) => i !== exerciseIndex);
+          newWeeks[wNum] = {
+            ...week,
+            days: week.days.map((d, i) => i === selectedDayIndex ? { ...d, exercises: filteredExercises } : d),
+          };
+        } else {
+          // Rimuovi solo il blocco
+          const updatedBlocks = exercise.blocks.filter((_, i) => i !== blockIndex);
+          const updatedExercise = { ...exercise, blocks: updatedBlocks };
+          const updatedExercises = day.exercises.map((ex, i) => i === exerciseIndex ? updatedExercise : ex);
+          newWeeks[wNum] = {
+            ...week,
+            days: week.days.map((d, i) => i === selectedDayIndex ? { ...d, exercises: updatedExercises } : d),
+          };
+        }
+      });
+      
+      updateProgram(program.id, { ...program, weeks: newWeeks });
+    } else {
+      // Cancella solo da questa settimana
+      const week = weeks[weekNum];
+      const day = week?.days?.[selectedDayIndex];
+      if (!week || !day) {
+        setDeleteBlockDialog(null);
+        return;
+      }
+      
+      const exercise = day.exercises[exerciseIndex];
+      if (!exercise) {
+        setDeleteBlockDialog(null);
+        return;
+      }
+      
+      if (exercise.blocks.length <= 1) {
+        // Se è l'ultimo blocco, rimuovi l'esercizio da questa settimana
+        const filteredExercises = day.exercises.filter((_, i) => i !== exerciseIndex);
+        const updatedDay = { ...day, exercises: filteredExercises };
+        updateWeek(weekNum, { ...week, days: week.days.map((d, i) => i === selectedDayIndex ? updatedDay : d) });
+      } else {
+        // Rimuovi solo il blocco
+        const updatedBlocks = exercise.blocks.filter((_, i) => i !== blockIndex);
+        const updatedExercise = { ...exercise, blocks: updatedBlocks };
+        const updatedExercises = day.exercises.map((ex, i) => i === exerciseIndex ? updatedExercise : ex);
+        const updatedDay = { ...day, exercises: updatedExercises };
+        updateWeek(weekNum, { ...week, days: week.days.map((d, i) => i === selectedDayIndex ? updatedDay : d) });
+      }
+    }
+    
+    setDeleteBlockDialog(null);
+  };
+  
+  // === COPIA/INCOLLA BLOCCHI ===
+  const handleCopyBlock = (weekNum: number, exerciseIndex: number, blockIndex: number, exerciseName: string) => {
+    const week = weeks[weekNum];
+    const day = week?.days?.[selectedDayIndex];
+    const exercise = day?.exercises?.[exerciseIndex];
+    const block = exercise?.blocks?.[blockIndex];
+    
+    if (block) {
+      setClipboard({ block: { ...block }, exerciseName });
+    }
+  };
+  
+  const handlePasteBlock = (weekNum: number, exerciseIndex: number, blockIndex: number) => {
+    if (!clipboard || !program) return;
+    
+    const week = weeks[weekNum];
+    const day = week?.days?.[selectedDayIndex];
+    const exercise = day?.exercises?.[exerciseIndex];
+    
+    if (!week || !day || !exercise) return;
+    
+    // Sostituisci il blocco con quello copiato (mantieni l'id se serve)
+    const updatedBlocks = exercise.blocks.map((b, i) => 
+      i === blockIndex ? { ...clipboard.block } : b
+    );
+    
+    const updatedExercise = { ...exercise, blocks: updatedBlocks };
+    const updatedExercises = day.exercises.map((ex, i) => i === exerciseIndex ? updatedExercise : ex);
+    const updatedDay = { ...day, exercises: updatedExercises };
+    
+    updateWeek(weekNum, { ...week, days: week.days.map((d, i) => i === selectedDayIndex ? updatedDay : d) });
+  };
+  
+  const handleApplyBlockToAllWeeks = (sourceWeekNum: number, exerciseIndex: number, blockIndex: number, exerciseName: string) => {
+    if (!program) return;
+    
+    const sourceWeek = weeks[sourceWeekNum];
+    const sourceDay = sourceWeek?.days?.[selectedDayIndex];
+    const sourceExercise = sourceDay?.exercises?.[exerciseIndex];
+    const sourceBlock = sourceExercise?.blocks?.[blockIndex];
+    
+    if (!sourceBlock) return;
+    
+    const newWeeks = { ...program.weeks };
+    
+    weekNumbers.forEach(weekNum => {
+      if (weekNum === sourceWeekNum) return; // Salta la settimana sorgente
+      
+      const week = newWeeks[weekNum];
+      const day = week?.days?.[selectedDayIndex];
+      if (!week || !day) return;
+      
+      const exercise = day.exercises[exerciseIndex];
+      if (!exercise || exercise.exerciseName !== exerciseName) return;
+      
+      // Aggiorna o aggiungi il blocco
+      let updatedBlocks: ExerciseBlock[];
+      if (blockIndex < exercise.blocks.length) {
+        // Sostituisci blocco esistente
+        updatedBlocks = exercise.blocks.map((b, i) => i === blockIndex ? { ...sourceBlock } : b);
+      } else {
+        // Aggiungi nuovo blocco
+        updatedBlocks = [...exercise.blocks, { ...sourceBlock }];
+      }
+      
+      const updatedExercise = { ...exercise, blocks: updatedBlocks };
+      const updatedExercises = day.exercises.map((ex, i) => i === exerciseIndex ? updatedExercise : ex);
+      
+      newWeeks[weekNum] = {
+        ...week,
+        days: week.days.map((d, i) => i === selectedDayIndex ? { ...d, exercises: updatedExercises } : d),
       };
     });
     
@@ -1017,66 +1259,151 @@ export function ProgramTableView() {
                             
                             // Combina note per REST/NOTE
                             const restNotesParts: string[] = [];
-                            if (weekData.rest) restNotesParts.push(`Rest: ${weekData.rest}s`);
                             if (weekData.exerciseNotes) restNotesParts.push(weekData.exerciseNotes);
                             if (weekData.blockNotes) restNotesParts.push(weekData.blockNotes);
-                            const restNotesText = restNotesParts.join('\n');
+                            const notesText = restNotesParts.join('\n');
+                            
+                            // Verifica se questa cella è in editing
+                            const isEditingThisRest = editingRest && 
+                              editingRest.weekNum === weekNum && 
+                              editingRest.exerciseIndex === instance.exerciseIndex && 
+                              editingRest.blockIndex === blockRow.blockIndex;
                             
                             return (
                               <td key={`data-${weekNum}`} colSpan={3} className="p-0 border-b border-border">
                                 <div className="grid grid-cols-3">
                                   {/* REST / NOTE */}
-                                  <div className="p-2 border-r border-border bg-muted/20 text-xs whitespace-pre-wrap">
-                                    {weekData.exists ? (restNotesText || '-') : '-'}
-                                  </div>
-                                  
-                                  {/* SCHEMA */}
                                   <div 
-                                    className={`p-2 border-r border-border ${
-                                      weekData.exists 
-                                        ? 'bg-white cursor-pointer hover:bg-blue-50' 
-                                        : canCreateBlock 
-                                          ? 'bg-gray-50 cursor-pointer hover:bg-green-50 border-dashed border-green-300'
-                                          : canCreateExercise
-                                            ? 'bg-amber-50 cursor-pointer hover:bg-amber-100 border-dashed border-amber-400'
-                                            : 'bg-white'
+                                    className={`p-2 border-r border-border bg-muted/20 text-xs ${
+                                      weekData.exists && !isEditingThisRest ? 'cursor-pointer hover:bg-muted/40' : ''
                                     }`}
                                     onClick={() => {
-                                      if (weekData.exists) {
-                                        handleOpenConfigModal(weekNum, instance, blockRow);
-                                      } else if (canCreateBlock) {
-                                        handleCreateBlockInWeek(weekNum, instance.exerciseIndex, blockRow.blockIndex);
-                                      } else if (canCreateExercise) {
-                                        handleCreateExerciseFromExisting(weekNum, instance);
+                                      if (weekData.exists && !isEditingThisRest) {
+                                        handleStartEditRest(weekNum, instance.exerciseIndex, blockRow.blockIndex, weekData.rest);
                                       }
                                     }}
                                   >
                                     {weekData.exists ? (
-                                      <div className="space-y-0.5">
-                                        <div className="font-semibold text-xs text-gray-900 whitespace-pre-wrap">
-                                          {weekData.schema}
+                                      isEditingThisRest ? (
+                                        <div className="space-y-1">
+                                          <div className="flex items-center gap-1">
+                                            <span className="text-muted-foreground">Rest:</span>
+                                            <Input
+                                              type="number"
+                                              value={editingRest.value}
+                                              onChange={(e) => setEditingRest({ ...editingRest, value: e.target.value })}
+                                              onKeyDown={handleRestKeyDown}
+                                              onBlur={handleSaveRest}
+                                              autoFocus
+                                              className="h-6 w-16 text-xs px-1"
+                                              min={0}
+                                            />
+                                            <span className="text-muted-foreground">s</span>
+                                          </div>
+                                          {notesText && <div className="whitespace-pre-wrap text-muted-foreground">{notesText}</div>}
                                         </div>
-                                        {weekData.loads && (
-                                          <div className="text-[11px] text-gray-600 whitespace-pre-wrap">{weekData.loads}</div>
-                                        )}
-                                        {weekData.intensityInfo && (
-                                          <div className="text-[10px] text-muted-foreground whitespace-pre-wrap">{weekData.intensityInfo}</div>
-                                        )}
-                                      </div>
-                                    ) : canCreateBlock ? (
-                                      <div className="flex items-center justify-center gap-1 text-green-600 text-xs">
-                                        <Plus className="w-3 h-3" />
-                                        <span>Blocco</span>
-                                      </div>
-                                    ) : canCreateExercise ? (
-                                      <div className="flex items-center justify-center gap-1 text-amber-600 text-xs">
-                                        <Plus className="w-3 h-3" />
-                                        <span>Crea</span>
-                                      </div>
-                                    ) : (
-                                      <span className="text-muted-foreground italic text-xs">-</span>
-                                    )}
+                                      ) : (
+                                        <div className="whitespace-pre-wrap">
+                                          {weekData.rest ? <div>Rest: {weekData.rest}s</div> : null}
+                                          {notesText && <div className="text-muted-foreground">{notesText}</div>}
+                                          {!weekData.rest && !notesText && '-'}
+                                        </div>
+                                      )
+                                    ) : '-'}
                                   </div>
+                                  
+                                  {/* SCHEMA con Context Menu */}
+                                  <ContextMenu>
+                                    <ContextMenuTrigger asChild>
+                                      <div 
+                                        className={`p-2 border-r border-border relative group ${
+                                          weekData.exists 
+                                            ? 'bg-white cursor-pointer hover:bg-blue-50' 
+                                            : canCreateBlock 
+                                              ? 'bg-gray-50 cursor-pointer hover:bg-green-50 border-dashed border-green-300'
+                                              : canCreateExercise
+                                                ? 'bg-amber-50 cursor-pointer hover:bg-amber-100 border-dashed border-amber-400'
+                                                : 'bg-white'
+                                        }`}
+                                        onClick={() => {
+                                          if (weekData.exists) {
+                                            handleOpenConfigModal(weekNum, instance, blockRow);
+                                          } else if (canCreateBlock) {
+                                            handleCreateBlockInWeek(weekNum, instance.exerciseIndex, blockRow.blockIndex);
+                                          } else if (canCreateExercise) {
+                                            handleCreateExerciseFromExisting(weekNum, instance);
+                                          }
+                                        }}
+                                      >
+                                        {/* Icona cestino al hover */}
+                                        {weekData.exists && (
+                                          <button
+                                            className="absolute top-1 right-1 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-red-100 text-red-500 transition-opacity"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleOpenDeleteBlockDialog(weekNum, weekData.exerciseIndex, blockRow.blockIndex, instance.exerciseName);
+                                            }}
+                                          >
+                                            <Trash2 className="w-3 h-3" />
+                                          </button>
+                                        )}
+                                        {weekData.exists ? (
+                                          <div className="space-y-0.5 pr-4">
+                                            <div className="font-semibold text-xs text-gray-900 whitespace-pre-wrap">
+                                              {weekData.schema}
+                                            </div>
+                                            {weekData.loads && (
+                                              <div className="text-[11px] text-gray-600 whitespace-pre-wrap">{weekData.loads}</div>
+                                            )}
+                                            {weekData.intensityInfo && (
+                                              <div className="text-[10px] text-muted-foreground whitespace-pre-wrap">{weekData.intensityInfo}</div>
+                                            )}
+                                          </div>
+                                        ) : canCreateBlock ? (
+                                          <div className="flex items-center justify-center gap-1 text-green-600 text-xs">
+                                            <Plus className="w-3 h-3" />
+                                            <span>Blocco</span>
+                                          </div>
+                                        ) : canCreateExercise ? (
+                                          <div className="flex items-center justify-center gap-1 text-amber-600 text-xs">
+                                            <Plus className="w-3 h-3" />
+                                            <span>Crea</span>
+                                          </div>
+                                        ) : (
+                                          <span className="text-muted-foreground italic text-xs">-</span>
+                                        )}
+                                      </div>
+                                    </ContextMenuTrigger>
+                                    {weekData.exists && (
+                                      <ContextMenuContent>
+                                        <ContextMenuItem onClick={() => handleCopyBlock(weekNum, weekData.exerciseIndex, blockRow.blockIndex, instance.exerciseName)}>
+                                          <Copy className="w-4 h-4 mr-2" />
+                                          Copia blocco
+                                        </ContextMenuItem>
+                                        <ContextMenuItem 
+                                          onClick={() => handlePasteBlock(weekNum, weekData.exerciseIndex, blockRow.blockIndex)}
+                                          disabled={!clipboard}
+                                        >
+                                          <Clipboard className="w-4 h-4 mr-2" />
+                                          Incolla blocco
+                                          {clipboard && <span className="ml-auto text-xs text-muted-foreground">(da {clipboard.exerciseName})</span>}
+                                        </ContextMenuItem>
+                                        <ContextMenuSeparator />
+                                        <ContextMenuItem onClick={() => handleApplyBlockToAllWeeks(weekNum, weekData.exerciseIndex, blockRow.blockIndex, instance.exerciseName)}>
+                                          <CopyCheck className="w-4 h-4 mr-2" />
+                                          Applica a tutte le settimane
+                                        </ContextMenuItem>
+                                        <ContextMenuSeparator />
+                                        <ContextMenuItem 
+                                          onClick={() => handleOpenDeleteBlockDialog(weekNum, weekData.exerciseIndex, blockRow.blockIndex, instance.exerciseName)}
+                                          className="text-red-600"
+                                        >
+                                          <Trash2 className="w-4 h-4 mr-2" />
+                                          Elimina blocco
+                                        </ContextMenuItem>
+                                      </ContextMenuContent>
+                                    )}
+                                  </ContextMenu>
                                   
                                   {/* RESOCONTO */}
                                   <div 
@@ -1337,6 +1664,29 @@ export function ProgramTableView() {
             <Button variant="outline" onClick={() => setShowAddExerciseDialog(false)}>Annulla</Button>
             <Button onClick={handleAddExercise} disabled={!newExerciseName || selectedWeeksForNewExercise.length === 0}>
               <Plus className="w-4 h-4 mr-2" />Aggiungi
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Dialog Cancellazione Blocco */}
+      <Dialog open={deleteBlockDialog !== null} onOpenChange={(open) => !open && setDeleteBlockDialog(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Elimina Blocco</DialogTitle>
+            <DialogDescription>
+              Vuoi eliminare questo blocco solo dalla settimana {deleteBlockDialog?.weekNum} o da tutte le settimane?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setDeleteBlockDialog(null)}>
+              Annulla
+            </Button>
+            <Button variant="destructive" onClick={() => handleDeleteBlockInWeek(false)}>
+              Solo W{deleteBlockDialog?.weekNum}
+            </Button>
+            <Button variant="destructive" onClick={() => handleDeleteBlockInWeek(true)}>
+              Tutte le settimane
             </Button>
           </DialogFooter>
         </DialogContent>
