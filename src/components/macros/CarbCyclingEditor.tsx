@@ -47,10 +47,9 @@ export function CarbCyclingEditor({ onApply }: CarbCyclingEditorProps) {
   // Calcola calorie base
   const baseKcal = Math.round(baseMacros.protein * 4 + baseMacros.carbs * 4 + baseMacros.fat * 9);
 
-  // Inizializza le settimane selezionate
+  // Inizializza i giorni di allenamento per le settimane (ma NON seleziona le settimane)
   useEffect(() => {
-    if (weekNumbers.length > 0 && selectedWeeks.length === 0) {
-      setSelectedWeeks(weekNumbers);
+    if (weekNumbers.length > 0 && trainingDaysPerWeek.length === 0) {
       setTrainingDaysPerWeek(weekNumbers.map(() => [0, 2, 4])); // Default: Lun, Mer, Ven
     }
   }, [weekNumbers.length]);

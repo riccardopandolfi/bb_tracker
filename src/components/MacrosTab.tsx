@@ -36,6 +36,7 @@ export function MacrosTab() {
   
   const [activeTab, setActiveTab] = useState<MacrosTabView>('week');
   const [localSupplements, setLocalSupplements] = useState<Supplement[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const program = getCurrentProgram();
   const weekNumbers = program ? Object.keys(program.weeks).map(Number).sort((a, b) => a - b) : [];
@@ -200,7 +201,7 @@ export function MacrosTab() {
         </TabsList>
 
         {/* TAB: Settimana */}
-        <TabsContent value="week" className="mt-4 space-y-4">
+        <TabsContent value="week" className="mt-4 space-y-4" key={`week-${refreshKey}`}>
           {/* Riepilogo */}
           {stats && (
             <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
@@ -361,11 +362,15 @@ export function MacrosTab() {
 
         {/* TAB: Cycling */}
         <TabsContent value="cycling" className="mt-4">
-          <CarbCyclingEditor onApply={() => setActiveTab('week')} />
+          <CarbCyclingEditor onApply={() => {
+            // Forza re-render incrementando la key e cambiando tab
+            setRefreshKey(k => k + 1);
+            setActiveTab('week');
+          }} />
         </TabsContent>
 
         {/* TAB: Piano */}
-        <TabsContent value="overview" className="mt-4">
+        <TabsContent value="overview" className="mt-4" key={`overview-${refreshKey}`}>
           <MacrosOverview onNavigateToWeek={(weekNum) => {
             setCurrentWeek(weekNum);
             setActiveTab('week');
