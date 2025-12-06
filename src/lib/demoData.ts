@@ -737,7 +737,7 @@ export function generateDemoLoggedSessions(): LoggedSession[] {
     week.days.forEach((day, dayIndex) => {
       const dayOffset = weekDaysOffset + dayIndex; // Spaziare i giorni nella settimana
 
-      day.exercises.forEach((exercise) => {
+      day.exercises.forEach((exercise, exerciseIndex) => {
         exercise.blocks.forEach((block, blockIndex) => {
           // Skip blocks with missing required fields
           if (!block.sets || !block.repsBase || !block.targetLoads || !block.technique ||
@@ -761,6 +761,7 @@ export function generateDemoLoggedSessions(): LoggedSession[] {
             exercise: exercise.exerciseName,
             dayIndex,
             dayName: day.name,
+            exerciseIndex, // Posizione esercizio nell'array
             blockIndex,
             technique: block.technique,
             techniqueSchema: block.techniqueSchema,
@@ -791,7 +792,7 @@ export function generateDemoLoggedSessions(): LoggedSession[] {
     week.days.forEach((day, dayIndex) => {
       const dayOffset = weekDaysOffset + dayIndex; // Spaziare i giorni nella settimana
 
-      day.exercises.forEach((exercise) => {
+      day.exercises.forEach((exercise, exerciseIndex) => {
         exercise.blocks.forEach((block, blockIndex) => {
           // Skip blocks with missing required fields
           if (!block.sets || !block.repsBase || !block.targetLoads || !block.technique ||
@@ -815,6 +816,7 @@ export function generateDemoLoggedSessions(): LoggedSession[] {
             exercise: exercise.exerciseName,
             dayIndex,
             dayName: day.name,
+            exerciseIndex, // Posizione esercizio nell'array
             blockIndex,
             technique: block.technique,
             techniqueSchema: block.techniqueSchema,

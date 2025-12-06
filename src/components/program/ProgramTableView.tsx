@@ -336,14 +336,15 @@ export function ProgramTableView() {
                 blockNotes: block.notes || '',
               };
               
-              // Log - usa exerciseIndex se disponibile per distinguere esercizi con stesso nome
+              // Log - usa exerciseIndex per distinguere esercizi con stesso nome
+              // Se il log non ha exerciseIndex (log vecchi), assumiamo sia del primo esercizio (index 0)
               const session = loggedSessions.find(
                 s => s.programId === program.id &&
                      s.weekNum === weekNum &&
                      s.exercise === exercise.exerciseName &&
                      s.blockIndex === blockIndex &&
                      s.dayIndex === selectedDayIndex &&
-                     (s.exerciseIndex === undefined || s.exerciseIndex === exerciseIndex)
+                     (s.exerciseIndex !== undefined ? s.exerciseIndex === exerciseIndex : exerciseIndex === 0)
               );
               blockRow.logData[weekNum] = formatLoggedSession(session);
               if (session) blockRow.logData[weekNum].session = session;
