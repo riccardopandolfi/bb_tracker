@@ -135,15 +135,15 @@ export function CarbCyclingEditor({ onApply }: CarbCyclingEditorProps) {
     saveCarbCyclingTemplate(template);
     setEditingTemplateId(templateId);
 
-    // Applica alle settimane (usa un piccolo delay per assicurarsi che lo state sia aggiornato)
-    setTimeout(() => {
-      applyCarbCyclingToWeeks(
-        templateId, 
-        selectedWeeks, 
-        mode === 'training_based' ? trainingDaysPerWeek : undefined
-      );
-      onApply?.();
-    }, 50);
+    // Applica alle settimane passando il template direttamente (evita problemi di timing)
+    applyCarbCyclingToWeeks(
+      templateId, 
+      selectedWeeks, 
+      mode === 'training_based' ? trainingDaysPerWeek : undefined,
+      template // Passa il template direttamente
+    );
+    
+    onApply?.();
   };
 
   // Toggle settimana

@@ -6,40 +6,37 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 
 const DAY_NAMES = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
 
-// Calcola calorie automaticamente
-const calculateKcal = (protein: string, carbs: string, fat: string): number => {
-  const p = parseFloat(protein) || 0;
-  const c = parseFloat(carbs) || 0;
-  const f = parseFloat(fat) || 0;
-  return Math.round(p * 4 + c * 4 + f * 9);
-};
-
 export function MacrosSummaryWidget() {
-  const { dailyMacros, getCurrentDayIndex, setCurrentTab } = useApp();
+  const { getMacrosPlanForWeek, currentWeek, supplements, setCurrentTab } = useApp();
 
-  const currentDayIndex = getCurrentDayIndex();
-  const currentDay = dailyMacros?.days[currentDayIndex];
+  // Ottieni il giorno corrente (0 = Lunedì, 6 = Domenica)
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const currentDayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+  // Usa il nuovo sistema macrosPlans invece di dailyMacros legacy
+  const weekPlan = getMacrosPlanForWeek(currentWeek);
+  const currentDay = weekPlan?.days?.[currentDayIndex];
 
   const hasMacros = currentDay && (
-    currentDay.protein || currentDay.carbs || currentDay.fat
+    currentDay.protein > 0 || currentDay.carbs > 0 || currentDay.fat > 0
   );
 
-  const calculatedKcal = currentDay ? calculateKcal(currentDay.protein, currentDay.carbs, currentDay.fat) : 0;
-
-  const p = parseFloat(currentDay?.protein || '0');
-  const c = parseFloat(currentDay?.carbs || '0');
-  const f = parseFloat(currentDay?.fat || '0');
+  const p = currentDay?.protein || 0;
+  const c = currentDay?.carbs || 0;
+  const f = currentDay?.fat || 0;
+  const calculatedKcal = currentDay?.kcal || 0;
 
   return (
     <Card className="h-full card-monetra">
       <CardContent className="space-y-5 pt-6">
-        {!dailyMacros || !hasMacros ? (
+        {!hasMacros ? (
           <div className="text-center py-8 space-y-4">
             <div className="w-24 h-24 mx-auto rounded-full bg-gray-100 flex items-center justify-center">
               <span className="text-2xl">🍎</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Nessun macro configurato per oggi
+              Nessun macro configurato per oggi (Week {currentWeek})
             </p>
             <Button
               onClick={() => setCurrentTab('macros')}
@@ -56,7 +53,7 @@ export function MacrosSummaryWidget() {
             {/* Title with separator */}
             <div className="pb-4 border-b">
               <div className="text-base sm:text-lg font-bold font-heading">Macro di Oggi</div>
-              <p className="text-sm text-gray-500 mt-1">{DAY_NAMES[currentDayIndex]}</p>
+              <p className="text-sm text-gray-500 mt-1">{DAY_NAMES[currentDayIndex]} - Week {currentWeek}</p>
             </div>
 
             {/* Calorie */}
@@ -94,14 +91,14 @@ export function MacrosSummaryWidget() {
               </div>
             </div>
 
-            {/* Integratori */}
-            {dailyMacros.supplements && dailyMacros.supplements.length > 0 && (
+            {/* Integratori (usa supplements globali) */}
+            {supplements && supplements.length > 0 && supplements.some(s => s.name) && (
               <div className="border-t border-gray-100 pt-4">
                 <div className="text-xs font-semibold mb-2 text-gray-400">Integratori</div>
                 <div className="space-y-2">
-                  {dailyMacros.supplements.map((supp, idx) => (
+                  {supplements.filter(s => s.name).map((supp, idx) => (
                     <div key={idx} className="flex justify-between items-center text-sm">
-                      <span className="text-gray-600">{supp.name || 'Integratore'}</span>
+                      <span className="text-gray-600">{supp.name}</span>
                       <span className="font-semibold text-gray-900">{supp.grams}g</span>
                     </div>
                   ))}
@@ -110,32 +107,34 @@ export function MacrosSummaryWidget() {
             )}
 
             {/* Weekly Macros Bar Chart */}
-            <div className="border-t border-gray-100 pt-4">
-              <div className="text-xs font-semibold mb-3 text-gray-400">Macros Settimanali</div>
-              <ResponsiveContainer width="100%" height={150}>
-                <BarChart data={dailyMacros.days.map((day, idx) => ({
-                  day: DAY_NAMES[idx].slice(0, 3),
-                  proteine: parseFloat(day.protein || '0'),
-                  carbo: parseFloat(day.carbs || '0'),
-                  grassi: parseFloat(day.fat || '0'),
-                }))}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="day" tick={{ fontSize: 10 }} stroke="#6b7280" />
-                  <YAxis tick={{ fontSize: 10 }} stroke="#6b7280" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'white', 
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '12px'
-                    }}
-                  />
-                  <Bar dataKey="proteine" fill="rgb(196, 255, 57)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="carbo" fill="#10b981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="grassi" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {weekPlan?.days && (
+              <div className="border-t border-gray-100 pt-4">
+                <div className="text-xs font-semibold mb-3 text-gray-400">Macros Week {currentWeek}</div>
+                <ResponsiveContainer width="100%" height={150}>
+                  <BarChart data={weekPlan.days.map((day, idx) => ({
+                    day: DAY_NAMES[idx].slice(0, 3),
+                    proteine: day.protein || 0,
+                    carbo: day.carbs || 0,
+                    grassi: day.fat || 0,
+                  }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="day" tick={{ fontSize: 10 }} stroke="#6b7280" />
+                    <YAxis tick={{ fontSize: 10 }} stroke="#6b7280" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'white', 
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '12px'
+                      }}
+                    />
+                    <Bar dataKey="proteine" fill="rgb(196, 255, 57)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="carbo" fill="#10b981" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="grassi" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
         )}
       </CardContent>

@@ -66,7 +66,7 @@ interface AppContextType extends UserData {
   saveCarbCyclingTemplate: (template: CarbCyclingTemplate) => void;
   deleteCarbCyclingTemplate: (templateId: string) => void;
   setActiveCarbCycling: (templateId: string | null) => void;
-  applyCarbCyclingToWeeks: (templateId: string, weekNumbers: number[], trainingDays?: number[][]) => void;
+  applyCarbCyclingToWeeks: (templateId: string, weekNumbers: number[], trainingDays?: number[][], templateData?: CarbCyclingTemplate) => void;
   
   // Utility
   calculateMacrosFromBase: (baseMacros: { protein: number; carbs: number; fat: number }, multiplier: number) => PlannedDayMacros;
@@ -953,10 +953,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const applyCarbCyclingToWeeks = (
     templateId: string,
     weekNumbers: number[],
-    trainingDays?: number[][]
+    trainingDays?: number[][],
+    templateData?: CarbCyclingTemplate
   ) => {
+    // Usa templateData se fornito, altrimenti cerca nello state
     const userData = state.userData[state.currentUserId];
-    const template = userData?.carbCyclingTemplates?.find(t => t.id === templateId);
+    const template = templateData || userData?.carbCyclingTemplates?.find(t => t.id === templateId);
     if (!template) return;
 
     updateCurrentUser((prev) => {
