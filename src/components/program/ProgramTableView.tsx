@@ -13,12 +13,40 @@ import { getExerciseBlocks, createDefaultBlock } from '@/lib/exerciseUtils';
 import { ConfigureExerciseModal } from './ConfigureExerciseModal';
 import { LogSessionModal } from './LogSessionModal';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '../ui/context-menu';
-import { ClipboardList, Plus, Trash2, ChevronUp, ChevronDown, X, Copy, Clipboard, CopyCheck } from 'lucide-react';
+import { ClipboardList, Plus, Trash2, ChevronUp, ChevronDown, X, Copy, Clipboard, CopyCheck, StickyNote } from 'lucide-react';
+
+// Verifica se un blocco ha solo una nota (senza schema reale)
+function isNoteOnlyBlock(block: ExerciseBlock): boolean {
+  // Un blocco è "solo nota" se ha schemaNote ma non ha sets/schema vero
+  // E non è una tecnica Ad Hoc
+  if (!block.schemaNote) return false;
+  if (block.technique === 'Tecnica Ad Hoc' && block.adHocSchema) return false;
+  if (block.sets && block.sets > 0) return false;
+  if (block.repsBase) return false;
+  if (block.percentageProgression) return false;
+  return true;
+}
 
 // Genera la stringa dello schema per un blocco (come nella vista card)
 function formatBlockSchema(block: ExerciseBlock): string {
+  // Se è una tecnica Ad Hoc, mostra lo schema testuale
+  if (block.technique === 'Tecnica Ad Hoc' && block.adHocSchema) {
+    return block.adHocSchema;
+  }
+  
+  // Se è solo una nota, restituisci stringa vuota (sarà gestita separatamente)
+  if (isNoteOnlyBlock(block)) {
+    return '';
+  }
+  
   const sets = block.sets || 0;
   const technique = block.technique || 'Normale';
+  
+  // Aggiungi half reps se presenti
+  const formatRepsWithHalf = (reps: string[], halfSets?: number[]): string => {
+    if (!halfSets || halfSets.length === 0) return reps.join('-');
+    return reps.map((r, idx) => halfSets.includes(idx) ? `${r} half` : r).join('-');
+  };
   
   if (technique === 'Ramping') {
     const startLoad = block.startLoad || '?';
@@ -37,9 +65,15 @@ function formatBlockSchema(block: ExerciseBlock): string {
   
   if (technique === 'Normale') {
     if (block.targetReps && block.targetReps.length > 0) {
-      return `${sets} x ${block.targetReps.join('-')}`;
+      const formattedReps = formatRepsWithHalf(block.targetReps, block.halfRepSets);
+      return `${sets} x ${formattedReps}`;
     }
-    return `${sets} x ${block.repsBase || '?'}`;
+    const baseRep = block.repsBase || '?';
+    // Se è un singolo rep con half
+    if (block.halfRepSets && block.halfRepSets.length > 0) {
+      return `${sets} x ${baseRep} half`;
+    }
+    return `${sets} x ${baseRep}`;
   }
   
   // Tecniche speciali (Rest-Pause, Myo-Reps, etc.)
@@ -112,6 +146,8 @@ function formatLoggedSession(session: LoggedSession | undefined): { reps: string
 // Dati per settimana di un blocco
 interface WeekBlockData {
   exists: boolean;
+  isNoteOnly?: boolean;
+  schemaNote?: string;
   exerciseIndex: number;
   exercise?: ProgramExercise;
   block?: ExerciseBlock;
@@ -216,6 +252,15 @@ export function ProgramTableView() {
   const [clipboard, setClipboard] = useState<{
     block: ExerciseBlock;
     exerciseName: string;
+  } | null>(null);
+  
+  // Dialog per aggiungere nota placeholder
+  const [schemaNotesDialog, setSchemaNotesDialog] = useState<{
+    weekNum: number;
+    exerciseIndex: number;
+    blockIndex: number;
+    exerciseName: string;
+    note: string;
   } | null>(null);
   
   // Funzione per ottenere il gruppo muscolare dalla libreria
@@ -323,8 +368,11 @@ export function ProgramTableView() {
             const block = blocks[blockIndex];
             
             if (block) {
+              const isOnlyNote = isNoteOnlyBlock(block);
               blockRow.weekData[weekNum] = {
-                exists: true,
+                exists: !isOnlyNote, // Se è solo nota, trattiamo come "non esiste" per lo schema
+                isNoteOnly: isOnlyNote,
+                schemaNote: block.schemaNote || '',
                 exerciseIndex,
                 exercise,
                 block,
@@ -1000,36 +1048,67 @@ export function ProgramTableView() {
     };
     
     updateWeek(weekNum, updatedWeek);
+  };
+  
+  // Salva una nota placeholder su una cella vuota
+  const handleSaveSchemaNote = () => {
+    if (!schemaNotesDialog || !program) return;
     
-    // Riduci il contatore dei blocchi pendenti se necessario
-    const currentPending = pendingBlocks[exerciseIndex] || 0;
-    if (currentPending > 0) {
-      // Conta quanti blocchi reali esistono ora
-      const realBlocksCount = newBlocks.length;
-      // Ricalcola quanti pendenti servono ancora
-      const totalNeeded = blockIndex + 1;
-      const newPending = Math.max(0, totalNeeded - realBlocksCount);
-      
-      if (newPending !== currentPending) {
-        setPendingBlocks(prev => {
-          const updated = { ...prev };
-          if (newPending === 0) {
-            delete updated[exerciseIndex];
-          } else {
-            updated[exerciseIndex] = newPending;
-          }
-          return updated;
-        });
-      }
+    const { weekNum, exerciseIndex, blockIndex, note } = schemaNotesDialog;
+    
+    const week = weeks[weekNum];
+    const day = week?.days?.[selectedDayIndex];
+    const exercise = day?.exercises?.[exerciseIndex];
+    
+    if (!week || !day || !exercise) {
+      setSchemaNotesDialog(null);
+      return;
     }
     
-    // Apri il modal per configurare il blocco appena creato
-    setSelectedWeekNum(weekNum);
-    setSelectedExerciseIndex(exerciseIndex);
-    setSelectedBlockIndex(blockIndex);
-    setSelectedExercise(updatedExercise);
-    setCurrentWeek(weekNum);
-    setConfigModalOpen(true);
+    // Ottieni i blocchi esistenti
+    const existingBlocks = getExerciseBlocks(exercise);
+    const newBlocks = [...existingBlocks];
+    
+    // Assicurati che ci sia un blocco alla posizione corretta
+    while (newBlocks.length <= blockIndex) {
+      newBlocks.push(createDefaultBlock(exercise.exerciseType || 'resistance'));
+    }
+    
+    // Aggiorna il blocco con solo la nota (rimuovi schema se presente)
+    newBlocks[blockIndex] = {
+      ...newBlocks[blockIndex],
+      schemaNote: note || undefined,
+      // Se stiamo aggiungendo una nota, rimuovi lo schema esistente
+      sets: undefined,
+      repsBase: undefined,
+      targetReps: undefined,
+      targetLoads: undefined,
+      technique: undefined,
+    };
+    
+    const updatedExercise = { ...exercise, blocks: newBlocks };
+    const updatedDay = {
+      ...day,
+      exercises: day.exercises.map((ex, i) => i === exerciseIndex ? updatedExercise : ex),
+    };
+    const updatedWeek = {
+      ...week,
+      days: week.days.map((d, i) => i === selectedDayIndex ? updatedDay : d),
+    };
+    
+    updateWeek(weekNum, updatedWeek);
+    setSchemaNotesDialog(null);
+  };
+  
+  // Apri dialog per aggiungere nota su cella vuota
+  const handleOpenSchemaNotesDialog = (weekNum: number, exerciseIndex: number, blockIndex: number, exerciseName: string, existingNote?: string) => {
+    setSchemaNotesDialog({
+      weekNum,
+      exerciseIndex,
+      blockIndex,
+      exerciseName,
+      note: existingNote || '',
+    });
   };
   
   const handleOpenConfigModal = (weekNum: number, instance: ExerciseInstance, blockRow: BlockRow) => {
@@ -1429,6 +1508,17 @@ export function ProgramTableView() {
                                               <div className="text-[10px] text-muted-foreground whitespace-pre-wrap">{weekData.intensityInfo}</div>
                                             )}
                                           </div>
+                                        ) : weekData.isNoteOnly || weekData.schemaNote ? (
+                                          // Mostra la nota placeholder con stile distintivo
+                                          <div className="space-y-0.5 pr-4">
+                                            <div className="flex items-center gap-1">
+                                              <StickyNote className="w-3 h-3 text-amber-500" />
+                                              <span className="text-[10px] text-amber-600 font-medium">Nota</span>
+                                            </div>
+                                            <div className="text-xs text-gray-500 italic whitespace-pre-wrap line-clamp-3">
+                                              {weekData.schemaNote}
+                                            </div>
+                                          </div>
                                         ) : (
                                           <span className="text-muted-foreground italic text-xs">-</span>
                                         )}
@@ -1487,6 +1577,19 @@ export function ProgramTableView() {
                                               <span className="ml-auto text-xs text-muted-foreground">(da {clipboard.exerciseName})</span>
                                             </ContextMenuItem>
                                           )}
+                                          <ContextMenuSeparator />
+                                          <ContextMenuItem 
+                                            onClick={() => handleOpenSchemaNotesDialog(
+                                              weekNum, 
+                                              exerciseExistsInWeek ? weekData.exerciseIndex : instance.exerciseIndex, 
+                                              blockRow.blockIndex, 
+                                              instance.exerciseName,
+                                              weekData.schemaNote
+                                            )}
+                                          >
+                                            <StickyNote className="w-4 h-4 mr-2" />
+                                            {weekData.isNoteOnly ? 'Modifica nota' : 'Aggiungi nota'}
+                                          </ContextMenuItem>
                                         </>
                                       )}
                                     </ContextMenuContent>
@@ -1770,6 +1873,53 @@ export function ProgramTableView() {
             </Button>
             <Button variant="destructive" onClick={() => handleDeleteBlockInWeek(true)}>
               Tutte le settimane
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Dialog Nota Schema Placeholder */}
+      <Dialog open={schemaNotesDialog !== null} onOpenChange={(open) => !open && setSchemaNotesDialog(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <StickyNote className="w-5 h-5 text-amber-500" />
+              Nota Schema
+            </DialogTitle>
+            <DialogDescription>
+              Aggiungi una nota placeholder per la Week {schemaNotesDialog?.weekNum} - {schemaNotesDialog?.exerciseName}. 
+              La nota verrà visualizzata finché non configuri lo schema dell'esercizio.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <textarea
+              value={schemaNotesDialog?.note || ''}
+              onChange={(e) => setSchemaNotesDialog(prev => prev ? { ...prev, note: e.target.value } : null)}
+              placeholder="Es: Aumentare peso se 3x10 completi, valutare drop set..."
+              className="w-full h-32 p-3 border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-500"
+            />
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setSchemaNotesDialog(null)}>
+              Annulla
+            </Button>
+            {schemaNotesDialog?.note && (
+              <Button 
+                variant="destructive" 
+                onClick={() => {
+                  setSchemaNotesDialog(prev => prev ? { ...prev, note: '' } : null);
+                  setTimeout(() => handleSaveSchemaNote(), 0);
+                }}
+              >
+                Elimina nota
+              </Button>
+            )}
+            <Button 
+              onClick={handleSaveSchemaNote}
+              className="bg-amber-500 hover:bg-amber-600"
+            >
+              <StickyNote className="w-4 h-4 mr-2" />
+              Salva nota
             </Button>
           </DialogFooter>
         </DialogContent>

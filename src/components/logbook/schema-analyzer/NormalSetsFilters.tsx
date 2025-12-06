@@ -9,9 +9,10 @@ import { Checkbox } from '../../ui/checkbox';
 interface NormalSetsFiltersProps {
   filters: WorkoutSchemaFilters;
   setFilters: (filters: WorkoutSchemaFilters) => void;
+  hideConfig?: boolean; // Per Ad Hoc: nascondi configurazione set/reps
 }
 
-export function NormalSetsFilters({ filters, setFilters }: NormalSetsFiltersProps) {
+export function NormalSetsFilters({ filters, setFilters, hideConfig }: NormalSetsFiltersProps) {
   const { loggedSessions, currentProgramId } = useApp();
 
   // Filtra le sessioni per il programma attivo
@@ -125,8 +126,8 @@ export function NormalSetsFilters({ filters, setFilters }: NormalSetsFiltersProp
         )}
       </div>
 
-      {/* Set and Reps Configuration */}
-      {filters.exercise && (
+      {/* Set and Reps Configuration - nascosto per Ad Hoc */}
+      {filters.exercise && !hideConfig && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ExerciseBlock, Exercise, REP_RANGES, PercentageProgression } from '@/types';
+import { ExerciseBlock, Exercise, REP_RANGES, PercentageProgression, AD_HOC_TECHNIQUE } from '@/types';
 import { Card, CardContent, CardHeader } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Trash2, Dumbbell, Clock, FileText } from 'lucide-react';
+import { Checkbox } from '../ui/checkbox';
 import { TechniqueParamsForm } from './TechniqueParamsForm';
 import { PercentageProgressionEditor } from './PercentageProgressionEditor';
 import { generateSchemaFromParams, TECHNIQUE_DEFINITIONS, usesPercentageProgression } from '@/lib/techniques';
@@ -54,6 +55,7 @@ export function ExerciseBlockCard({
   const isNormalTechnique = (block.technique || 'Normale') === 'Normale';
   const isRampingTechnique = block.technique === 'Ramping';
   const isProgressionTechnique = usesPercentageProgression(block.technique || 'Normale');
+  const isAdHocTechnique = block.technique === AD_HOC_TECHNIQUE;
 
   // Helper per gestire input numerici con cancellazione libera
   const getFieldValue = (fieldName: string, actualValue: any) => {
@@ -538,17 +540,80 @@ export function ExerciseBlockCard({
                     {tech}
                   </SelectItem>
                 ))}
+                {/* Separatore e Tecnica Ad Hoc */}
+                <div className="border-t border-gray-200 my-1" />
+                <SelectItem value={AD_HOC_TECHNIQUE} className="font-medium text-amber-700">
+                  📝 {AD_HOC_TECHNIQUE}
+                </SelectItem>
               </SelectContent>
             </Select>
 
-            {/* Technique Params Form - Solo per tecniche speciali (escluso Ramping e Progressione a %) */}
-            {block.technique && block.technique !== 'Normale' && block.technique !== 'Ramping' && !isProgressionTechnique && (
+            {/* Technique Params Form - Solo per tecniche speciali (escluso Ramping, Progressione a % e Ad Hoc) */}
+            {block.technique && block.technique !== 'Normale' && block.technique !== 'Ramping' && !isProgressionTechnique && !isAdHocTechnique && (
               <div className="mt-3 pt-3 border-t border-gray-200">
                 <TechniqueParamsForm
                   technique={block.technique}
                   params={block.techniqueParams || {}}
                   onChange={handleTechniqueParamsChange}
                 />
+              </div>
+            )}
+            
+            {/* Configurazione Tecnica Ad Hoc */}
+            {isAdHocTechnique && (
+              <div className="mt-3 pt-3 border-t border-gray-200 space-y-4 bg-gradient-to-br from-amber-50 to-yellow-50 p-4 rounded-lg border-2 border-amber-300">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-sm font-bold text-amber-900">📝 Schema Ad Hoc</span>
+                  <span className="text-xs text-amber-600">(per schemi complessi)</span>
+                </div>
+                
+                {/* Textarea per schema testuale */}
+                <div>
+                  <Label className="text-xs text-gray-700 mb-1.5 block font-medium">Schema Testuale</Label>
+                  <Textarea
+                    value={block.adHocSchema || ''}
+                    onChange={(e) => onUpdate(blockIndex, 'adHocSchema', e.target.value)}
+                    placeholder="Es: 3x10-8-6 con pause 3s, poi drop set al 50%..."
+                    className="min-h-[80px] bg-white text-sm"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Numero set (per calcolo volume) */}
+                  <div>
+                    <Label className="text-xs text-gray-700 mb-1.5 block font-medium">Numero Set</Label>
+                    <Input
+                      type="number"
+                      value={block.adHocSets || ''}
+                      onChange={(e) => onUpdate(blockIndex, 'adHocSets', parseInt(e.target.value) || undefined)}
+                      placeholder="es. 3"
+                      className="h-10 bg-white"
+                      min={1}
+                    />
+                    <p className="text-[10px] text-gray-500 mt-1">Per calcolo volume</p>
+                  </div>
+                  
+                  {/* Coefficiente */}
+                  <div>
+                    <Label className="text-xs text-gray-700 mb-1.5 block font-medium">Coefficiente</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={block.adHocCoefficient || ''}
+                      onChange={(e) => onUpdate(blockIndex, 'adHocCoefficient', parseFloat(e.target.value) || undefined)}
+                      placeholder="es. 1.0"
+                      className="h-10 bg-white"
+                      min={0.1}
+                      max={3}
+                    />
+                    <p className="text-[10px] text-gray-500 mt-1">Per calcolo volume</p>
+                  </div>
+                </div>
+                
+                <p className="text-xs text-amber-700 bg-amber-100 p-2 rounded">
+                  💡 Usa questa opzione quando lo schema è troppo complesso per le tecniche standard.
+                  Il rest verrà inserito manualmente nella colonna REST.
+                </p>
               </div>
             )}
             
@@ -735,32 +800,62 @@ export function ExerciseBlockCard({
                   {block.targetReps && block.targetReps.length > 0 ? (
                     // Mostra input se targetReps è già configurato
                     <div className="space-y-2">
-                      {block.targetReps.map((reps, i) => (
-                        <div key={i} className="flex items-center gap-2 p-2 bg-emerald-50 rounded-lg border border-emerald-200">
-                          <span className="px-2 py-1 rounded bg-emerald-600 text-white text-xs font-bold min-w-[3rem] text-center">
-                            Set {i + 1}
-                          </span>
-                          <Input
-                            type="text"
-                            value={reps}
-                            onChange={(e) => {
-                              const value = e.target.value.toUpperCase();
-                              if (value === '' || value === 'MAX' || /^\d+$/.test(value)) {
-                                const newReps = [...(block.targetReps || [])];
-                                newReps[i] = value;
-                                onUpdate(blockIndex, 'targetReps', newReps);
-                              }
-                            }}
-                            className="h-8 flex-1 text-sm"
-                            placeholder="10 o MAX"
-                          />
-                          <span className="text-xs font-medium text-muted-foreground">reps</span>
-                        </div>
-                      ))}
+                      {block.targetReps.map((reps, i) => {
+                        const isHalf = block.halfRepSets?.includes(i) || false;
+                        return (
+                          <div key={i} className={`flex items-center gap-2 p-2 rounded-lg border ${isHalf ? 'bg-amber-50 border-amber-300' : 'bg-emerald-50 border-emerald-200'}`}>
+                            <span className={`px-2 py-1 rounded text-white text-xs font-bold min-w-[3rem] text-center ${isHalf ? 'bg-amber-600' : 'bg-emerald-600'}`}>
+                              Set {i + 1}
+                            </span>
+                            <Input
+                              type="text"
+                              value={reps}
+                              onChange={(e) => {
+                                const value = e.target.value.toUpperCase();
+                                if (value === '' || value === 'MAX' || /^\d+$/.test(value)) {
+                                  const newReps = [...(block.targetReps || [])];
+                                  newReps[i] = value;
+                                  onUpdate(blockIndex, 'targetReps', newReps);
+                                }
+                              }}
+                              className="h-8 flex-1 text-sm"
+                              placeholder="10 o MAX"
+                            />
+                            <span className="text-xs font-medium text-muted-foreground">reps</span>
+                            {/* Checkbox Half Rep */}
+                            <div className="flex items-center gap-1.5 pl-2 border-l border-gray-200">
+                              <Checkbox
+                                id={`half-${blockIndex}-${i}`}
+                                checked={isHalf}
+                                onCheckedChange={(checked) => {
+                                  const currentHalfs = block.halfRepSets || [];
+                                  let newHalfs: number[];
+                                  if (checked) {
+                                    newHalfs = [...currentHalfs, i].sort((a, b) => a - b);
+                                  } else {
+                                    newHalfs = currentHalfs.filter(idx => idx !== i);
+                                  }
+                                  onUpdate(blockIndex, 'halfRepSets', newHalfs.length > 0 ? newHalfs : undefined);
+                                }}
+                                className="h-4 w-4"
+                              />
+                              <label 
+                                htmlFor={`half-${blockIndex}-${i}`}
+                                className={`text-xs cursor-pointer ${isHalf ? 'font-semibold text-amber-700' : 'text-gray-500'}`}
+                              >
+                                Half
+                              </label>
+                            </div>
+                          </div>
+                        );
+                      })}
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onUpdate(blockIndex, 'targetReps', [])}
+                        onClick={() => {
+                          onUpdate(blockIndex, 'targetReps', []);
+                          onUpdate(blockIndex, 'halfRepSets', undefined);
+                        }}
                         className="w-full text-xs text-red-600 hover:text-red-700 hover:bg-red-50 h-8"
                       >
                         Rimuovi personalizzazione

@@ -6,8 +6,9 @@ import { SpecialTechniqueFilters } from './schema-analyzer/SpecialTechniqueFilte
 import { SchemaProgressionChart } from './schema-analyzer/SchemaProgressionChart';
 import { SchemaDetailTable } from './schema-analyzer/SchemaDetailTable';
 import { getExerciseBlocks } from '@/lib/exerciseUtils';
+import { AD_HOC_TECHNIQUE } from '@/types';
 
-type AnalysisMode = 'normal' | 'special';
+type AnalysisMode = 'normal' | 'special' | 'adhoc';
 
 export interface NormalSetsConfig {
   sets: number;
@@ -138,6 +139,11 @@ export function WorkoutSchemaAnalyzer() {
         return false;
       });
     }
+    
+    // Per modalità Ad Hoc: filtra solo sessioni con tecnica Ad Hoc
+    if (mode === 'adhoc') {
+      sessions = sessions.filter(s => s.technique === AD_HOC_TECHNIQUE);
+    }
 
     return sessions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [loggedSessions, filters, mode, getCurrentWeeks, currentProgramId]);
@@ -180,6 +186,15 @@ export function WorkoutSchemaAnalyzer() {
           >
             Tecniche Speciali
           </button>
+          <button
+            onClick={() => handleModeChange('adhoc')}
+            className={`flex-1 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors border-2 ${mode === 'adhoc'
+                ? 'border-amber-400 bg-amber-50 text-amber-900'
+                : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+              }`}
+          >
+            📝 Ad Hoc
+          </button>
         </div>
       </CardHeader>
 
@@ -187,20 +202,73 @@ export function WorkoutSchemaAnalyzer() {
         {/* Filtri specifici per modalità */}
         {mode === 'normal' ? (
           <NormalSetsFilters filters={filters} setFilters={setFilters} />
-        ) : (
+        ) : mode === 'special' ? (
           <SpecialTechniqueFilters filters={filters} setFilters={setFilters} />
+        ) : (
+          /* Filtri per Ad Hoc - solo esercizio e settimane */
+          <div className="space-y-4 p-4 bg-amber-50 border-2 border-amber-200 rounded-lg">
+            <p className="text-sm text-amber-800 mb-4">
+              📝 Le sessioni Ad Hoc contengono log testuali liberi. Seleziona un esercizio per vedere lo storico.
+            </p>
+            <NormalSetsFilters filters={filters} setFilters={setFilters} hideConfig />
+          </div>
         )}
 
         {/* Risultati */}
         {filters.exercise &&
           ((mode === 'normal' && filters.normalConfig?.sets && filters.normalConfig?.reps) ||
-            (mode === 'special' && filters.specialConfig?.technique && filters.specialConfig?.totalSets)) && (
+            (mode === 'special' && filters.specialConfig?.technique && filters.specialConfig?.totalSets) ||
+            mode === 'adhoc') && (
             <>
               {filteredSessions.length > 0 ? (
-                <>
-                  <SchemaProgressionChart sessions={filteredSessions} filters={filters} mode={mode} />
-                  <SchemaDetailTable sessions={filteredSessions} mode={mode} />
-                </>
+                mode === 'adhoc' ? (
+                  /* Visualizzazione speciale per Ad Hoc: tabella con data, schema, log */
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-semibold text-amber-900">Storico Sessioni Ad Hoc</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-amber-100 text-amber-900">
+                            <th className="px-3 py-2 text-left font-medium">Data</th>
+                            <th className="px-3 py-2 text-left font-medium">Week</th>
+                            <th className="px-3 py-2 text-left font-medium">Schema</th>
+                            <th className="px-3 py-2 text-left font-medium">Log</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredSessions.map((session, idx) => (
+                            <tr key={session.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-amber-50/50'}>
+                              <td className="px-3 py-2 whitespace-nowrap">
+                                {new Date(session.date).toLocaleDateString('it-IT')}
+                              </td>
+                              <td className="px-3 py-2 whitespace-nowrap">W{session.weekNum}</td>
+                              <td className="px-3 py-2 max-w-xs">
+                                <div className="whitespace-pre-wrap text-gray-600">
+                                  {session.adHocSchema || session.techniqueSchema || '-'}
+                                </div>
+                              </td>
+                              <td className="px-3 py-2 max-w-md">
+                                <div className="whitespace-pre-wrap">
+                                  {session.logText || '-'}
+                                </div>
+                                {session.notes && (
+                                  <div className="text-xs text-gray-500 italic mt-1">
+                                    Note: {session.notes}
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <SchemaProgressionChart sessions={filteredSessions} filters={filters} mode={mode} />
+                    <SchemaDetailTable sessions={filteredSessions} mode={mode} />
+                  </>
+                )
               ) : (
                 <div className="text-center py-8 sm:py-12 text-muted-foreground">
                   <p className="text-sm sm:text-base">
@@ -217,7 +285,8 @@ export function WorkoutSchemaAnalyzer() {
         {/* Messaggio quando i filtri non sono completi */}
         {filters.exercise &&
           !((mode === 'normal' && filters.normalConfig?.sets && filters.normalConfig?.reps) ||
-            (mode === 'special' && filters.specialConfig?.technique && filters.specialConfig?.totalSets)) && (
+            (mode === 'special' && filters.specialConfig?.technique && filters.specialConfig?.totalSets) ||
+            mode === 'adhoc') && (
             <div className="text-center py-8 sm:py-12 text-muted-foreground">
               <p className="text-sm sm:text-base">
                 Compila tutti i filtri per vedere i risultati

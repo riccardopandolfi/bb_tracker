@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { LoggedSet, LoggedSession, ExerciseVideo } from '@/types';
+import { LoggedSet, LoggedSession, ExerciseVideo, AD_HOC_TECHNIQUE } from '@/types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -44,8 +44,12 @@ export function LogSessionModal({
 
   const [tempLogSets, setTempLogSets] = useState<LoggedSet[]>([]);
   const [sessionNotes, setSessionNotes] = useState<string>('');
+  const [adHocLogText, setAdHocLogText] = useState<string>('');
   const [pendingVideos, setPendingVideos] = useState<ExerciseVideo[]>([]);
   const [showVideoUploader, setShowVideoUploader] = useState(false);
+  
+  // Verifica se è tecnica Ad Hoc
+  const isAdHocTechnique = block?.technique === AD_HOC_TECHNIQUE;
   
   // Controlla se l'utente è autenticato (video disponibili solo per utenti autenticati)
   const isAuthenticated = Boolean(session);
@@ -55,6 +59,7 @@ export function LogSessionModal({
       // Initialize temp log sets
       initializeTempSets();
       setSessionNotes('');
+      setAdHocLogText('');
       setPendingVideos([]);
       setShowVideoUploader(false);
     }
@@ -170,6 +175,54 @@ export function LogSessionModal({
       alert('Seleziona un programma prima di loggare una sessione.');
       return;
     }
+    
+    // Per tecniche Ad Hoc: solo log testuale
+    if (isAdHocTechnique) {
+      if (!adHocLogText.trim()) {
+        alert('Inserisci il log testuale per questa tecnica Ad Hoc.');
+        return;
+      }
+      
+      const sessionId = Date.now();
+      const loggedSession: LoggedSession = {
+        id: sessionId,
+        programId: currentProgramId,
+        date: new Date().toISOString().split('T')[0],
+        weekNum: currentWeek,
+        exercise: exercise.exerciseName,
+        dayIndex: dayIndex,
+        dayName: day?.name,
+        exerciseIndex: exerciseIndex,
+        blockIndex: currentBlockIndex !== null ? currentBlockIndex : 0,
+        technique: block.technique || AD_HOC_TECHNIQUE,
+        techniqueSchema: block.adHocSchema || '',
+        repRange: '8-12', // Default per Ad Hoc
+        coefficient: block.adHocCoefficient || 1,
+        targetLoads: [],
+        targetRPE: 0,
+        sets: [],
+        totalReps: 0,
+        targetReps: 0,
+        avgRPE: 0,
+        completion: 100, // Ad Hoc è sempre "completo" se loggato
+        blockRest: block.blockRest,
+        notes: sessionNotes.trim() || undefined,
+        logText: adHocLogText.trim(),
+        adHocSchema: block.adHocSchema,
+      };
+      
+      addLoggedSession(loggedSession);
+      
+      if (pendingVideos.length > 0) {
+        for (const video of pendingVideos) {
+          await linkVideoToSession(video.id, sessionId);
+        }
+      }
+      
+      onOpenChange(false);
+      return;
+    }
+    
     // Per tecniche normali richiedi repRange, per tecniche speciali no
     const isNormalTechnique = block.technique === 'Normale';
     if (!block.technique || (isNormalTechnique && !block.repRange) || block.coefficient === undefined || block.targetRPE === undefined) return;
@@ -253,85 +306,114 @@ export function LogSessionModal({
         </DialogHeader>
 
         <div className="space-y-3 sm:space-y-4 py-3 sm:py-4">
-          {/* Sets */}
-          {Object.entries(setGroups).map(([setNumStr, sets]) => {
-            const setNum = parseInt(setNumStr, 10);
-            return (
-              <Card key={setNum} className="p-4">
-                <div className="flex justify-between items-center mb-3">
-                  <h4 className="font-bold flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-sm font-medium">
-                      S{setNum}
-                    </span>
-                  </h4>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleRemoveSet(setNum)}
-                  >
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </Button>
+          {/* UI speciale per Ad Hoc */}
+          {isAdHocTechnique ? (
+            <div className="space-y-4">
+              {/* Schema Ad Hoc (solo lettura) */}
+              {block.adHocSchema && (
+                <div className="p-4 bg-amber-50 border-2 border-amber-200 rounded-lg">
+                  <Label className="text-xs text-amber-700 font-medium mb-2 block">Schema Pianificato</Label>
+                  <p className="text-sm text-gray-900 whitespace-pre-wrap">{block.adHocSchema}</p>
                 </div>
+              )}
+              
+              {/* Textarea per log testuale */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Log Testuale</Label>
+                <Textarea
+                  value={adHocLogText}
+                  onChange={(e) => setAdHocLogText(e.target.value)}
+                  placeholder="Descrivi come è andata la sessione: set completati, carichi usati, sensazioni..."
+                  className="min-h-[150px]"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Per le tecniche Ad Hoc, scrivi liberamente il resoconto della sessione.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Sets - UI standard */}
+              {Object.entries(setGroups).map(([setNumStr, sets]) => {
+                const setNum = parseInt(setNumStr, 10);
+                return (
+                  <Card key={setNum} className="p-4">
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="font-bold flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-sm font-medium">
+                          S{setNum}
+                        </span>
+                      </h4>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveSet(setNum)}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </div>
 
-                <div className="space-y-2">
-                  {sets.map((set, clusterIndex) => {
-                    const globalIndex = tempLogSets.findIndex(
-                      (s) => s.setNum === set.setNum && s.clusterNum === set.clusterNum
-                    );
+                    <div className="space-y-2">
+                      {sets.map((set, clusterIndex) => {
+                        const globalIndex = tempLogSets.findIndex(
+                          (s) => s.setNum === set.setNum && s.clusterNum === set.clusterNum
+                        );
 
-                    return (
-                      <div key={clusterIndex} className="flex gap-2 items-end bg-gray-50 p-2 rounded-md">
-                        {block.technique !== 'Normale' && (
-                          <div className="text-sm font-medium text-gray-600 w-16">
-                            C{set.clusterNum}
+                        return (
+                          <div key={clusterIndex} className="flex gap-2 items-end bg-gray-50 p-2 rounded-md">
+                            {block.technique !== 'Normale' && (
+                              <div className="text-sm font-medium text-gray-600 w-16">
+                                C{set.clusterNum}
+                              </div>
+                            )}
+                            <div className="flex-1 grid grid-cols-3 gap-2">
+                              <div>
+                                <Label className="text-xs">Reps</Label>
+                                <Input
+                                  type="number"
+                                  value={set.reps}
+                                  onChange={(e) =>
+                                    handleUpdateSet(globalIndex, 'reps', e.target.value)
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Carico (kg)</Label>
+                                <Input
+                                  type="text"
+                                  value={set.load}
+                                  onChange={(e) =>
+                                    handleUpdateSet(globalIndex, 'load', e.target.value)
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">RPE</Label>
+                                <Input
+                                  type="number"
+                                  step="0.5"
+                                  value={set.rpe}
+                                  onChange={(e) =>
+                                    handleUpdateSet(globalIndex, 'rpe', e.target.value)
+                                  }
+                                />
+                              </div>
+                            </div>
                           </div>
-                        )}
-                        <div className="flex-1 grid grid-cols-3 gap-2">
-                          <div>
-                            <Label className="text-xs">Reps</Label>
-                            <Input
-                              type="number"
-                              value={set.reps}
-                              onChange={(e) =>
-                                handleUpdateSet(globalIndex, 'reps', e.target.value)
-                              }
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-xs">Carico (kg)</Label>
-                            <Input
-                              type="text"
-                              value={set.load}
-                              onChange={(e) =>
-                                handleUpdateSet(globalIndex, 'load', e.target.value)
-                              }
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-xs">RPE</Label>
-                            <Input
-                              type="number"
-                              step="0.5"
-                              value={set.rpe}
-                              onChange={(e) =>
-                                handleUpdateSet(globalIndex, 'rpe', e.target.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-            );
-          })}
+                        );
+                      })}
+                    </div>
+                  </Card>
+                );
+              })}
 
-          {/* Add Set Button */}
-          <Button variant="outline" onClick={handleAddSet} className="w-full">
-            <Plus className="w-4 h-4 mr-2" />
-            Aggiungi Set
-          </Button>
+              {/* Add Set Button */}
+              <Button variant="outline" onClick={handleAddSet} className="w-full">
+                <Plus className="w-4 h-4 mr-2" />
+                Aggiungi Set
+              </Button>
+            </>
+          )}
 
           {/* Note */}
           <div>

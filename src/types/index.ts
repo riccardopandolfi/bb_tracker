@@ -115,6 +115,9 @@ export interface PercentageProgression {
   weeks: ProgressionWeekConfig[];
 }
 
+// Valore speciale per tecniche ad hoc
+export const AD_HOC_TECHNIQUE = 'Tecnica Ad Hoc';
+
 // Blocco di metodologia all'interno di un esercizio
 export interface ExerciseBlock {
   // Per resistance
@@ -143,6 +146,19 @@ export interface ExerciseBlock {
 
   // Per Progressione a %
   percentageProgression?: PercentageProgression; // Configurazione progressione multi-settimana
+
+  // === NUOVI CAMPI ===
+  
+  // Note placeholder (visibili finché non c'è uno schema)
+  schemaNote?: string;
+  
+  // Half reps: array di indici dei set che sono mezze rep (es. [2] = terzo set è half)
+  halfRepSets?: number[];
+  
+  // Schema Ad Hoc (per schemi complessi non gestibili con tecniche standard)
+  adHocSchema?: string;      // Testo libero dello schema
+  adHocSets?: number;        // Numero di set (per calcolo volume)
+  adHocCoefficient?: number; // Coefficiente (per calcolo volume)
 }
 
 // Program (Scheda)
@@ -236,6 +252,10 @@ export interface LoggedSession {
 
   blockRest?: number; // Rest dopo questo blocco (null se è l'ultimo blocco)
   notes?: string; // Note del log
+  
+  // === NUOVI CAMPI PER AD_HOC ===
+  logText?: string; // Log testuale libero per tecnica Ad Hoc
+  adHocSchema?: string; // Schema testuale (copia dal blocco per storico)
 }
 
 // Daily Macros

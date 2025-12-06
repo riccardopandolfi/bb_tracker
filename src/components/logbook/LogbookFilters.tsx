@@ -2,7 +2,7 @@ import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent } from '../ui/card';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { REP_RANGES, DEFAULT_TECHNIQUES } from '@/types';
+import { REP_RANGES, DEFAULT_TECHNIQUES, AD_HOC_TECHNIQUE } from '@/types';
 
 interface LogbookFiltersProps {
   filters: {
@@ -124,6 +124,10 @@ export function LogbookFilters({ filters, setFilters, totalSessions, availableWe
                     {tech}
                   </SelectItem>
                 ))}
+                <div className="border-t border-gray-200 my-1" />
+                <SelectItem value={AD_HOC_TECHNIQUE} className="font-medium text-amber-700">
+                  📝 {AD_HOC_TECHNIQUE}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
