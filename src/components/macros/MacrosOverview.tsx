@@ -3,29 +3,51 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Copy, Trash2 } from 'lucide-react';
+import { WeekMacrosPlan } from '@/types';
 
 const DAY_NAMES = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+const MONTH_NAMES = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+
+// Formatta una data come "6-12 Gen"
+const formatWeekShort = (startDate: string, endDate: string): string => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const startDay = start.getDate();
+  const endDay = end.getDate();
+  const startMonth = MONTH_NAMES[start.getMonth()];
+  const endMonth = MONTH_NAMES[end.getMonth()];
+  
+  if (startMonth === endMonth) {
+    return `${startDay}-${endDay} ${startMonth}`;
+  } else {
+    return `${startDay} ${startMonth}-${endDay} ${endMonth}`;
+  }
+};
+
+// Verifica se una data è nella settimana corrente
+const isCurrentWeek = (startDate: string, endDate: string): boolean => {
+  const today = new Date().toISOString().split('T')[0];
+  return today >= startDate && today <= endDate;
+};
 
 interface MacrosOverviewProps {
-  onNavigateToWeek?: (weekNum: number) => void;
+  onNavigateToWeek?: (weekId: string) => void;
 }
 
 export function MacrosOverview({ onNavigateToWeek }: MacrosOverviewProps) {
   const { 
-    getCurrentProgram, 
-    getMacrosPlanForWeek,
-    copyWeekPlan,
-    resetWeekPlan,
-    currentWeek,
+    getAllMacrosWeeks,
+    getWeekPlanById,
+    copyWeekPlanById,
+    resetWeekPlanById,
+    deleteWeekPlan,
   } = useApp();
 
-  const program = getCurrentProgram();
-  const weekNumbers = program ? Object.keys(program.weeks).map(Number).sort((a, b) => a - b) : [];
+  const allWeeks = getAllMacrosWeeks();
 
   // Calcola totali settimanali
-  const getWeeklyTotals = (weekNum: number) => {
-    const plan = getMacrosPlanForWeek(weekNum);
-    if (!plan) return null;
+  const getWeeklyTotals = (week: WeekMacrosPlan) => {
+    if (!week) return null;
 
     let totalKcal = 0;
     let totalProtein = 0;
@@ -34,7 +56,7 @@ export function MacrosOverview({ onNavigateToWeek }: MacrosOverviewProps) {
     let filledDays = 0;
     let checkedDays = 0;
 
-    plan.days.forEach((day, idx) => {
+    week.days.forEach((day, idx) => {
       if (day.protein > 0 || day.carbs > 0 || day.fat > 0) {
         totalKcal += day.kcal;
         totalProtein += day.protein;
@@ -42,7 +64,7 @@ export function MacrosOverview({ onNavigateToWeek }: MacrosOverviewProps) {
         totalFat += day.fat;
         filledDays++;
       }
-      if (plan.checked[idx]) checkedDays++;
+      if (week.checked[idx]) checkedDays++;
     });
 
     return { 
@@ -53,15 +75,15 @@ export function MacrosOverview({ onNavigateToWeek }: MacrosOverviewProps) {
       avgFat: filledDays > 0 ? Math.round(totalFat / filledDays) : 0,
       filledDays,
       checkedDays,
-      fromCycling: plan.fromCycling,
+      fromCycling: week.fromCycling,
+      fromOnOff: week.fromOnOff,
     };
   };
 
   // Rendering cella
-  const renderCell = (weekNum: number, dayIdx: number) => {
-    const plan = getMacrosPlanForWeek(weekNum);
-    const day = plan?.days?.[dayIdx];
-    const isChecked = plan?.checked?.[dayIdx];
+  const renderCell = (week: WeekMacrosPlan, dayIdx: number) => {
+    const day = week?.days?.[dayIdx];
+    const isChecked = week?.checked?.[dayIdx];
 
     if (!day || (day.protein === 0 && day.carbs === 0 && day.fat === 0)) {
       return (
@@ -74,7 +96,7 @@ export function MacrosOverview({ onNavigateToWeek }: MacrosOverviewProps) {
     return (
       <div 
         className={`text-[10px] py-1 cursor-pointer hover:bg-muted/50 rounded ${isChecked ? 'bg-green-50' : ''}`}
-        onClick={() => onNavigateToWeek?.(weekNum)}
+        onClick={() => onNavigateToWeek?.(week.id)}
       >
         <div className={`font-medium ${isChecked ? 'text-green-600' : ''}`}>{day.kcal}</div>
         <div className="text-muted-foreground opacity-70">
@@ -85,17 +107,48 @@ export function MacrosOverview({ onNavigateToWeek }: MacrosOverviewProps) {
   };
 
   // Handle copy week
-  const handleCopyWeek = (fromWeek: number) => {
-    const toWeek = prompt(`Copiare Week ${fromWeek} in quale settimana?`, String(fromWeek + 1));
-    if (toWeek && !isNaN(parseInt(toWeek))) {
-      copyWeekPlan(fromWeek, parseInt(toWeek));
+  const handleCopyWeek = (fromWeekId: string) => {
+    const fromWeek = getWeekPlanById(fromWeekId);
+    if (!fromWeek) return;
+    
+    // Mostra le altre settimane disponibili
+    const otherWeeks = allWeeks.filter(w => w.id !== fromWeekId);
+    if (otherWeeks.length === 0) {
+      alert('Non ci sono altre settimane in cui copiare');
+      return;
+    }
+    
+    const targetWeekLabel = formatWeekShort(fromWeek.startDate, fromWeek.endDate);
+    const options = otherWeeks.map((w, i) => `${i + 1}. ${formatWeekShort(w.startDate, w.endDate)}`).join('\n');
+    const choice = prompt(`Copiare ${targetWeekLabel} in quale settimana?\n${options}`, '1');
+    
+    if (choice && !isNaN(parseInt(choice))) {
+      const idx = parseInt(choice) - 1;
+      if (idx >= 0 && idx < otherWeeks.length) {
+        copyWeekPlanById(fromWeekId, otherWeeks[idx].id);
+      }
     }
   };
 
   // Handle reset week
-  const handleResetWeek = (weekNum: number) => {
-    if (confirm(`Svuotare i macro della Week ${weekNum}?`)) {
-      resetWeekPlan(weekNum);
+  const handleResetWeek = (weekId: string) => {
+    const week = getWeekPlanById(weekId);
+    if (!week) return;
+    
+    const label = formatWeekShort(week.startDate, week.endDate);
+    if (confirm(`Svuotare i macro della settimana ${label}?`)) {
+      resetWeekPlanById(weekId);
+    }
+  };
+
+  // Handle delete week
+  const handleDeleteWeek = (weekId: string) => {
+    const week = getWeekPlanById(weekId);
+    if (!week) return;
+    
+    const label = formatWeekShort(week.startDate, week.endDate);
+    if (confirm(`Eliminare la settimana ${label}? I dati andranno persi.`)) {
+      deleteWeekPlan(weekId);
     }
   };
 
@@ -110,122 +163,145 @@ export function MacrosOverview({ onNavigateToWeek }: MacrosOverviewProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="text-left py-2 px-3 font-medium sticky left-0 bg-muted/50">Giorno</th>
-                  {weekNumbers.map(weekNum => {
-                    const stats = getWeeklyTotals(weekNum);
-                    return (
-                      <th 
-                        key={weekNum} 
-                        className={`text-center py-2 px-2 font-medium ${
-                          weekNum === currentWeek ? 'bg-primary/10' : ''
-                        }`}
-                      >
-                        <div className="flex items-center justify-center gap-1">
-                          W{weekNum}
-                          {stats?.fromCycling && (
-                            <RefreshCw className="w-3 h-3 text-primary" />
-                          )}
-                        </div>
-                      </th>
-                    );
-                  })}
-                </tr>
-              </thead>
-              <tbody>
-                {DAY_NAMES.map((day, dayIdx) => (
-                  <tr key={dayIdx} className="border-b hover:bg-muted/30">
-                    <td className="py-1 px-3 font-medium sticky left-0 bg-background">{day}</td>
-                    {weekNumbers.map(weekNum => (
-                      <td 
-                        key={weekNum} 
-                        className={`text-center ${weekNum === currentWeek ? 'bg-primary/5' : ''}`}
-                      >
-                        {renderCell(weekNum, dayIdx)}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-                {/* Totali / Media */}
-                <tr className="bg-muted/50 font-medium">
-                  <td className="py-2 px-3 sticky left-0 bg-muted/50">Media</td>
-                  {weekNumbers.map(weekNum => {
-                    const stats = getWeeklyTotals(weekNum);
-                    
-                    return (
-                      <td key={weekNum} className={`text-center py-2 ${weekNum === currentWeek ? 'bg-primary/10' : ''}`}>
-                        {stats && stats.filledDays > 0 ? (
-                          <div className="text-[10px]">
-                            <div className="font-bold">{stats.avgKcal}</div>
-                            <div className="text-muted-foreground">
-                              {stats.checkedDays}/{stats.filledDays}
-                            </div>
+          {allWeeks.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-left py-2 px-3 font-medium sticky left-0 bg-muted/50">Giorno</th>
+                    {allWeeks.map(week => {
+                      const stats = getWeeklyTotals(week);
+                      const isCurrent = isCurrentWeek(week.startDate, week.endDate);
+                      return (
+                        <th 
+                          key={week.id} 
+                          className={`text-center py-2 px-2 font-medium ${
+                            isCurrent ? 'bg-primary/10' : ''
+                          }`}
+                        >
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span className="text-[10px]">
+                              {formatWeekShort(week.startDate, week.endDate)}
+                            </span>
+                            {(stats?.fromCycling || stats?.fromOnOff) && (
+                              <div className="flex items-center gap-0.5">
+                                {stats?.fromCycling && (
+                                  <RefreshCw className="w-2.5 h-2.5 text-primary" />
+                                )}
+                                {stats?.fromOnOff && (
+                                  <span className="text-[8px]">⚡</span>
+                                )}
+                              </div>
+                            )}
                           </div>
-                        ) : (
-                          <span className="text-muted-foreground text-[10px]">-</span>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {DAY_NAMES.map((day, dayIdx) => (
+                    <tr key={dayIdx} className="border-b hover:bg-muted/30">
+                      <td className="py-1 px-3 font-medium sticky left-0 bg-background">{day}</td>
+                      {allWeeks.map(week => {
+                        const isCurrent = isCurrentWeek(week.startDate, week.endDate);
+                        return (
+                          <td 
+                            key={week.id} 
+                            className={`text-center ${isCurrent ? 'bg-primary/5' : ''}`}
+                          >
+                            {renderCell(week, dayIdx)}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                  {/* Totali / Media */}
+                  <tr className="bg-muted/50 font-medium">
+                    <td className="py-2 px-3 sticky left-0 bg-muted/50">Media</td>
+                    {allWeeks.map(week => {
+                      const stats = getWeeklyTotals(week);
+                      const isCurrent = isCurrentWeek(week.startDate, week.endDate);
+                      
+                      return (
+                        <td key={week.id} className={`text-center py-2 ${isCurrent ? 'bg-primary/10' : ''}`}>
+                          {stats && stats.filledDays > 0 ? (
+                            <div className="text-[10px]">
+                              <div className="font-bold">{stats.avgKcal}</div>
+                              <div className="text-muted-foreground">
+                                {stats.checkedDays}/{stats.filledDays}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-[10px]">-</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="py-8 text-center text-muted-foreground">
+              <p>Nessuna settimana configurata.</p>
+              <p className="text-sm mt-1">Aggiungi una settimana nella tab "Settimana" per iniziare.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {/* Azioni per settimana */}
-      <Card>
-        <CardHeader className="py-3">
-          <CardTitle className="text-sm">Azioni</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="flex flex-wrap gap-2">
-            {weekNumbers.map(weekNum => {
-              const stats = getWeeklyTotals(weekNum);
-              const hasData = stats && stats.filledDays > 0;
-              
-              return (
-                <div key={weekNum} className="flex items-center gap-1 p-2 rounded-lg bg-muted/30">
-                  <Badge variant={weekNum === currentWeek ? 'default' : 'outline'} className="text-xs">
-                    W{weekNum}
-                  </Badge>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={() => handleCopyWeek(weekNum)}
-                    disabled={!hasData}
-                    title="Copia in altra settimana"
-                  >
-                    <Copy className="w-3 h-3" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0 text-red-500 hover:text-red-600"
-                    onClick={() => handleResetWeek(weekNum)}
-                    disabled={!hasData}
-                    title="Reset settimana"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Messaggio se non ci sono dati */}
-      {weekNumbers.length === 0 && (
+      {allWeeks.length > 0 && (
         <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            <p>Nessun programma attivo.</p>
-            <p className="text-sm">Crea un programma per iniziare a pianificare i macro.</p>
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm">Azioni</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex flex-wrap gap-2">
+              {allWeeks.map(week => {
+                const stats = getWeeklyTotals(week);
+                const hasData = stats && stats.filledDays > 0;
+                const isCurrent = isCurrentWeek(week.startDate, week.endDate);
+                
+                return (
+                  <div key={week.id} className="flex items-center gap-1 p-2 rounded-lg bg-muted/30">
+                    <Badge variant={isCurrent ? 'default' : 'outline'} className="text-[10px]">
+                      {formatWeekShort(week.startDate, week.endDate)}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={() => handleCopyWeek(week.id)}
+                      disabled={!hasData}
+                      title="Copia in altra settimana"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-orange-500 hover:text-orange-600"
+                      onClick={() => handleResetWeek(week.id)}
+                      disabled={!hasData}
+                      title="Reset settimana"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-red-500 hover:text-red-600"
+                      onClick={() => handleDeleteWeek(week.id)}
+                      title="Elimina settimana"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       )}

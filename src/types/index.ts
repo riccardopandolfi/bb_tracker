@@ -291,13 +291,18 @@ export interface PlannedDayMacros {
 export type DayType = 'on' | 'off' | null;
 
 // Piano macro per una settimana (unificato: manuale + cycling + on/off)
+// Cross-program: basato su date reali, non su numero settimana del programma
 export interface WeekMacrosPlan {
-  weekNumber: number;
-  days: PlannedDayMacros[];  // 7 giorni (0=Lun, 6=Dom)
-  checked: boolean[];        // 7 boolean per tracking completamento
-  fromCycling?: boolean;     // true se generato da Carb Cycling
-  fromOnOff?: boolean;       // true se generato da On/Off
-  dayTypes?: DayType[];      // Tipo selezionato per ogni giorno (7 elementi) - usato con On/Off
+  id: string;                 // UUID univoco per identificare la settimana
+  startDate: string;          // Data inizio settimana (ISO: "2025-01-06")
+  endDate: string;            // Data fine settimana (ISO: "2025-01-12")
+  days: PlannedDayMacros[];   // 7 giorni (0=Lun, 6=Dom)
+  checked: boolean[];         // 7 boolean per tracking completamento
+  fromCycling?: boolean;      // true se generato da Carb Cycling
+  fromOnOff?: boolean;        // true se generato da On/Off
+  dayTypes?: DayType[];       // Tipo selezionato per ogni giorno (7 elementi) - usato con On/Off
+  // Legacy field per migrazione (da rimuovere dopo migrazione)
+  weekNumber?: number;
 }
 
 // Modalità Carb Cycling

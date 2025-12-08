@@ -11,13 +11,12 @@ const DAY_NAMES = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 
 
 export function MacrosSummaryWidget() {
   const { 
-    getMacrosPlanForWeek, 
-    currentWeek, 
+    getCurrentMacrosWeek, 
+    setDayTypeById,
     supplements, 
     setCurrentTab,
     macroMode = 'fixed',
     onOffPlan,
-    setDayType,
     addWeight,
     getWeightHistory,
     getTodayWeight,
@@ -31,8 +30,8 @@ export function MacrosSummaryWidget() {
   const dayOfWeek = today.getDay();
   const currentDayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
 
-  // Usa il nuovo sistema macrosPlans invece di dailyMacros legacy
-  const weekPlan = getMacrosPlanForWeek(currentWeek);
+  // Usa getCurrentMacrosWeek per trovare automaticamente la settimana corrente basata sulla data
+  const weekPlan = getCurrentMacrosWeek();
   const currentDay = weekPlan?.days?.[currentDayIndex];
   const currentDayType = weekPlan?.dayTypes?.[currentDayIndex] as DayType;
   
@@ -106,7 +105,7 @@ export function MacrosSummaryWidget() {
               <span className="text-2xl">🍎</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Nessun macro configurato per oggi (Week {currentWeek})
+              Nessun macro configurato per oggi
             </p>
             <Button
               onClick={() => setCurrentTab('macros')}
@@ -125,7 +124,7 @@ export function MacrosSummaryWidget() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-base sm:text-lg font-bold font-heading">Macro di Oggi</div>
-                  <p className="text-sm text-gray-500 mt-1">{DAY_NAMES[currentDayIndex]} - Week {currentWeek}</p>
+                  <p className="text-sm text-gray-500 mt-1">{DAY_NAMES[currentDayIndex]}</p>
                 </div>
                 {/* Indicatore tipo giorno in modalità On/Off */}
                 {isOnOffMode && currentDayType && (
@@ -158,15 +157,17 @@ export function MacrosSummaryWidget() {
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setDayType(currentWeek, currentDayIndex, 'on')}
+                      onClick={() => weekPlan?.id && setDayTypeById(weekPlan.id, currentDayIndex, 'on')}
                       className="flex-1 px-3 py-2 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 transition-colors flex items-center justify-center gap-1.5 text-sm font-medium"
+                      disabled={!weekPlan?.id}
                     >
                       <Dumbbell className="w-4 h-4" />
                       On (Allenamento)
                     </button>
                     <button
-                      onClick={() => setDayType(currentWeek, currentDayIndex, 'off')}
+                      onClick={() => weekPlan?.id && setDayTypeById(weekPlan.id, currentDayIndex, 'off')}
                       className="flex-1 px-3 py-2 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors flex items-center justify-center gap-1.5 text-sm font-medium"
+                      disabled={!weekPlan?.id}
                     >
                       <Moon className="w-4 h-4" />
                       Off (Riposo)

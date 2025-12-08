@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { PlannedDayMacros, Supplement, DayType } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -6,13 +6,50 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
-import { CheckCircle2, Circle, Copy, Plus, X, ChevronLeft, ChevronRight, Calendar, BarChart3, Dumbbell, Moon, Zap, Lock, Power, RefreshCw } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { CheckCircle2, Circle, Copy, Plus, X, ChevronLeft, ChevronRight, Calendar, BarChart3, Dumbbell, Moon, Zap, Lock, Power, RefreshCw, Trash2 } from 'lucide-react';
 import { CarbCyclingEditor } from './macros/CarbCyclingEditor';
 import { MacrosOverview } from './macros/MacrosOverview';
 import { OnOffEditor } from './macros/OnOffEditor';
 
 const DAY_NAMES = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
 const DAY_SHORT = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+const MONTH_NAMES = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+
+// Formatta una data come "6 - 12 Gen 2025"
+const formatDateRange = (startDate: string, endDate: string): string => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const startDay = start.getDate();
+  const endDay = end.getDate();
+  const startMonth = MONTH_NAMES[start.getMonth()];
+  const endMonth = MONTH_NAMES[end.getMonth()];
+  const year = start.getFullYear();
+  
+  if (startMonth === endMonth) {
+    return `${startDay} - ${endDay} ${startMonth} ${year}`;
+  } else {
+    return `${startDay} ${startMonth} - ${endDay} ${endMonth} ${year}`;
+  }
+};
+
+// Ottiene il lunedì della settimana corrente
+const getCurrentWeekMonday = (): string => {
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + mondayOffset);
+  return monday.toISOString().split('T')[0];
+};
+
+// Ottiene il lunedì della settimana successiva a una data
+const getNextWeekMonday = (lastEndDate: string): string => {
+  const end = new Date(lastEndDate);
+  const nextMonday = new Date(end);
+  nextMonday.setDate(end.getDate() + 1);
+  return nextMonday.toISOString().split('T')[0];
+};
 
 // Calcola calorie automaticamente
 const calculateKcal = (protein: number, carbs: number, fat: number): number => {
@@ -23,33 +60,51 @@ type MacrosTabView = 'week' | 'onoff' | 'cycling' | 'overview';
 
 export function MacrosTab() {
   const { 
-    getCurrentProgram,
-    currentWeek,
-    setCurrentWeek,
-    // Nuovo sistema macros
-    updateWeekMacros,
-    checkWeekDay,
-    getMacrosPlanForWeek,
+    // Nuovo sistema macros basato su date
+    getAllMacrosWeeks,
+    getCurrentMacrosWeek,
+    addMacrosWeek,
+    deleteWeekPlan,
+    updateWeekMacrosById,
+    checkWeekDayById,
+    getWeekPlanById,
+    setDayTypeById,
     // Supplements
     supplements = [],
     updateGlobalSupplements,
     // Sistema On/Off
     macroMode = 'fixed',
     setMacroMode,
-    setDayType,
     onOffPlan,
   } = useApp();
   
   const [activeTab, setActiveTab] = useState<MacrosTabView>('week');
   const [localSupplements, setLocalSupplements] = useState<Supplement[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [selectedWeekId, setSelectedWeekId] = useState<string | null>(null);
 
-  const program = getCurrentProgram();
-  const weekNumbers = program ? Object.keys(program.weeks).map(Number).sort((a, b) => a - b) : [];
-  const maxWeek = weekNumbers.length > 0 ? Math.max(...weekNumbers) : 1;
+  // Ottieni tutte le settimane ordinate per data
+  const allWeeks = useMemo(() => getAllMacrosWeeks(), [getAllMacrosWeeks]);
+  
+  // Trova la settimana corrente automaticamente o usa quella selezionata
+  const currentMacrosWeek = useMemo(() => {
+    if (selectedWeekId) {
+      return getWeekPlanById(selectedWeekId);
+    }
+    return getCurrentMacrosWeek();
+  }, [selectedWeekId, getCurrentMacrosWeek, getWeekPlanById]);
+  
+  // Se non c'è settimana selezionata e ne esiste una corrente, selezionala
+  useEffect(() => {
+    if (!selectedWeekId && currentMacrosWeek?.id) {
+      setSelectedWeekId(currentMacrosWeek.id);
+    } else if (!selectedWeekId && allWeeks.length > 0) {
+      // Seleziona l'ultima settimana se non c'è una corrente
+      setSelectedWeekId(allWeeks[allWeeks.length - 1].id);
+    }
+  }, [selectedWeekId, currentMacrosWeek, allWeeks]);
 
-  // Ottieni o crea il piano per la settimana corrente
-  const weekPlan = getMacrosPlanForWeek(currentWeek);
+  const weekPlan = selectedWeekId ? getWeekPlanById(selectedWeekId) : currentMacrosWeek;
   const days = weekPlan?.days || Array(7).fill(null).map(() => ({ protein: 0, carbs: 0, fat: 0, kcal: 0 }));
   const checked = weekPlan?.checked || Array(7).fill(false);
 
@@ -66,35 +121,76 @@ export function MacrosTab() {
 
   // Aggiorna i macro di un giorno
   const handleUpdateDay = (dayIndex: number, field: keyof PlannedDayMacros, value: number) => {
+    if (!weekPlan?.id) return;
     const currentDay = days[dayIndex] || { protein: 0, carbs: 0, fat: 0, kcal: 0 };
     const updated = { ...currentDay, [field]: value };
     updated.kcal = calculateKcal(updated.protein, updated.carbs, updated.fat);
-    updateWeekMacros(currentWeek, dayIndex, updated);
+    updateWeekMacrosById(weekPlan.id, dayIndex, updated);
   };
 
   // Copia i macro di un giorno a tutti gli altri
   const handleCopyToAll = (dayIndex: number) => {
+    if (!weekPlan?.id) return;
     if (!confirm('Copiare i macro di questo giorno a tutti gli altri giorni?')) return;
     const sourceMacros = days[dayIndex];
     for (let i = 0; i < 7; i++) {
       if (i !== dayIndex) {
-        updateWeekMacros(currentWeek, i, { ...sourceMacros });
+        updateWeekMacrosById(weekPlan.id, i, { ...sourceMacros });
       }
     }
   };
 
   // Segna giorno completato
   const handleCheckDay = (dayIndex: number) => {
-    checkWeekDay(currentWeek, dayIndex);
+    if (!weekPlan?.id) return;
+    checkWeekDayById(weekPlan.id, dayIndex);
   };
 
   // Navigazione settimane
+  const currentWeekIndex = allWeeks.findIndex(w => w.id === selectedWeekId);
+  
   const goToPrevWeek = () => {
-    if (currentWeek > 1) setCurrentWeek(currentWeek - 1);
+    if (currentWeekIndex > 0) {
+      setSelectedWeekId(allWeeks[currentWeekIndex - 1].id);
+    }
   };
 
   const goToNextWeek = () => {
-    if (currentWeek < maxWeek) setCurrentWeek(currentWeek + 1);
+    if (currentWeekIndex < allWeeks.length - 1) {
+      setSelectedWeekId(allWeeks[currentWeekIndex + 1].id);
+    }
+  };
+  
+  // Aggiungi nuova settimana
+  const handleAddWeek = () => {
+    let startDate: string;
+    if (allWeeks.length > 0) {
+      // Usa la domenica dell'ultima settimana + 1 giorno
+      const lastWeek = allWeeks[allWeeks.length - 1];
+      startDate = getNextWeekMonday(lastWeek.endDate);
+    } else {
+      // Usa il lunedì della settimana corrente
+      startDate = getCurrentWeekMonday();
+    }
+    const newWeek = addMacrosWeek(startDate);
+    setSelectedWeekId(newWeek.id);
+  };
+  
+  // Elimina settimana
+  const handleDeleteWeek = () => {
+    if (!weekPlan?.id) return;
+    if (!confirm('Eliminare questa settimana? I dati andranno persi.')) return;
+    
+    deleteWeekPlan(weekPlan.id);
+    
+    // Seleziona la settimana precedente o successiva
+    if (currentWeekIndex > 0) {
+      setSelectedWeekId(allWeeks[currentWeekIndex - 1].id);
+    } else if (allWeeks.length > 1) {
+      setSelectedWeekId(allWeeks[1].id);
+    } else {
+      setSelectedWeekId(null);
+    }
   };
 
   // Supplements
@@ -160,7 +256,7 @@ export function MacrosTab() {
           <p className="text-muted-foreground text-sm">Pianifica e traccia i tuoi macro</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           {/* Toggle On/Off Mode */}
           <Button
             variant={macroMode === 'on_off' ? 'default' : 'outline'}
@@ -173,34 +269,83 @@ export function MacrosTab() {
             On/Off
           </Button>
 
-          {/* Week Selector */}
-          {program && weekNumbers.length > 0 && (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={goToPrevWeek}
-                disabled={currentWeek <= 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Badge variant={weekPlan?.fromCycling || weekPlan?.fromOnOff ? 'default' : 'secondary'} className="px-3 py-1">
-                Week {currentWeek}
-                {weekPlan?.fromCycling && <span className="ml-1 text-[10px]">🔄</span>}
-                {weekPlan?.fromOnOff && <span className="ml-1 text-[10px]">⚡</span>}
+          {/* Week Selector con Date */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={goToPrevWeek}
+              disabled={currentWeekIndex <= 0}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            {allWeeks.length > 0 ? (
+              <Select value={selectedWeekId || ''} onValueChange={setSelectedWeekId}>
+                <SelectTrigger className="h-8 w-auto min-w-[160px] text-xs">
+                  <SelectValue placeholder="Seleziona settimana">
+                    {weekPlan?.startDate && weekPlan?.endDate ? (
+                      <span className="flex items-center gap-1">
+                        {formatDateRange(weekPlan.startDate, weekPlan.endDate)}
+                        {weekPlan.fromCycling && <span className="text-[10px]">🔄</span>}
+                        {weekPlan.fromOnOff && <span className="text-[10px]">⚡</span>}
+                      </span>
+                    ) : 'Seleziona'}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {allWeeks.map((week) => (
+                    <SelectItem key={week.id} value={week.id}>
+                      <span className="flex items-center gap-1">
+                        {formatDateRange(week.startDate, week.endDate)}
+                        {week.fromCycling && <span className="text-[10px]">🔄</span>}
+                        {week.fromOnOff && <span className="text-[10px]">⚡</span>}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Badge variant="secondary" className="px-3 py-1 text-xs">
+                Nessuna settimana
               </Badge>
+            )}
+            
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={goToNextWeek}
+              disabled={currentWeekIndex >= allWeeks.length - 1}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            
+            {/* Aggiungi settimana */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={handleAddWeek}
+              title="Aggiungi nuova settimana"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+            
+            {/* Elimina settimana */}
+            {weekPlan && (
               <Button
                 variant="outline"
                 size="icon"
-                className="h-8 w-8"
-                onClick={goToNextWeek}
-                disabled={currentWeek >= maxWeek}
+                className="h-8 w-8 text-destructive hover:text-destructive"
+                onClick={handleDeleteWeek}
+                title="Elimina settimana"
               >
-                <ChevronRight className="h-4 w-4" />
+                <Trash2 className="h-4 w-4" />
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
@@ -343,7 +488,7 @@ export function MacrosTab() {
                         ) : (
                           <>
                             <button
-                              onClick={() => setDayType(currentWeek, dayIndex, dayType === 'on' ? null : 'on')}
+                              onClick={() => weekPlan?.id && setDayTypeById(weekPlan.id, dayIndex, dayType === 'on' ? null : 'on')}
                               className={`px-2 py-1 rounded text-[10px] font-medium transition-all ${
                                 dayType === 'on' 
                                   ? 'bg-green-500 text-white' 
@@ -354,7 +499,7 @@ export function MacrosTab() {
                               <Dumbbell className="w-3 h-3" />
                             </button>
                             <button
-                              onClick={() => setDayType(currentWeek, dayIndex, dayType === 'off' ? null : 'off')}
+                              onClick={() => weekPlan?.id && setDayTypeById(weekPlan.id, dayIndex, dayType === 'off' ? null : 'off')}
                               className={`px-2 py-1 rounded text-[10px] font-medium transition-all ${
                                 dayType === 'off' 
                                   ? 'bg-blue-500 text-white' 
@@ -484,8 +629,8 @@ export function MacrosTab() {
 
         {/* TAB: Piano */}
         <TabsContent value="overview" className="mt-4" key={`overview-${refreshKey}`}>
-          <MacrosOverview onNavigateToWeek={(weekNum) => {
-            setCurrentWeek(weekNum);
+          <MacrosOverview onNavigateToWeek={(weekId) => {
+            setSelectedWeekId(weekId);
             setActiveTab('week');
           }} />
         </TabsContent>

@@ -54,7 +54,22 @@ interface AppContextType extends UserData {
   getLastCheckedDayIndex: () => number | null;
   updateSupplements: (supplements: import('@/types').Supplement[]) => void;
 
-  // Macros Multi-Settimana (sistema unificato)
+  // Macros Multi-Settimana (sistema unificato basato su date)
+  // Core operations by ID
+  getWeekPlanById: (id: string) => WeekMacrosPlan | undefined;
+  updateWeekMacrosById: (id: string, dayIndex: number, macros: PlannedDayMacros) => void;
+  checkWeekDayById: (id: string, dayIndex: number) => void;
+  copyWeekPlanById: (fromId: string, toId: string) => void;
+  resetWeekPlanById: (id: string) => void;
+  deleteWeekPlan: (id: string) => void;
+  
+  // Week management
+  addMacrosWeek: (startDate: string) => WeekMacrosPlan;
+  getCurrentMacrosWeek: () => WeekMacrosPlan | undefined;
+  getWeekPlanByDate: (date: string) => WeekMacrosPlan | undefined;
+  getAllMacrosWeeks: () => WeekMacrosPlan[];
+  
+  // Legacy support (per migrazione - usano weekNumber)
   getOrCreateWeekPlan: (weekNum: number) => WeekMacrosPlan;
   updateWeekMacros: (weekNum: number, dayIndex: number, macros: PlannedDayMacros) => void;
   checkWeekDay: (weekNum: number, dayIndex: number) => void;
@@ -67,6 +82,7 @@ interface AppContextType extends UserData {
   deleteCarbCyclingTemplate: (templateId: string) => void;
   setActiveCarbCycling: (templateId: string | null) => void;
   applyCarbCyclingToWeeks: (templateId: string, weekNumbers: number[], trainingDays?: number[][], templateData?: CarbCyclingTemplate) => void;
+  applyCarbCyclingToWeekIds: (templateId: string, weekIds: string[], trainingDays?: number[][], templateData?: CarbCyclingTemplate) => void;
   
   // Utility
   calculateMacrosFromBase: (baseMacros: { protein: number; carbs: number; fat: number }, multiplier: number) => PlannedDayMacros;
@@ -90,6 +106,7 @@ interface AppContextType extends UserData {
   setMacroMode: (mode: MacroMode) => void;
   updateOnOffPlan: (plan: OnOffMacrosPlan) => void;
   setDayType: (weekNum: number, dayIndex: number, dayType: DayType) => void;
+  setDayTypeById: (weekId: string, dayIndex: number, dayType: DayType) => void;
   
   // Weight Tracking
   addWeight: (weight: number, date?: string) => void;
@@ -209,6 +226,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Helper function to migrate data format
   const migrateData = (data: any): AppState => {
+    // Helper per migrare macrosPlans (aggiunge id, startDate, endDate se mancanti)
+    const migrateMacrosPlansInline = (plans: any[]): any[] => {
+      if (!plans || plans.length === 0) return plans || [];
+      
+      let needsMigration = false;
+      const migrated = plans.map((plan: any) => {
+        if (plan.id && plan.startDate) return plan;
+        needsMigration = true;
+        
+        const id = plan.id || `week-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const weekNum = plan.weekNumber || 1;
+        const today = new Date();
+        const dayOfWeek = today.getDay();
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        const thisMonday = new Date(today);
+        thisMonday.setDate(today.getDate() + mondayOffset);
+        const targetMonday = new Date(thisMonday);
+        targetMonday.setDate(thisMonday.getDate() + (weekNum - 1) * 7);
+        const targetSunday = new Date(targetMonday);
+        targetSunday.setDate(targetMonday.getDate() + 6);
+        
+        return {
+          ...plan,
+          id,
+          startDate: plan.startDate || targetMonday.toISOString().split('T')[0],
+          endDate: plan.endDate || targetSunday.toISOString().split('T')[0],
+        };
+      });
+      
+      return needsMigration ? migrated : plans;
+    };
+
     // Check if it's already the new format
     if (data.users && Array.isArray(data.users) && data.userData) {
       // MIGRATION FIX: Rename "Utente Principale" to "Riccardo" if found
@@ -219,9 +268,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return u;
       });
 
-      if (JSON.stringify(updatedUsers) !== JSON.stringify(data.users)) {
-        console.log('Migrating user name: Utente Principale -> Riccardo');
-        return { ...data, users: updatedUsers };
+      // Migrate macrosPlans for all users
+      let userDataNeedsMigration = false;
+      const migratedUserData: Record<string, any> = {};
+      
+      Object.keys(data.userData || {}).forEach(userId => {
+        const userData = data.userData[userId];
+        if (userData?.macrosPlans) {
+          const migratedPlans = migrateMacrosPlansInline(userData.macrosPlans);
+          if (migratedPlans !== userData.macrosPlans) {
+            userDataNeedsMigration = true;
+            migratedUserData[userId] = { ...userData, macrosPlans: migratedPlans };
+          } else {
+            migratedUserData[userId] = userData;
+          }
+        } else {
+          migratedUserData[userId] = userData;
+        }
+      });
+
+      if (JSON.stringify(updatedUsers) !== JSON.stringify(data.users) || userDataNeedsMigration) {
+        console.log('Migrating data format (users/macrosPlans)');
+        return { 
+          ...data, 
+          users: updatedUsers,
+          userData: userDataNeedsMigration ? migratedUserData : data.userData 
+        };
       }
 
       return data as AppState;
@@ -339,6 +411,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return ex;
     });
 
+    // Migrazione macrosPlans: aggiunge id, startDate, endDate se mancanti
+    const migrateMacrosPlans = (plans: any[]): any[] => {
+      if (!plans || plans.length === 0) return [];
+      
+      return plans.map((plan: any) => {
+        // Se ha già id e startDate, non migrare
+        if (plan.id && plan.startDate) return plan;
+        
+        // Genera id se mancante
+        const id = plan.id || `week-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Calcola date basate su weekNumber (assume settimana 1 = settimana corrente meno (weekNumber-1)*7 giorni)
+        const weekNum = plan.weekNumber || 1;
+        const today = new Date();
+        const dayOfWeek = today.getDay();
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        const thisMonday = new Date(today);
+        thisMonday.setDate(today.getDate() + mondayOffset);
+        
+        // Calcola il lunedì della settimana target
+        const targetMonday = new Date(thisMonday);
+        targetMonday.setDate(thisMonday.getDate() + (weekNum - 1) * 7);
+        
+        const targetSunday = new Date(targetMonday);
+        targetSunday.setDate(targetMonday.getDate() + 6);
+        
+        const startDate = plan.startDate || targetMonday.toISOString().split('T')[0];
+        const endDate = plan.endDate || targetSunday.toISOString().split('T')[0];
+        
+        return {
+          ...plan,
+          id,
+          startDate,
+          endDate,
+        };
+      });
+    };
+
     const migratedUserData: UserData = {
       currentTab: data.currentTab || 'library',
       currentProgramId: migratedCurrentProgramId,
@@ -350,8 +460,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       muscleGroupColors: data.muscleGroupColors || {},
       customTechniques: data.customTechniques || [],
       dailyMacros: data.dailyMacros || null,
-      // Sistema macros multi-settimana unificato
-      macrosPlans: data.macrosPlans || [],
+      // Sistema macros multi-settimana unificato (con migrazione)
+      macrosPlans: migrateMacrosPlans(data.macrosPlans || []),
       supplements: data.supplements || data.dailyMacros?.supplements || [],
       carbCyclingTemplates: data.carbCyclingTemplates || [],
       activeCarbCyclingId: data.activeCarbCyclingId || null,
@@ -824,13 +934,66 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return { protein, carbs, fat, kcal };
   };
 
-  // Crea un piano vuoto per una settimana
-  const createEmptyWeekPlan = (weekNum: number): WeekMacrosPlan => ({
-    weekNumber: weekNum,
-    days: Array(7).fill(null).map(() => ({ protein: 0, carbs: 0, fat: 0, kcal: 0 })),
-    checked: Array(7).fill(false),
-    fromCycling: false,
-  });
+  // === DATE HELPERS ===
+  
+  // Ottiene il lunedì della settimana che contiene la data
+  const getWeekMonday = (date: Date): Date => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Lunedì
+    return new Date(d.setDate(diff));
+  };
+  
+  // Ottiene la domenica della settimana che contiene la data
+  const getWeekSunday = (monday: Date): Date => {
+    const d = new Date(monday);
+    d.setDate(d.getDate() + 6);
+    return d;
+  };
+  
+  // Formatta una data in ISO (YYYY-MM-DD)
+  const formatDateISO = (date: Date): string => {
+    return date.toISOString().split('T')[0];
+  };
+  
+  // Genera un UUID semplice
+  const generateId = (): string => {
+    return `week-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  };
+  
+  // Crea un piano vuoto per una settimana con date
+  const createEmptyWeekPlanWithDates = (startDate: string): WeekMacrosPlan => {
+    const start = new Date(startDate);
+    const end = getWeekSunday(start);
+    return {
+      id: generateId(),
+      startDate: formatDateISO(start),
+      endDate: formatDateISO(end),
+      days: Array(7).fill(null).map(() => ({ protein: 0, carbs: 0, fat: 0, kcal: 0 })),
+      checked: Array(7).fill(false),
+      fromCycling: false,
+    };
+  };
+  
+  // Legacy: Crea un piano vuoto per una settimana (per retrocompatibilità)
+  const createEmptyWeekPlan = (weekNum: number): WeekMacrosPlan => {
+    // Calcola la data di inizio basata sul numero di settimana
+    // Questo è per retro-compatibilità, assume settimana 1 = settimana corrente
+    const today = new Date();
+    const monday = getWeekMonday(today);
+    monday.setDate(monday.getDate() + (weekNum - 1) * 7);
+    const end = getWeekSunday(monday);
+    
+    return {
+      id: generateId(),
+      startDate: formatDateISO(monday),
+      endDate: formatDateISO(end),
+      weekNumber: weekNum, // Legacy field
+      days: Array(7).fill(null).map(() => ({ protein: 0, carbs: 0, fat: 0, kcal: 0 })),
+      checked: Array(7).fill(false),
+      fromCycling: false,
+    };
+  };
 
   // Ottiene o crea il piano per una settimana
   const getOrCreateWeekPlan = (weekNum: number): WeekMacrosPlan => {
@@ -841,7 +1004,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Crea nuovo piano vuoto
     const newPlan = createEmptyWeekPlan(weekNum);
     updateCurrentUser((prev) => ({
-      macrosPlans: [...(prev.macrosPlans || []), newPlan].sort((a, b) => a.weekNumber - b.weekNumber),
+      macrosPlans: [...(prev.macrosPlans || []), newPlan].sort((a, b) => (a.weekNumber || 0) - (b.weekNumber || 0)),
     }));
     return newPlan;
   };
@@ -865,7 +1028,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       
       const newPlans = existingIndex >= 0
         ? plans.map((p, i) => i === existingIndex ? updatedPlan : p)
-        : [...plans, updatedPlan].sort((a, b) => a.weekNumber - b.weekNumber);
+        : [...plans, updatedPlan].sort((a, b) => (a.weekNumber || 0) - (b.weekNumber || 0));
       
       return { macrosPlans: newPlans };
     });
@@ -903,7 +1066,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const plans = prev.macrosPlans || [];
       const existingIndex = plans.findIndex(p => p.weekNumber === toWeek);
       
+      // Se esiste già un piano per la settimana target, mantieni id/date
+      const existingPlan = existingIndex >= 0 ? plans[existingIndex] : createEmptyWeekPlan(toWeek);
+      
       const newPlan: WeekMacrosPlan = {
+        ...existingPlan,
         weekNumber: toWeek,
         days: [...sourcePlan.days],
         checked: Array(7).fill(false),
@@ -912,7 +1079,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       
       const newPlans = existingIndex >= 0
         ? plans.map((p, i) => i === existingIndex ? newPlan : p)
-        : [...plans, newPlan].sort((a, b) => a.weekNumber - b.weekNumber);
+        : [...plans, newPlan].sort((a, b) => (a.weekNumber || 0) - (b.weekNumber || 0));
       
       return { macrosPlans: newPlans };
     });
@@ -931,6 +1098,157 @@ export function AppProvider({ children }: { children: ReactNode }) {
       
       return { macrosPlans: newPlans };
     });
+  };
+
+  // === NUOVE FUNZIONI BASATE SU ID E DATE ===
+  
+  // Funzione di ordinamento per date
+  const sortPlansByDate = (plans: WeekMacrosPlan[]): WeekMacrosPlan[] => {
+    return [...plans].sort((a, b) => {
+      if (a.startDate && b.startDate) {
+        return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+      }
+      // Fallback su weekNumber per retrocompatibilità
+      return (a.weekNumber || 0) - (b.weekNumber || 0);
+    });
+  };
+  
+  // Ottiene un piano per ID
+  const getWeekPlanById = (id: string): WeekMacrosPlan | undefined => {
+    const userData = state.userData[state.currentUserId];
+    return userData?.macrosPlans?.find(p => p.id === id);
+  };
+  
+  // Aggiorna i macro di un singolo giorno per ID
+  const updateWeekMacrosById = (id: string, dayIndex: number, macros: PlannedDayMacros) => {
+    updateCurrentUser((prev) => {
+      const plans = prev.macrosPlans || [];
+      const existingIndex = plans.findIndex(p => p.id === id);
+      
+      if (existingIndex < 0) return {};
+      
+      const updatedPlan = { ...plans[existingIndex] };
+      updatedPlan.days = [...updatedPlan.days];
+      updatedPlan.days[dayIndex] = macros;
+      updatedPlan.fromCycling = false;
+      
+      const newPlans = plans.map((p, i) => i === existingIndex ? updatedPlan : p);
+      return { macrosPlans: newPlans };
+    });
+  };
+  
+  // Segna un giorno come completato per ID
+  const checkWeekDayById = (id: string, dayIndex: number) => {
+    updateCurrentUser((prev) => {
+      const plans = prev.macrosPlans || [];
+      const existingIndex = plans.findIndex(p => p.id === id);
+      
+      if (existingIndex < 0) return {};
+      
+      const updatedPlan = { ...plans[existingIndex] };
+      updatedPlan.checked = [...updatedPlan.checked];
+      updatedPlan.checked[dayIndex] = !updatedPlan.checked[dayIndex];
+      
+      const newPlans = plans.map((p, i) => i === existingIndex ? updatedPlan : p);
+      return { macrosPlans: newPlans };
+    });
+  };
+  
+  // Copia un piano macro per ID
+  const copyWeekPlanById = (fromId: string, toId: string) => {
+    const sourcePlan = getWeekPlanById(fromId);
+    const targetPlan = getWeekPlanById(toId);
+    if (!sourcePlan || !targetPlan) return;
+    
+    updateCurrentUser((prev) => {
+      const plans = prev.macrosPlans || [];
+      const existingIndex = plans.findIndex(p => p.id === toId);
+      
+      if (existingIndex < 0) return {};
+      
+      const newPlan: WeekMacrosPlan = {
+        ...targetPlan,
+        days: [...sourcePlan.days],
+        checked: Array(7).fill(false),
+        fromCycling: false,
+        fromOnOff: false,
+      };
+      
+      const newPlans = plans.map((p, i) => i === existingIndex ? newPlan : p);
+      return { macrosPlans: newPlans };
+    });
+  };
+  
+  // Reset completo di una settimana per ID
+  const resetWeekPlanById = (id: string) => {
+    updateCurrentUser((prev) => {
+      const plans = prev.macrosPlans || [];
+      const existingIndex = plans.findIndex(p => p.id === id);
+      
+      if (existingIndex < 0) return {};
+      
+      const existingPlan = plans[existingIndex];
+      const emptyPlan: WeekMacrosPlan = {
+        id: existingPlan.id,
+        startDate: existingPlan.startDate,
+        endDate: existingPlan.endDate,
+        weekNumber: existingPlan.weekNumber,
+        days: Array(7).fill(null).map(() => ({ protein: 0, carbs: 0, fat: 0, kcal: 0 })),
+        checked: Array(7).fill(false),
+        fromCycling: false,
+      };
+      
+      const newPlans = plans.map((p, i) => i === existingIndex ? emptyPlan : p);
+      return { macrosPlans: newPlans };
+    });
+  };
+  
+  // Elimina una settimana
+  const deleteWeekPlan = (id: string) => {
+    updateCurrentUser((prev) => {
+      const plans = prev.macrosPlans || [];
+      return { macrosPlans: plans.filter(p => p.id !== id) };
+    });
+  };
+  
+  // Aggiunge una nuova settimana con data di inizio
+  const addMacrosWeek = (startDate: string): WeekMacrosPlan => {
+    const newPlan = createEmptyWeekPlanWithDates(startDate);
+    updateCurrentUser((prev) => ({
+      macrosPlans: sortPlansByDate([...(prev.macrosPlans || []), newPlan]),
+    }));
+    return newPlan;
+  };
+  
+  // Ottiene la settimana corrente (basata sulla data odierna)
+  const getCurrentMacrosWeek = (): WeekMacrosPlan | undefined => {
+    const userData = state.userData[state.currentUserId];
+    const today = formatDateISO(new Date());
+    
+    return userData?.macrosPlans?.find(p => {
+      if (p.startDate && p.endDate) {
+        return today >= p.startDate && today <= p.endDate;
+      }
+      return false;
+    });
+  };
+  
+  // Ottiene una settimana per una data specifica
+  const getWeekPlanByDate = (date: string): WeekMacrosPlan | undefined => {
+    const userData = state.userData[state.currentUserId];
+    
+    return userData?.macrosPlans?.find(p => {
+      if (p.startDate && p.endDate) {
+        return date >= p.startDate && date <= p.endDate;
+      }
+      return false;
+    });
+  };
+  
+  // Ottiene tutte le settimane ordinate per data
+  const getAllMacrosWeeks = (): WeekMacrosPlan[] => {
+    const userData = state.userData[state.currentUserId];
+    return sortPlansByDate(userData?.macrosPlans || []);
   };
 
   // === SUPPLEMENTS (GLOBALI) ===
@@ -1013,7 +1331,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           days.push(calculateMacrosFromBase(template.baseMacros, multiplier));
         }
         
+        const existingPlanData = existingPlan || createEmptyWeekPlan(weekNum);
         const newPlan: WeekMacrosPlan = {
+          ...existingPlanData,
           weekNumber: weekNum,
           days,
           checked: existingChecked,
@@ -1027,10 +1347,70 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       });
       
-      plans.sort((a, b) => a.weekNumber - b.weekNumber);
+      plans.sort((a, b) => (a.weekNumber || 0) - (b.weekNumber || 0));
       
       return { 
         macrosPlans: plans,
+        activeCarbCyclingId: templateId,
+        macroMode: 'cycling' as MacroMode,
+      };
+    });
+  };
+
+  // Applica un template carb cycling alle settimane per ID
+  const applyCarbCyclingToWeekIds = (
+    templateId: string,
+    weekIds: string[],
+    trainingDays?: number[][],
+    templateData?: CarbCyclingTemplate
+  ) => {
+    const userData = state.userData[state.currentUserId];
+    const template = templateData || userData?.carbCyclingTemplates?.find(t => t.id === templateId);
+    if (!template) return;
+
+    updateCurrentUser((prev) => {
+      const plans = [...(prev.macrosPlans || [])];
+      
+      weekIds.forEach((weekId, weekIdx) => {
+        const existingIndex = plans.findIndex(p => p.id === weekId);
+        if (existingIndex < 0) return;
+        
+        const existingPlan = plans[existingIndex];
+        const existingChecked = existingPlan.checked || Array(7).fill(false);
+        const existingDays = existingPlan.days || [];
+        
+        const days: PlannedDayMacros[] = [];
+        
+        for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
+          if (existingChecked[dayIdx] && existingDays[dayIdx]) {
+            days.push(existingDays[dayIdx]);
+            continue;
+          }
+          
+          let multiplier = 1.0;
+          
+          if (template.mode === 'per_day' && template.dayMultipliers) {
+            multiplier = template.dayMultipliers[dayIdx] ?? 1.0;
+          } else if (template.mode === 'training_based') {
+            const isTrainingDay = trainingDays?.[weekIdx]?.includes(dayIdx) ?? false;
+            multiplier = isTrainingDay 
+              ? (template.trainingMultiplier ?? 1.0) 
+              : (template.restMultiplier ?? 1.0);
+          }
+          
+          days.push(calculateMacrosFromBase(template.baseMacros, multiplier));
+        }
+        
+        plans[existingIndex] = {
+          ...existingPlan,
+          days,
+          checked: existingChecked,
+          fromCycling: true,
+        };
+      });
+      
+      return { 
+        macrosPlans: sortPlansByDate(plans),
         activeCarbCyclingId: templateId,
         macroMode: 'cycling' as MacroMode,
       };
@@ -1061,14 +1441,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       
       if (existingIndex < 0) {
-        // Crea nuovo piano
-        plans.push({
-          weekNumber: weekNum,
-          days: Array(7).fill(null).map(() => ({ protein: 0, carbs: 0, fat: 0, kcal: 0 })),
-          checked: Array(7).fill(false),
-          fromOnOff: true,
-          dayTypes: Array(7).fill(null),
-        });
+        // Crea nuovo piano con createEmptyWeekPlan per avere id, startDate, endDate
+        const newPlan = createEmptyWeekPlan(weekNum);
+        newPlan.fromOnOff = true;
+        newPlan.dayTypes = Array(7).fill(null);
+        plans.push(newPlan);
         existingIndex = plans.length - 1;
       }
       
@@ -1093,9 +1470,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
       plan.fromOnOff = true;
       plans[existingIndex] = plan;
       
-      plans.sort((a, b) => a.weekNumber - b.weekNumber);
+      plans.sort((a, b) => (a.weekNumber || 0) - (b.weekNumber || 0));
       
       return { macrosPlans: plans, macroMode: 'on_off' as MacroMode };
+    });
+  };
+
+  // Imposta il tipo di un giorno per ID
+  const setDayTypeById = (weekId: string, dayIndex: number, dayType: DayType) => {
+    updateCurrentUser((prev) => {
+      const plans = [...(prev.macrosPlans || [])];
+      const onOffPlan = prev.onOffPlan;
+      
+      const existingIndex = plans.findIndex(p => p.id === weekId);
+      
+      if (existingIndex < 0) return {};
+      
+      // Se il giorno è già checked, non permettere la modifica
+      if (plans[existingIndex].checked?.[dayIndex]) {
+        return {};
+      }
+      
+      const plan = { ...plans[existingIndex] };
+      const dayTypes = [...(plan.dayTypes || Array(7).fill(null))];
+      const days = [...plan.days];
+      
+      dayTypes[dayIndex] = dayType;
+      
+      if (onOffPlan && dayType) {
+        const macros = dayType === 'on' ? onOffPlan.onDayMacros : onOffPlan.offDayMacros;
+        days[dayIndex] = { ...macros };
+      } else if (dayType === null) {
+        days[dayIndex] = { protein: 0, carbs: 0, fat: 0, kcal: 0 };
+      }
+      
+      plan.dayTypes = dayTypes;
+      plan.days = days;
+      plan.fromOnOff = true;
+      plans[existingIndex] = plan;
+      
+      return { macrosPlans: sortPlansByDate(plans), macroMode: 'on_off' as MacroMode };
     });
   };
 
@@ -1302,7 +1716,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         getCurrentDayIndex,
         getLastCheckedDayIndex,
         updateSupplements,
-        // Macros Multi-Settimana (sistema unificato)
+        // Macros Multi-Settimana (sistema basato su date)
+        // Core operations by ID
+        getWeekPlanById,
+        updateWeekMacrosById,
+        checkWeekDayById,
+        copyWeekPlanById,
+        resetWeekPlanById,
+        deleteWeekPlan,
+        // Week management
+        addMacrosWeek,
+        getCurrentMacrosWeek,
+        getWeekPlanByDate,
+        getAllMacrosWeeks,
+        // Legacy support (per retrocompatibilità)
         getOrCreateWeekPlan,
         updateWeekMacros,
         checkWeekDay,
@@ -1314,6 +1741,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         deleteCarbCyclingTemplate,
         setActiveCarbCycling,
         applyCarbCyclingToWeeks,
+        applyCarbCyclingToWeekIds,
         calculateMacrosFromBase,
         // Supplements
         updateGlobalSupplements,
@@ -1325,6 +1753,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setMacroMode,
         updateOnOffPlan,
         setDayType,
+        setDayTypeById,
         // Weight tracking
         addWeight,
         getWeightHistory,
