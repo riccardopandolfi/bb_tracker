@@ -1,13 +1,22 @@
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Dumbbell, Moon, Zap } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { DayType } from '@/types';
 
 const DAY_NAMES = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
 
 export function MacrosSummaryWidget() {
-  const { getMacrosPlanForWeek, currentWeek, supplements, setCurrentTab } = useApp();
+  const { 
+    getMacrosPlanForWeek, 
+    currentWeek, 
+    supplements, 
+    setCurrentTab,
+    macroMode = 'fixed',
+    onOffPlan,
+    setDayType,
+  } = useApp();
 
   // Ottieni il giorno corrente (0 = Lunedì, 6 = Domenica)
   const today = new Date();
@@ -17,6 +26,10 @@ export function MacrosSummaryWidget() {
   // Usa il nuovo sistema macrosPlans invece di dailyMacros legacy
   const weekPlan = getMacrosPlanForWeek(currentWeek);
   const currentDay = weekPlan?.days?.[currentDayIndex];
+  const currentDayType = weekPlan?.dayTypes?.[currentDayIndex] as DayType;
+  
+  // Modalità On/Off attiva
+  const isOnOffMode = macroMode === 'on_off' && onOffPlan;
 
   const hasMacros = currentDay && (
     currentDay.protein > 0 || currentDay.carbs > 0 || currentDay.fat > 0
@@ -52,13 +65,66 @@ export function MacrosSummaryWidget() {
           <div className="space-y-4">
             {/* Title with separator */}
             <div className="pb-4 border-b">
-              <div className="text-base sm:text-lg font-bold font-heading">Macro di Oggi</div>
-              <p className="text-sm text-gray-500 mt-1">{DAY_NAMES[currentDayIndex]} - Week {currentWeek}</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-base sm:text-lg font-bold font-heading">Macro di Oggi</div>
+                  <p className="text-sm text-gray-500 mt-1">{DAY_NAMES[currentDayIndex]} - Week {currentWeek}</p>
+                </div>
+                {/* Indicatore tipo giorno in modalità On/Off */}
+                {isOnOffMode && currentDayType && (
+                  <div className={`px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-medium ${
+                    currentDayType === 'on' 
+                      ? 'bg-green-100 text-green-700 border border-green-200' 
+                      : 'bg-blue-100 text-blue-700 border border-blue-200'
+                  }`}>
+                    {currentDayType === 'on' ? (
+                      <>
+                        <Dumbbell className="w-3 h-3" />
+                        <span>Giorno On</span>
+                      </>
+                    ) : (
+                      <>
+                        <Moon className="w-3 h-3" />
+                        <span>Giorno Off</span>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              {/* Quick toggle On/Off se la modalità è attiva ma il giorno non è ancora segnato */}
+              {isOnOffMode && !currentDayType && (
+                <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                  <div className="flex items-center gap-2 text-amber-700 mb-2">
+                    <Zap className="w-4 h-4" />
+                    <span className="text-xs font-medium">Seleziona il tipo di giorno:</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setDayType(currentWeek, currentDayIndex, 'on')}
+                      className="flex-1 px-3 py-2 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 transition-colors flex items-center justify-center gap-1.5 text-sm font-medium"
+                    >
+                      <Dumbbell className="w-4 h-4" />
+                      On (Allenamento)
+                    </button>
+                    <button
+                      onClick={() => setDayType(currentWeek, currentDayIndex, 'off')}
+                      className="flex-1 px-3 py-2 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors flex items-center justify-center gap-1.5 text-sm font-medium"
+                    >
+                      <Moon className="w-4 h-4" />
+                      Off (Riposo)
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Calorie */}
             <div className="flex items-center justify-end">
-              <div className="text-sm font-bold font-heading text-gray-900">
+              <div className={`text-sm font-bold font-heading ${
+                currentDayType === 'on' ? 'text-green-700' :
+                currentDayType === 'off' ? 'text-blue-700' : 'text-gray-900'
+              }`}>
                 {calculatedKcal > 0 ? calculatedKcal : '-'} <span className="text-xs font-normal text-gray-500">kcal</span>
               </div>
             </div>

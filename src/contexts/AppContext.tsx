@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
-import { AppState, Exercise, Week, LoggedSession, CustomTechnique, Program, DailyMacrosWeek, DayMacros, User, UserData, PercentageProgression, WeekMacrosPlan, PlannedDayMacros, CarbCyclingTemplate, Supplement } from '@/types';
+import { AppState, Exercise, Week, LoggedSession, CustomTechnique, Program, DailyMacrosWeek, DayMacros, User, UserData, PercentageProgression, WeekMacrosPlan, PlannedDayMacros, CarbCyclingTemplate, Supplement, MacroMode, OnOffMacrosPlan, DayType } from '@/types';
 import { DEFAULT_EXERCISES, MUSCLE_COLORS } from '@/lib/constants';
 import { DEFAULT_MUSCLE_GROUPS } from '@/types';
 import { generateDemoPrograms, generateDemoLoggedSessions } from '@/lib/demoData';
@@ -85,6 +85,11 @@ interface AppContextType extends UserData {
     exerciseIndex: number,
     exerciseName: string
   ) => void;
+  
+  // Sistema On/Off
+  setMacroMode: (mode: MacroMode) => void;
+  updateOnOffPlan: (plan: OnOffMacrosPlan) => void;
+  setDayType: (weekNum: number, dayIndex: number, dayType: DayType) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -107,6 +112,9 @@ const createDefaultUserData = (): UserData => ({
   supplements: [],
   carbCyclingTemplates: [],
   activeCarbCyclingId: null,
+  // Sistema On/Off
+  macroMode: 'fixed',
+  onOffPlan: null,
 });
 
 const defaultUser: User = {
@@ -340,6 +348,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       supplements: data.supplements || data.dailyMacros?.supplements || [],
       carbCyclingTemplates: data.carbCyclingTemplates || [],
       activeCarbCyclingId: data.activeCarbCyclingId || null,
+      // Sistema On/Off
+      macroMode: data.macroMode || 'fixed',
+      onOffPlan: data.onOffPlan || null,
     };
 
     return {
@@ -1006,6 +1017,63 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  // === SISTEMA ON/OFF ===
+  
+  const setMacroMode = (mode: MacroMode) => {
+    updateCurrentUser(() => ({ macroMode: mode }));
+  };
+
+  const updateOnOffPlan = (plan: OnOffMacrosPlan) => {
+    updateCurrentUser(() => ({ onOffPlan: plan }));
+  };
+
+  const setDayType = (weekNum: number, dayIndex: number, dayType: DayType) => {
+    updateCurrentUser((prev) => {
+      const plans = [...(prev.macrosPlans || [])];
+      const onOffPlan = prev.onOffPlan;
+      
+      // Trova o crea il piano per questa settimana
+      let existingIndex = plans.findIndex(p => p.weekNumber === weekNum);
+      
+      if (existingIndex < 0) {
+        // Crea nuovo piano
+        plans.push({
+          weekNumber: weekNum,
+          days: Array(7).fill(null).map(() => ({ protein: 0, carbs: 0, fat: 0, kcal: 0 })),
+          checked: Array(7).fill(false),
+          fromOnOff: true,
+          dayTypes: Array(7).fill(null),
+        });
+        existingIndex = plans.length - 1;
+      }
+      
+      const plan = { ...plans[existingIndex] };
+      const dayTypes = [...(plan.dayTypes || Array(7).fill(null))];
+      const days = [...plan.days];
+      
+      // Imposta il tipo del giorno
+      dayTypes[dayIndex] = dayType;
+      
+      // Se c'è un piano On/Off configurato, aggiorna i macro
+      if (onOffPlan && dayType) {
+        const macros = dayType === 'on' ? onOffPlan.onDayMacros : onOffPlan.offDayMacros;
+        days[dayIndex] = { ...macros };
+      } else if (dayType === null) {
+        // Reset macro se il tipo è null
+        days[dayIndex] = { protein: 0, carbs: 0, fat: 0, kcal: 0 };
+      }
+      
+      plan.dayTypes = dayTypes;
+      plan.days = days;
+      plan.fromOnOff = true;
+      plans[existingIndex] = plan;
+      
+      plans.sort((a, b) => a.weekNumber - b.weekNumber);
+      
+      return { macrosPlans: plans };
+    });
+  };
+
   const resetAllData = () => {
     if (confirm('Cancellare tutti i dati dell\'utente corrente? Questa azione è irreversibile!')) {
       updateCurrentUser(() => createDefaultUserData());
@@ -1182,6 +1250,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         getCurrentProgram,
         getCurrentWeeks,
         applyProgressionToAllWeeks,
+        // Sistema On/Off
+        setMacroMode,
+        updateOnOffPlan,
+        setDayType,
       }}
     >
       {children}

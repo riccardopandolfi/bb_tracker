@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { PlannedDayMacros, Supplement } from '@/types';
+import { PlannedDayMacros, Supplement, DayType } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
-import { CheckCircle2, Circle, Copy, Plus, X, ChevronLeft, ChevronRight, Calendar, Settings2, BarChart3 } from 'lucide-react';
+import { CheckCircle2, Circle, Copy, Plus, X, ChevronLeft, ChevronRight, Calendar, Settings2, BarChart3, Dumbbell, Moon, Zap } from 'lucide-react';
 import { CarbCyclingEditor } from './macros/CarbCyclingEditor';
 import { MacrosOverview } from './macros/MacrosOverview';
+import { OnOffEditor } from './macros/OnOffEditor';
 
 const DAY_NAMES = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
 const DAY_SHORT = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
@@ -18,7 +19,7 @@ const calculateKcal = (protein: number, carbs: number, fat: number): number => {
   return Math.round(protein * 4 + carbs * 4 + fat * 9);
 };
 
-type MacrosTabView = 'week' | 'cycling' | 'overview';
+type MacrosTabView = 'week' | 'onoff' | 'cycling' | 'overview';
 
 export function MacrosTab() {
   const { 
@@ -32,6 +33,11 @@ export function MacrosTab() {
     // Supplements
     supplements = [],
     updateGlobalSupplements,
+    // Sistema On/Off
+    macroMode = 'fixed',
+    setMacroMode,
+    setDayType,
+    onOffPlan,
   } = useApp();
   
   const [activeTab, setActiveTab] = useState<MacrosTabView>('week');
@@ -185,10 +191,14 @@ export function MacrosTab() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as MacrosTabView)}>
-        <TabsList className="grid grid-cols-3 h-9">
+        <TabsList className="grid grid-cols-4 h-9">
           <TabsTrigger value="week" className="text-xs gap-1">
             <Calendar className="w-3 h-3 hidden sm:inline" />
             Settimana
+          </TabsTrigger>
+          <TabsTrigger value="onoff" className="text-xs gap-1">
+            <Zap className="w-3 h-3 hidden sm:inline" />
+            On/Off
           </TabsTrigger>
           <TabsTrigger value="cycling" className="text-xs gap-1">
             <Settings2 className="w-3 h-3 hidden sm:inline" />
@@ -242,17 +252,48 @@ export function MacrosTab() {
             </Card>
           )}
 
+          {/* Info modalità On/Off attiva */}
+          {macroMode === 'on_off' && onOffPlan && (
+            <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
+              <CardContent className="py-3">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-amber-600" />
+                    <span className="font-medium text-amber-800">Modalità On/Off attiva</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs">
+                    <span className="flex items-center gap-1 text-green-700">
+                      <Dumbbell className="w-3 h-3" />
+                      On: {onOffPlan.onDayMacros.kcal} kcal
+                    </span>
+                    <span className="flex items-center gap-1 text-blue-700">
+                      <Moon className="w-3 h-3" />
+                      Off: {onOffPlan.offDayMacros.kcal} kcal
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Giorni della settimana */}
           <div className="space-y-2">
             {days.map((day, dayIndex) => {
               const isChecked = checked[dayIndex];
               const isToday = dayIndex === currentDayIndex;
               const hasMacros = day.protein > 0 || day.carbs > 0 || day.fat > 0;
+              const dayType = weekPlan?.dayTypes?.[dayIndex] as DayType;
+              const isOnOffMode = macroMode === 'on_off' && onOffPlan;
 
               return (
                 <Card
                   key={dayIndex}
-                  className={`p-3 ${isChecked ? 'border-emerald-200 bg-emerald-50' : isToday ? 'border-primary border-2 bg-primary/5' : ''}`}
+                  className={`p-3 ${
+                    isChecked ? 'border-emerald-200 bg-emerald-50' : 
+                    dayType === 'on' ? 'border-green-300 bg-green-50/50' :
+                    dayType === 'off' ? 'border-blue-300 bg-blue-50/50' :
+                    isToday ? 'border-primary border-2 bg-primary/5' : ''
+                  }`}
                 >
                   <div className="flex items-center gap-3">
                     {/* Checkbox */}
@@ -276,7 +317,35 @@ export function MacrosTab() {
                       {isToday && <span className="text-[10px] text-muted-foreground block">oggi</span>}
                     </div>
 
-                    {/* Input */}
+                    {/* Toggle On/Off (solo in modalità on_off) */}
+                    {isOnOffMode && (
+                      <div className="flex gap-1 shrink-0">
+                        <button
+                          onClick={() => setDayType(currentWeek, dayIndex, dayType === 'on' ? null : 'on')}
+                          className={`px-2 py-1 rounded text-[10px] font-medium transition-all ${
+                            dayType === 'on' 
+                              ? 'bg-green-500 text-white' 
+                              : 'bg-gray-100 text-gray-500 hover:bg-green-100 hover:text-green-600'
+                          }`}
+                          title="Giorno di allenamento"
+                        >
+                          <Dumbbell className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => setDayType(currentWeek, dayIndex, dayType === 'off' ? null : 'off')}
+                          className={`px-2 py-1 rounded text-[10px] font-medium transition-all ${
+                            dayType === 'off' 
+                              ? 'bg-blue-500 text-white' 
+                              : 'bg-gray-100 text-gray-500 hover:bg-blue-100 hover:text-blue-600'
+                          }`}
+                          title="Giorno di riposo"
+                        >
+                          <Moon className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Input (disabilitati in modalità on_off quando dayType è selezionato) */}
                     <div className="flex-1 grid grid-cols-4 gap-2">
                       <Input
                         type="number"
@@ -284,6 +353,7 @@ export function MacrosTab() {
                         onChange={(e) => handleUpdateDay(dayIndex, 'protein', parseInt(e.target.value) || 0)}
                         placeholder="P"
                         className="h-8 text-xs"
+                        disabled={Boolean(isOnOffMode && dayType !== null)}
                       />
                       <Input
                         type="number"
@@ -291,6 +361,7 @@ export function MacrosTab() {
                         onChange={(e) => handleUpdateDay(dayIndex, 'carbs', parseInt(e.target.value) || 0)}
                         placeholder="C"
                         className="h-8 text-xs"
+                        disabled={Boolean(isOnOffMode && dayType !== null)}
                       />
                       <Input
                         type="number"
@@ -298,22 +369,29 @@ export function MacrosTab() {
                         onChange={(e) => handleUpdateDay(dayIndex, 'fat', parseInt(e.target.value) || 0)}
                         placeholder="G"
                         className="h-8 text-xs"
+                        disabled={Boolean(isOnOffMode && dayType !== null)}
                       />
-                      <div className="h-8 px-2 bg-muted rounded flex items-center justify-center text-xs font-medium">
+                      <div className={`h-8 px-2 rounded flex items-center justify-center text-xs font-medium ${
+                        dayType === 'on' ? 'bg-green-100 text-green-700' :
+                        dayType === 'off' ? 'bg-blue-100 text-blue-700' :
+                        'bg-muted'
+                      }`}>
                         {day.kcal || '-'}
                       </div>
                     </div>
 
-                    {/* Copia */}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleCopyToAll(dayIndex)}
-                      disabled={!hasMacros}
-                      className="h-8 w-8 p-0 shrink-0"
-                    >
-                      <Copy className="w-3 h-3" />
-                    </Button>
+                    {/* Copia (nascosto in modalità on_off) */}
+                    {!isOnOffMode && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCopyToAll(dayIndex)}
+                        disabled={!hasMacros}
+                        className="h-8 w-8 p-0 shrink-0"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </Button>
+                    )}
                   </div>
                 </Card>
               );
@@ -360,10 +438,21 @@ export function MacrosTab() {
           </Card>
         </TabsContent>
 
+        {/* TAB: On/Off */}
+        <TabsContent value="onoff" className="mt-4">
+          <OnOffEditor onApply={() => {
+            // Imposta la modalità On/Off e vai alla vista settimanale
+            setMacroMode('on_off');
+            setRefreshKey(k => k + 1);
+            setActiveTab('week');
+          }} />
+        </TabsContent>
+
         {/* TAB: Cycling */}
         <TabsContent value="cycling" className="mt-4">
           <CarbCyclingEditor onApply={() => {
             // Forza re-render incrementando la key e cambiando tab
+            setMacroMode('cycling');
             setRefreshKey(k => k + 1);
             setActiveTab('week');
           }} />

@@ -287,16 +287,30 @@ export interface PlannedDayMacros {
   kcal: number;     // calcolato automaticamente
 }
 
-// Piano macro per una settimana (unificato: manuale + cycling)
+// Tipo giorno per modalità On/Off
+export type DayType = 'on' | 'off' | null;
+
+// Piano macro per una settimana (unificato: manuale + cycling + on/off)
 export interface WeekMacrosPlan {
   weekNumber: number;
   days: PlannedDayMacros[];  // 7 giorni (0=Lun, 6=Dom)
   checked: boolean[];        // 7 boolean per tracking completamento
   fromCycling?: boolean;     // true se generato da Carb Cycling
+  fromOnOff?: boolean;       // true se generato da On/Off
+  dayTypes?: DayType[];      // Tipo selezionato per ogni giorno (7 elementi) - usato con On/Off
 }
 
 // Modalità Carb Cycling
 export type CarbCyclingMode = 'per_day' | 'training_based' | 'custom';
+
+// Modalità Macro generale
+export type MacroMode = 'fixed' | 'cycling' | 'on_off';
+
+// Piano On/Off (macro per giorni allenamento vs riposo)
+export interface OnOffMacrosPlan {
+  onDayMacros: PlannedDayMacros;   // Macro per giorni di allenamento
+  offDayMacros: PlannedDayMacros;  // Macro per giorni di riposo
+}
 
 // Template Carb Cycling
 export interface CarbCyclingTemplate {
@@ -334,6 +348,9 @@ export interface UserData {
   supplements: Supplement[];           // Integratori globali
   carbCyclingTemplates: CarbCyclingTemplate[];  // Template carb cycling salvati
   activeCarbCyclingId: string | null;  // ID del template carb cycling attivo
+  // Sistema On/Off
+  macroMode: MacroMode;               // Modalità attiva: 'fixed' | 'cycling' | 'on_off'
+  onOffPlan: OnOffMacrosPlan | null;  // Piano On/Off salvato
 }
 
 // Global State
