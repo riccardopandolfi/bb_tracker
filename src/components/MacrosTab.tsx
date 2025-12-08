@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { PlannedDayMacros, Supplement, DayType, MacroMode } from '@/types';
+import { PlannedDayMacros, Supplement, DayType } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { CheckCircle2, Circle, Copy, Plus, X, ChevronLeft, ChevronRight, Calendar, Settings2, BarChart3, Dumbbell, Moon, Zap, Lock } from 'lucide-react';
+import { CheckCircle2, Circle, Copy, Plus, X, ChevronLeft, ChevronRight, Calendar, BarChart3, Dumbbell, Moon, Zap, Lock, Power, RefreshCw } from 'lucide-react';
 import { CarbCyclingEditor } from './macros/CarbCyclingEditor';
 import { MacrosOverview } from './macros/MacrosOverview';
 import { OnOffEditor } from './macros/OnOffEditor';
@@ -162,32 +161,17 @@ export function MacrosTab() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Mode Selector */}
-          <Select value={macroMode} onValueChange={(v) => setMacroMode(v as MacroMode)}>
-            <SelectTrigger className="w-28 h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="fixed">
-                <span className="flex items-center gap-1.5">
-                  <Settings2 className="w-3 h-3" />
-                  Fisso
-                </span>
-              </SelectItem>
-              <SelectItem value="on_off">
-                <span className="flex items-center gap-1.5">
-                  <Zap className="w-3 h-3" />
-                  On/Off
-                </span>
-              </SelectItem>
-              <SelectItem value="cycling">
-                <span className="flex items-center gap-1.5">
-                  <BarChart3 className="w-3 h-3" />
-                  Cycling
-                </span>
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Toggle On/Off Mode */}
+          <Button
+            variant={macroMode === 'on_off' ? 'default' : 'outline'}
+            size="sm"
+            className={`h-8 text-xs gap-1.5 ${macroMode === 'on_off' ? 'bg-amber-500 hover:bg-amber-600' : ''}`}
+            onClick={() => setMacroMode(macroMode === 'on_off' ? 'fixed' : 'on_off')}
+            title={macroMode === 'on_off' ? 'Disattiva modalità On/Off' : 'Attiva modalità On/Off'}
+          >
+            <Power className="w-3 h-3" />
+            On/Off
+          </Button>
 
           {/* Week Selector */}
           {program && weekNumbers.length > 0 && (
@@ -232,7 +216,7 @@ export function MacrosTab() {
             On/Off
           </TabsTrigger>
           <TabsTrigger value="cycling" className="text-xs gap-1">
-            <Settings2 className="w-3 h-3 hidden sm:inline" />
+            <RefreshCw className="w-3 h-3 hidden sm:inline" />
             Cycling
           </TabsTrigger>
           <TabsTrigger value="overview" className="text-xs gap-1">
