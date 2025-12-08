@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
-import { ArrowRight, Dumbbell, Moon, Zap } from 'lucide-react';
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Input } from '../ui/input';
+import { ArrowRight, Dumbbell, Moon, Zap, Scale, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, ReferenceLine } from 'recharts';
 import { DayType } from '@/types';
 
 const DAY_NAMES = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
@@ -16,7 +18,13 @@ export function MacrosSummaryWidget() {
     macroMode = 'fixed',
     onOffPlan,
     setDayType,
+    addWeight,
+    getWeightHistory,
+    getTodayWeight,
   } = useApp();
+
+  const [weightInput, setWeightInput] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Ottieni il giorno corrente (0 = Lunedì, 6 = Domenica)
   const today = new Date();
@@ -39,6 +47,55 @@ export function MacrosSummaryWidget() {
   const c = currentDay?.carbs || 0;
   const f = currentDay?.fat || 0;
   const calculatedKcal = currentDay?.kcal || 0;
+
+  // Weight data
+  const todayWeight = getTodayWeight();
+  const weightHistory = getWeightHistory(30); // Ultimi 30 giorni
+  
+  // Inizializza l'input con il peso di oggi se esiste
+  useEffect(() => {
+    if (todayWeight !== null) {
+      setWeightInput(todayWeight.toString());
+    }
+  }, [todayWeight]);
+
+  // Calcola trend (differenza tra ultimo e primo peso nel periodo)
+  const calculateTrend = () => {
+    if (weightHistory.length < 2) return null;
+    const sorted = [...weightHistory].sort((a, b) => a.date.localeCompare(b.date));
+    const oldest = sorted[0].weight;
+    const newest = sorted[sorted.length - 1].weight;
+    return newest - oldest;
+  };
+
+  const trend = calculateTrend();
+
+  // Prepara i dati per il grafico (ultimi 14 giorni, ordinati per data)
+  const chartData = [...weightHistory]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(-14)
+    .map(entry => ({
+      date: new Date(entry.date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }),
+      peso: entry.weight,
+    }));
+
+  // Calcola min/max per il grafico
+  const weights = chartData.map(d => d.peso);
+  const minWeight = weights.length > 0 ? Math.floor(Math.min(...weights) - 1) : 70;
+  const maxWeight = weights.length > 0 ? Math.ceil(Math.max(...weights) + 1) : 80;
+  const avgWeight = weights.length > 0 ? weights.reduce((a, b) => a + b, 0) / weights.length : 0;
+
+  const handleSaveWeight = () => {
+    const weight = parseFloat(weightInput);
+    if (isNaN(weight) || weight <= 0) return;
+    
+    setIsSaving(true);
+    addWeight(weight);
+    
+    setTimeout(() => {
+      setIsSaving(false);
+    }, 500);
+  };
 
   return (
     <Card className="h-full card-monetra">
@@ -172,20 +229,61 @@ export function MacrosSummaryWidget() {
               </div>
             )}
 
-            {/* Weekly Macros Bar Chart */}
-            {weekPlan?.days && (
-              <div className="border-t border-gray-100 pt-4">
-                <div className="text-xs font-semibold mb-3 text-gray-400">Macros Week {currentWeek}</div>
-                <ResponsiveContainer width="100%" height={150}>
-                  <BarChart data={weekPlan.days.map((day, idx) => ({
-                    day: DAY_NAMES[idx].slice(0, 3),
-                    proteine: day.protein || 0,
-                    carbo: day.carbs || 0,
-                    grassi: day.fat || 0,
-                  }))}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="day" tick={{ fontSize: 10 }} stroke="#6b7280" />
-                    <YAxis tick={{ fontSize: 10 }} stroke="#6b7280" />
+            {/* Peso Corporeo Section */}
+            <div className="border-t border-gray-100 pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Scale className="w-4 h-4 text-indigo-500" />
+                  <span className="text-xs font-semibold text-gray-400">Peso Corporeo</span>
+                </div>
+                {trend !== null && (
+                  <div className={`flex items-center gap-1 text-xs font-medium ${
+                    trend < 0 ? 'text-green-600' : trend > 0 ? 'text-red-500' : 'text-gray-500'
+                  }`}>
+                    {trend < 0 ? <TrendingDown className="w-3 h-3" /> : 
+                     trend > 0 ? <TrendingUp className="w-3 h-3" /> : 
+                     <Minus className="w-3 h-3" />}
+                    <span>{trend > 0 ? '+' : ''}{trend.toFixed(1)} kg</span>
+                  </div>
+                )}
+              </div>
+              
+              {/* Input peso */}
+              <div className="flex gap-2 mb-3">
+                <Input
+                  type="number"
+                  step="0.1"
+                  placeholder="es. 75.5"
+                  value={weightInput}
+                  onChange={(e) => setWeightInput(e.target.value)}
+                  className="flex-1 h-9 text-sm"
+                />
+                <Button
+                  size="sm"
+                  onClick={handleSaveWeight}
+                  disabled={!weightInput || isSaving}
+                  className="h-9 px-4"
+                >
+                  {isSaving ? '...' : todayWeight ? 'Aggiorna' : 'Salva'}
+                </Button>
+              </div>
+              
+              {/* Mini grafico peso */}
+              {chartData.length > 1 ? (
+                <ResponsiveContainer width="100%" height={100}>
+                  <LineChart data={chartData}>
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 9 }} 
+                      stroke="#9ca3af"
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis 
+                      domain={[minWeight, maxWeight]} 
+                      tick={{ fontSize: 9 }} 
+                      stroke="#9ca3af"
+                      width={30}
+                    />
                     <Tooltip 
                       contentStyle={{ 
                         backgroundColor: 'white', 
@@ -193,14 +291,30 @@ export function MacrosSummaryWidget() {
                         borderRadius: '8px',
                         fontSize: '12px'
                       }}
+                      formatter={(value: number) => [`${value.toFixed(1)} kg`, 'Peso']}
                     />
-                    <Bar dataKey="proteine" fill="rgb(196, 255, 57)" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="carbo" fill="#10b981" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="grassi" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                  </BarChart>
+                    <ReferenceLine y={avgWeight} stroke="#9ca3af" strokeDasharray="3 3" />
+                    <Line 
+                      type="monotone" 
+                      dataKey="peso" 
+                      stroke="#6366f1" 
+                      strokeWidth={2}
+                      dot={{ fill: '#6366f1', strokeWidth: 0, r: 3 }}
+                      activeDot={{ r: 5, fill: '#6366f1' }}
+                    />
+                  </LineChart>
                 </ResponsiveContainer>
-              </div>
-            )}
+              ) : chartData.length === 1 ? (
+                <div className="text-center py-4 text-sm text-gray-500">
+                  <span className="font-semibold text-indigo-600">{chartData[0].peso} kg</span>
+                  <p className="text-xs mt-1">Aggiungi altri dati per vedere il grafico</p>
+                </div>
+              ) : (
+                <div className="text-center py-4 text-xs text-gray-400">
+                  Inserisci il tuo peso per iniziare il tracking
+                </div>
+              )}
+            </div>
           </div>
         )}
       </CardContent>

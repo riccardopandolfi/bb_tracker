@@ -325,6 +325,12 @@ export interface CarbCyclingTemplate {
   restMultiplier?: number;      // es. 0.8 = -20%
 }
 
+// Weight Tracking
+export interface WeightEntry {
+  date: string;    // ISO date string (YYYY-MM-DD)
+  weight: number;  // in kg
+}
+
 // User Management
 export interface User {
   id: string;
@@ -351,6 +357,8 @@ export interface UserData {
   // Sistema On/Off
   macroMode: MacroMode;               // Modalità attiva: 'fixed' | 'cycling' | 'on_off'
   onOffPlan: OnOffMacrosPlan | null;  // Piano On/Off salvato
+  // Weight Tracking
+  weightHistory: WeightEntry[];       // Storico pesate (cross-program)
 }
 
 // Global State

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
-import { AppState, Exercise, Week, LoggedSession, CustomTechnique, Program, DailyMacrosWeek, DayMacros, User, UserData, PercentageProgression, WeekMacrosPlan, PlannedDayMacros, CarbCyclingTemplate, Supplement, MacroMode, OnOffMacrosPlan, DayType } from '@/types';
+import { AppState, Exercise, Week, LoggedSession, CustomTechnique, Program, DailyMacrosWeek, DayMacros, User, UserData, PercentageProgression, WeekMacrosPlan, PlannedDayMacros, CarbCyclingTemplate, Supplement, MacroMode, OnOffMacrosPlan, DayType, WeightEntry } from '@/types';
 import { DEFAULT_EXERCISES, MUSCLE_COLORS } from '@/lib/constants';
 import { DEFAULT_MUSCLE_GROUPS } from '@/types';
 import { generateDemoPrograms, generateDemoLoggedSessions } from '@/lib/demoData';
@@ -90,6 +90,11 @@ interface AppContextType extends UserData {
   setMacroMode: (mode: MacroMode) => void;
   updateOnOffPlan: (plan: OnOffMacrosPlan) => void;
   setDayType: (weekNum: number, dayIndex: number, dayType: DayType) => void;
+  
+  // Weight Tracking
+  addWeight: (weight: number, date?: string) => void;
+  getWeightHistory: (days?: number) => WeightEntry[];
+  getTodayWeight: () => number | null;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -115,6 +120,8 @@ const createDefaultUserData = (): UserData => ({
   // Sistema On/Off
   macroMode: 'fixed',
   onOffPlan: null,
+  // Weight Tracking
+  weightHistory: [],
 });
 
 const defaultUser: User = {
@@ -351,6 +358,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Sistema On/Off
       macroMode: data.macroMode || 'fixed',
       onOffPlan: data.onOffPlan || null,
+      // Weight Tracking
+      weightHistory: data.weightHistory || [],
     };
 
     return {
@@ -1090,6 +1099,52 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  // === WEIGHT TRACKING ===
+  
+  const addWeight = (weight: number, date?: string) => {
+    const dateStr = date || new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    
+    updateCurrentUser((prev) => {
+      const history = [...(prev.weightHistory || [])];
+      
+      // Verifica se esiste già una entry per questa data
+      const existingIndex = history.findIndex(e => e.date === dateStr);
+      
+      if (existingIndex >= 0) {
+        // Aggiorna il peso esistente
+        history[existingIndex] = { date: dateStr, weight };
+      } else {
+        // Aggiungi nuova entry
+        history.push({ date: dateStr, weight });
+      }
+      
+      // Ordina per data (più recente prima)
+      history.sort((a, b) => b.date.localeCompare(a.date));
+      
+      return { weightHistory: history };
+    });
+  };
+
+  const getWeightHistory = (days?: number): WeightEntry[] => {
+    const userData = state.userData[state.currentUserId];
+    const history = userData?.weightHistory || [];
+    
+    if (!days) return history;
+    
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    const cutoffStr = cutoffDate.toISOString().split('T')[0];
+    
+    return history.filter(e => e.date >= cutoffStr);
+  };
+
+  const getTodayWeight = (): number | null => {
+    const today = new Date().toISOString().split('T')[0];
+    const userData = state.userData[state.currentUserId];
+    const entry = userData?.weightHistory?.find(e => e.date === today);
+    return entry?.weight ?? null;
+  };
+
   const resetAllData = () => {
     if (confirm('Cancellare tutti i dati dell\'utente corrente? Questa azione è irreversibile!')) {
       updateCurrentUser(() => createDefaultUserData());
@@ -1270,6 +1325,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setMacroMode,
         updateOnOffPlan,
         setDayType,
+        // Weight tracking
+        addWeight,
+        getWeightHistory,
+        getTodayWeight,
       }}
     >
       {children}
