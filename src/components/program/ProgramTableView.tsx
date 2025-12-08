@@ -88,6 +88,11 @@ function formatBlockSchema(block: ExerciseBlock): string {
 function formatBlockLoads(block: ExerciseBlock): string {
   const technique = block.technique || 'Normale';
   
+  // Tecnica Ad Hoc: non mostrare carichi
+  if (technique === 'Tecnica Ad Hoc') {
+    return '';
+  }
+  
   if (technique === 'Ramping') {
     return block.startLoad ? `da ${block.startLoad} kg` : '';
   }
@@ -113,9 +118,15 @@ function formatBlockLoads(block: ExerciseBlock): string {
 
 // Formatta info intensità (RPE, Coeff)
 function formatIntensityInfo(block: ExerciseBlock): string {
+  const technique = block.technique || 'Normale';
+  
+  // Tecnica Ad Hoc: non mostrare intensità (già mostrato nello schema)
+  if (technique === 'Tecnica Ad Hoc') {
+    return '';
+  }
+  
   const parts: string[] = [];
   
-  const technique = block.technique || 'Normale';
   if (technique !== 'Normale') {
     parts.push(technique);
   }
