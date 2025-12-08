@@ -976,9 +976,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const plans = [...(prev.macrosPlans || [])];
       
       weekNumbers.forEach((weekNum, weekIdx) => {
+        const existingIndex = plans.findIndex(p => p.weekNumber === weekNum);
+        const existingPlan = existingIndex >= 0 ? plans[existingIndex] : null;
+        const existingChecked = existingPlan?.checked || Array(7).fill(false);
+        const existingDays = existingPlan?.days || [];
+        
         const days: PlannedDayMacros[] = [];
         
         for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
+          // Se il giorno è già checked, mantieni i macro esistenti
+          if (existingChecked[dayIdx] && existingDays[dayIdx]) {
+            days.push(existingDays[dayIdx]);
+            continue;
+          }
+          
           let multiplier = 1.0;
           
           if (template.mode === 'per_day' && template.dayMultipliers) {
@@ -993,11 +1004,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           days.push(calculateMacrosFromBase(template.baseMacros, multiplier));
         }
         
-        const existingIndex = plans.findIndex(p => p.weekNumber === weekNum);
         const newPlan: WeekMacrosPlan = {
           weekNumber: weekNum,
           days,
-          checked: existingIndex >= 0 ? plans[existingIndex].checked : Array(7).fill(false),
+          checked: existingChecked,
           fromCycling: true,
         };
         
@@ -1013,6 +1023,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return { 
         macrosPlans: plans,
         activeCarbCyclingId: templateId,
+        macroMode: 'cycling' as MacroMode,
       };
     });
   };
@@ -1034,6 +1045,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       
       // Trova o crea il piano per questa settimana
       let existingIndex = plans.findIndex(p => p.weekNumber === weekNum);
+      
+      // Se il giorno è già checked, non permettere la modifica
+      if (existingIndex >= 0 && plans[existingIndex].checked?.[dayIndex]) {
+        return {}; // Non modificare nulla
+      }
       
       if (existingIndex < 0) {
         // Crea nuovo piano
@@ -1070,7 +1086,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       
       plans.sort((a, b) => a.weekNumber - b.weekNumber);
       
-      return { macrosPlans: plans };
+      return { macrosPlans: plans, macroMode: 'on_off' as MacroMode };
     });
   };
 

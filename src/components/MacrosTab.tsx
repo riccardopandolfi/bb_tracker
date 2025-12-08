@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { PlannedDayMacros, Supplement, DayType } from '@/types';
+import { PlannedDayMacros, Supplement, DayType, MacroMode } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
-import { CheckCircle2, Circle, Copy, Plus, X, ChevronLeft, ChevronRight, Calendar, Settings2, BarChart3, Dumbbell, Moon, Zap } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { CheckCircle2, Circle, Copy, Plus, X, ChevronLeft, ChevronRight, Calendar, Settings2, BarChart3, Dumbbell, Moon, Zap, Lock } from 'lucide-react';
 import { CarbCyclingEditor } from './macros/CarbCyclingEditor';
 import { MacrosOverview } from './macros/MacrosOverview';
 import { OnOffEditor } from './macros/OnOffEditor';
@@ -153,40 +154,70 @@ export function MacrosTab() {
 
   return (
     <div className="space-y-4">
-      {/* Header con Week Selector */}
+      {/* Header con Week Selector e Mode Selector */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold font-heading">Nutrizione</h2>
           <p className="text-muted-foreground text-sm">Pianifica e traccia i tuoi macro</p>
         </div>
 
-        {/* Week Selector */}
-        {program && weekNumbers.length > 0 && (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={goToPrevWeek}
-              disabled={currentWeek <= 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Badge variant={weekPlan?.fromCycling ? 'default' : 'secondary'} className="px-3 py-1">
-              Week {currentWeek}
-              {weekPlan?.fromCycling && <span className="ml-1 text-[10px]">🔄</span>}
-            </Badge>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={goToNextWeek}
-              disabled={currentWeek >= maxWeek}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {/* Mode Selector */}
+          <Select value={macroMode} onValueChange={(v) => setMacroMode(v as MacroMode)}>
+            <SelectTrigger className="w-28 h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="fixed">
+                <span className="flex items-center gap-1.5">
+                  <Settings2 className="w-3 h-3" />
+                  Fisso
+                </span>
+              </SelectItem>
+              <SelectItem value="on_off">
+                <span className="flex items-center gap-1.5">
+                  <Zap className="w-3 h-3" />
+                  On/Off
+                </span>
+              </SelectItem>
+              <SelectItem value="cycling">
+                <span className="flex items-center gap-1.5">
+                  <BarChart3 className="w-3 h-3" />
+                  Cycling
+                </span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Week Selector */}
+          {program && weekNumbers.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={goToPrevWeek}
+                disabled={currentWeek <= 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Badge variant={weekPlan?.fromCycling || weekPlan?.fromOnOff ? 'default' : 'secondary'} className="px-3 py-1">
+                Week {currentWeek}
+                {weekPlan?.fromCycling && <span className="ml-1 text-[10px]">🔄</span>}
+                {weekPlan?.fromOnOff && <span className="ml-1 text-[10px]">⚡</span>}
+              </Badge>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={goToNextWeek}
+                disabled={currentWeek >= maxWeek}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Tabs */}
@@ -319,29 +350,38 @@ export function MacrosTab() {
 
                     {/* Toggle On/Off (solo in modalità on_off) */}
                     {isOnOffMode && (
-                      <div className="flex gap-1 shrink-0">
-                        <button
-                          onClick={() => setDayType(currentWeek, dayIndex, dayType === 'on' ? null : 'on')}
-                          className={`px-2 py-1 rounded text-[10px] font-medium transition-all ${
-                            dayType === 'on' 
-                              ? 'bg-green-500 text-white' 
-                              : 'bg-gray-100 text-gray-500 hover:bg-green-100 hover:text-green-600'
-                          }`}
-                          title="Giorno di allenamento"
-                        >
-                          <Dumbbell className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => setDayType(currentWeek, dayIndex, dayType === 'off' ? null : 'off')}
-                          className={`px-2 py-1 rounded text-[10px] font-medium transition-all ${
-                            dayType === 'off' 
-                              ? 'bg-blue-500 text-white' 
-                              : 'bg-gray-100 text-gray-500 hover:bg-blue-100 hover:text-blue-600'
-                          }`}
-                          title="Giorno di riposo"
-                        >
-                          <Moon className="w-3 h-3" />
-                        </button>
+                      <div className="flex gap-1 shrink-0 items-center">
+                        {isChecked ? (
+                          <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded" title="Giorno già completato - macro bloccati">
+                            <Lock className="w-3 h-3 text-gray-400" />
+                            <span className="text-[10px] text-gray-500">{dayType === 'on' ? 'ON' : dayType === 'off' ? 'OFF' : '-'}</span>
+                          </div>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => setDayType(currentWeek, dayIndex, dayType === 'on' ? null : 'on')}
+                              className={`px-2 py-1 rounded text-[10px] font-medium transition-all ${
+                                dayType === 'on' 
+                                  ? 'bg-green-500 text-white' 
+                                  : 'bg-gray-100 text-gray-500 hover:bg-green-100 hover:text-green-600'
+                              }`}
+                              title="Giorno di allenamento"
+                            >
+                              <Dumbbell className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={() => setDayType(currentWeek, dayIndex, dayType === 'off' ? null : 'off')}
+                              className={`px-2 py-1 rounded text-[10px] font-medium transition-all ${
+                                dayType === 'off' 
+                                  ? 'bg-blue-500 text-white' 
+                                  : 'bg-gray-100 text-gray-500 hover:bg-blue-100 hover:text-blue-600'
+                              }`}
+                              title="Giorno di riposo"
+                            >
+                              <Moon className="w-3 h-3" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     )}
 
