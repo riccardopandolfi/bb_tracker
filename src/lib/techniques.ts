@@ -51,6 +51,7 @@ export const TECHNIQUE_DEFINITIONS: TechniqueDefinition[] = [
       { name: 'activation', label: 'Reps attivazione', type: 'number', default: 12, min: 8, max: 20 },
       { name: 'myoReps', label: 'Reps per myo', type: 'number', default: 5, min: 3, max: 10 },
       { name: 'numMyo', label: 'Numero myo-reps', type: 'number', default: 4, min: 2, max: 6 },
+      { name: 'pause', label: 'Pausa (sec)', type: 'number', default: 5, min: 3, max: 15 },
     ],
     generateSchema: (params) => {
       const activation = params.activation !== undefined && params.activation !== '' ? params.activation : 12;

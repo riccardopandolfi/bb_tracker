@@ -364,8 +364,9 @@ export function ExerciseCard({
                   const isNormal = block.technique === 'Normale';
                   const sets = block.sets || 0;
                   const restGlobal = block.rest ? `${block.rest}s` : null;
-                  const restIntraSet = !isNormal && block.techniqueParams?.pause
-                    ? `${block.techniqueParams.pause}s`
+                  const restIntraSetValue = block.techniqueParams?.pause || block.techniqueParams?.restBetween;
+                  const restIntraSet = !isNormal && restIntraSetValue
+                    ? `${restIntraSetValue}s`
                     : null;
                   const restBetweenBlocks = idx < blocks.length - 1 && block.blockRest ? `${block.blockRest}s` : null;
 

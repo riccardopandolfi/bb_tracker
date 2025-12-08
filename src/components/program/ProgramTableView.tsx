@@ -131,6 +131,12 @@ function formatIntensityInfo(block: ExerciseBlock): string {
     parts.push(technique);
   }
   
+  // Rest intra-set per tecniche speciali (Rest-Pause, Myo-Reps, Cluster, etc.)
+  const restIntraSet = block.techniqueParams?.pause || block.techniqueParams?.restBetween;
+  if (restIntraSet) {
+    parts.push(`Rest ${restIntraSet}s`);
+  }
+  
   if (block.targetRPE) {
     parts.push(`RPE ${block.targetRPE}`);
   }
