@@ -3,7 +3,7 @@ import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { ArrowRight, Dumbbell, Moon, Zap, Scale, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { ArrowRight, Dumbbell, Moon, Zap, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, ReferenceLine } from 'recharts';
 import { DayType } from '@/types';
 
@@ -232,10 +232,7 @@ export function MacrosSummaryWidget() {
             {/* Peso Corporeo Section */}
             <div className="border-t border-gray-100 pt-4">
               <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Scale className="w-4 h-4 text-indigo-500" />
-                  <span className="text-xs font-semibold text-gray-400">Peso Corporeo</span>
-                </div>
+                <div className="text-xs font-semibold text-muted-foreground font-heading">Peso Corporeo</div>
                 {trend !== null && (
                   <div className={`flex items-center gap-1 text-xs font-medium ${
                     trend < 0 ? 'text-green-600' : trend > 0 ? 'text-red-500' : 'text-gray-500'
@@ -305,9 +302,9 @@ export function MacrosSummaryWidget() {
                   </LineChart>
                 </ResponsiveContainer>
               ) : chartData.length === 1 ? (
-                <div className="text-center py-4 text-sm text-gray-500">
-                  <span className="font-semibold text-indigo-600">{chartData[0].peso} kg</span>
-                  <p className="text-xs mt-1">Aggiungi altri dati per vedere il grafico</p>
+                <div className="text-center py-4">
+                  <span className="block text-base font-bold text-foreground font-heading">{chartData[0].peso} kg</span>
+                  <p className="text-xs mt-1 text-gray-500">Aggiungi altri dati per vedere il grafico</p>
                 </div>
               ) : (
                 <div className="text-center py-4 text-xs text-gray-400">
