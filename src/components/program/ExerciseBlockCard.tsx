@@ -696,8 +696,8 @@ export function ExerciseBlockCard({
             )}
           </div>
 
-          {/* Volume: Sets & Reps - Nascosto per Ramping e Progressione a % */}
-          {!isRampingTechnique && !isProgressionTechnique && (
+          {/* Volume: Sets & Reps - Nascosto per Ramping, Progressione a % e Ad Hoc */}
+          {!isRampingTechnique && !isProgressionTechnique && !isAdHocTechnique && (
             <div className="space-y-3">
               <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-block">Volume</Label>
               {isNormalTechnique ? (
@@ -881,8 +881,8 @@ export function ExerciseBlockCard({
             </div>
           )}
 
-          {/* Carichi - Nascosto per Ramping e Progressione a % */}
-          {!isRampingTechnique && !isProgressionTechnique && (
+          {/* Carichi - Nascosto per Ramping, Progressione a % e Ad Hoc */}
+          {!isRampingTechnique && !isProgressionTechnique && !isAdHocTechnique && (
             <div className="space-y-2">
               <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-flex items-center gap-2">
                 <Dumbbell className="w-3.5 h-3.5" />
@@ -912,81 +912,85 @@ export function ExerciseBlockCard({
             </div>
           )}
 
-          {/* Intensità */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-block">Intensità</Label>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs text-gray-600 mb-1.5 block">Coefficiente</Label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  value={getFieldValue('coefficient', block.coefficient)}
-                  onFocus={() => handleNumericFocus('coefficient', block.coefficient)}
-                  onChange={(e) => handleNumericChange(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  onBlur={(e) => handleNumericBlur('coefficient', e.target.value, 0)}
-                  className="h-10"
-                />
-              </div>
-              <div>
-                <Label className="text-xs text-gray-600 mb-1.5 block">RPE Target</Label>
-                <Input
-                  type="number"
-                  step="0.5"
-                  value={getFieldValue('targetRPE', block.targetRPE)}
-                  onFocus={() => handleNumericFocus('targetRPE', block.targetRPE)}
-                  onChange={(e) => handleNumericChange(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  onBlur={(e) => handleNumericBlur('targetRPE', e.target.value, 0)}
-                  className="h-10"
-                />
+          {/* Intensità - Nascosto per Ad Hoc */}
+          {!isAdHocTechnique && (
+            <div className="space-y-3">
+              <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-block">Intensità</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-gray-600 mb-1.5 block">Coefficiente</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={getFieldValue('coefficient', block.coefficient)}
+                    onFocus={() => handleNumericFocus('coefficient', block.coefficient)}
+                    onChange={(e) => handleNumericChange(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onBlur={(e) => handleNumericBlur('coefficient', e.target.value, 0)}
+                    className="h-10"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-600 mb-1.5 block">RPE Target</Label>
+                  <Input
+                    type="number"
+                    step="0.5"
+                    value={getFieldValue('targetRPE', block.targetRPE)}
+                    onFocus={() => handleNumericFocus('targetRPE', block.targetRPE)}
+                    onChange={(e) => handleNumericChange(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onBlur={(e) => handleNumericBlur('targetRPE', e.target.value, 0)}
+                    className="h-10"
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Rest */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-flex items-center gap-2">
-              <Clock className="w-3.5 h-3.5" />
-              Tempi di Recupero
-            </Label>
-            <div>
-              <Label className="text-xs text-gray-600 mb-1.5 block">
-                Rest globale (secondi)
-                {!isNormalTechnique && (
-                  <span className="text-muted-foreground ml-1 text-xs">
-                    - tra i set completi
-                  </span>
-                )}
+          {/* Rest - Nascosto per Ad Hoc (il rest viene inserito manualmente nella colonna REST) */}
+          {!isAdHocTechnique && (
+            <div className="space-y-3">
+              <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-flex items-center gap-2">
+                <Clock className="w-3.5 h-3.5" />
+                Tempi di Recupero
               </Label>
-              <Input
-                type="number"
-                value={getFieldValue('rest', block.rest)}
-                onFocus={() => handleNumericFocus('rest', block.rest)}
-                onChange={(e) => handleNumericChange(e.target.value)}
-                onKeyDown={handleKeyDown}
-                onBlur={(e) => handleNumericBlur('rest', e.target.value, 0)}
-                className="h-10"
-              />
-            </div>
-
-            {!isLast && (
               <div>
-                <Label className="text-xs text-gray-600 mb-1.5 block">Rest dopo blocco (secondi)</Label>
+                <Label className="text-xs text-gray-600 mb-1.5 block">
+                  Rest globale (secondi)
+                  {!isNormalTechnique && (
+                    <span className="text-muted-foreground ml-1 text-xs">
+                      - tra i set completi
+                    </span>
+                  )}
+                </Label>
                 <Input
                   type="number"
-                  value={getFieldValue('blockRest2', block.blockRest)}
-                  onFocus={() => handleNumericFocus('blockRest2', block.blockRest)}
+                  value={getFieldValue('rest', block.rest)}
+                  onFocus={() => handleNumericFocus('rest', block.rest)}
                   onChange={(e) => handleNumericChange(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  onBlur={(e) => handleNumericBlur('blockRest', e.target.value, 0)}
+                  onBlur={(e) => handleNumericBlur('rest', e.target.value, 0)}
                   className="h-10"
-                  placeholder="0"
                 />
               </div>
-            )}
-          </div>
+
+              {!isLast && (
+                <div>
+                  <Label className="text-xs text-gray-600 mb-1.5 block">Rest dopo blocco (secondi)</Label>
+                  <Input
+                    type="number"
+                    value={getFieldValue('blockRest2', block.blockRest)}
+                    onFocus={() => handleNumericFocus('blockRest2', block.blockRest)}
+                    onChange={(e) => handleNumericChange(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onBlur={(e) => handleNumericBlur('blockRest', e.target.value, 0)}
+                    className="h-10"
+                    placeholder="0"
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Note */}
           <div className="space-y-2">

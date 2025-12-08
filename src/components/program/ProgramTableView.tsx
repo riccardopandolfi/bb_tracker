@@ -852,15 +852,8 @@ export function ProgramTableView() {
       newExercise.blocks[blockIndex] = { ...clipboard.block };
       
       const updatedExercises = [...day.exercises];
-      // Inserisci nella posizione corretta
-      while (updatedExercises.length <= exerciseIndex) {
-        updatedExercises.push(newExercise);
-      }
-      if (updatedExercises.length > exerciseIndex && !updatedExercises[exerciseIndex]) {
-        updatedExercises[exerciseIndex] = newExercise;
-      } else {
-        updatedExercises.splice(exerciseIndex, 0, newExercise);
-      }
+      // Inserisci l'esercizio alla posizione corretta
+      updatedExercises.splice(exerciseIndex, 0, newExercise);
       
       const updatedDay = { ...day, exercises: updatedExercises };
       updateWeek(weekNum, { ...week, days: week.days.map((d, i) => i === selectedDayIndex ? updatedDay : d) });
@@ -1619,28 +1612,18 @@ export function ProgramTableView() {
                                         </>
                                       ) : (canCreateBlock || canCreateExercise) && (
                                         <>
-                                          <ContextMenuItem 
-                                            onClick={() => {
-                                              if (canCreateBlock) {
-                                                handleCreateBlockInWeek(weekNum, instance.exerciseIndex, blockRow.blockIndex);
-                                              } else if (canCreateExercise) {
-                                                handleCreateExerciseFromExisting(weekNum, instance);
-                                              }
-                                            }}
-                                          >
-                                            <Plus className="w-4 h-4 mr-2" />
-                                            Crea blocco vuoto
-                                          </ContextMenuItem>
                                           {clipboard && (
-                                            <ContextMenuItem 
-                                              onClick={() => handlePasteBlockToEmpty(weekNum, instance.exerciseIndex, blockRow.blockIndex, instance.exerciseName)}
-                                            >
-                                              <Clipboard className="w-4 h-4 mr-2" />
-                                              Incolla blocco
-                                              <span className="ml-auto text-xs text-muted-foreground">(da {clipboard.exerciseName})</span>
-                                            </ContextMenuItem>
+                                            <>
+                                              <ContextMenuItem 
+                                                onClick={() => handlePasteBlockToEmpty(weekNum, instance.exerciseIndex, blockRow.blockIndex, instance.exerciseName)}
+                                              >
+                                                <Clipboard className="w-4 h-4 mr-2" />
+                                                Incolla blocco
+                                                <span className="ml-auto text-xs text-muted-foreground">(da {clipboard.exerciseName})</span>
+                                              </ContextMenuItem>
+                                              <ContextMenuSeparator />
+                                            </>
                                           )}
-                                          <ContextMenuSeparator />
                                           <ContextMenuItem 
                                             onClick={() => handleOpenSchemaNotesDialog(
                                               weekNum, 
