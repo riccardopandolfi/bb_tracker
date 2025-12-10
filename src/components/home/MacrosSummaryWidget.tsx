@@ -99,25 +99,8 @@ export function MacrosSummaryWidget() {
   return (
     <Card className="h-full card-monetra">
       <CardContent className="space-y-5 pt-6">
-        {!hasMacros ? (
-          <div className="text-center py-8 space-y-4">
-            <div className="w-24 h-24 mx-auto rounded-full bg-gray-100 flex items-center justify-center">
-              <span className="text-2xl">🍎</span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Nessun macro configurato per oggi
-            </p>
-            <Button
-              onClick={() => setCurrentTab('macros')}
-              variant="outline"
-              size="sm"
-              className="w-full"
-            >
-              Vai a Macros
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </div>
-        ) : (
+        {/* Sezione Macro (condizionale) */}
+        {hasMacros ? (
           <div className="space-y-4">
             {/* Title with separator */}
             <div className="pb-4 border-b">
@@ -229,92 +212,116 @@ export function MacrosSummaryWidget() {
                 </div>
               </div>
             )}
-
-            {/* Peso Corporeo Section */}
-            <div className="border-t border-gray-100 pt-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="text-xs font-semibold text-muted-foreground font-heading">Peso Corporeo</div>
-                {trend !== null && (
-                  <div className={`flex items-center gap-1 text-xs font-medium ${
-                    trend < 0 ? 'text-green-600' : trend > 0 ? 'text-red-500' : 'text-gray-500'
-                  }`}>
-                    {trend < 0 ? <TrendingDown className="w-3 h-3" /> : 
-                     trend > 0 ? <TrendingUp className="w-3 h-3" /> : 
-                     <Minus className="w-3 h-3" />}
-                    <span>{trend > 0 ? '+' : ''}{trend.toFixed(1)} kg</span>
-                  </div>
-                )}
-              </div>
-              
-              {/* Input peso */}
-              <div className="flex gap-2 mb-3">
-                <Input
-                  type="number"
-                  step="0.1"
-                  placeholder="es. 75.5"
-                  value={weightInput}
-                  onChange={(e) => setWeightInput(e.target.value)}
-                  className="flex-1 h-9 text-sm"
-                />
-                <Button
-                  size="sm"
-                  onClick={handleSaveWeight}
-                  disabled={!weightInput || isSaving}
-                  className="h-9 px-4"
-                >
-                  {isSaving ? '...' : todayWeight ? 'Aggiorna' : 'Salva'}
-                </Button>
-              </div>
-              
-              {/* Mini grafico peso */}
-              {chartData.length > 1 ? (
-                <ResponsiveContainer width="100%" height={100}>
-                  <LineChart data={chartData}>
-                    <XAxis 
-                      dataKey="date" 
-                      tick={{ fontSize: 9 }} 
-                      stroke="#9ca3af"
-                      interval="preserveStartEnd"
-                    />
-                    <YAxis 
-                      domain={[minWeight, maxWeight]} 
-                      tick={{ fontSize: 9 }} 
-                      stroke="#9ca3af"
-                      width={30}
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'white', 
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '8px',
-                        fontSize: '12px'
-                      }}
-                      formatter={(value: number) => [`${value.toFixed(1)} kg`, 'Peso']}
-                    />
-                    <ReferenceLine y={avgWeight} stroke="#9ca3af" strokeDasharray="3 3" />
-                    <Line 
-                      type="monotone" 
-                      dataKey="peso" 
-                      stroke="#6366f1" 
-                      strokeWidth={2}
-                      dot={{ fill: '#6366f1', strokeWidth: 0, r: 3 }}
-                      activeDot={{ r: 5, fill: '#6366f1' }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : chartData.length === 1 ? (
-                <div className="text-center py-4">
-                  <span className="block text-base font-bold text-foreground font-heading">{chartData[0].peso} kg</span>
-                  <p className="text-xs mt-1 text-gray-500">Aggiungi altri dati per vedere il grafico</p>
-                </div>
-              ) : (
-                <div className="text-center py-4 text-xs text-gray-400">
-                  Inserisci il tuo peso per iniziare il tracking
-                </div>
-              )}
+          </div>
+        ) : (
+          /* Messaggio se non ci sono macro */
+          <div className="text-center py-4 space-y-3">
+            <div className="w-16 h-16 mx-auto rounded-full bg-gray-100 flex items-center justify-center">
+              <span className="text-xl">🍎</span>
             </div>
+            <p className="text-sm text-muted-foreground">
+              Nessun macro configurato per oggi
+            </p>
+            <Button
+              onClick={() => setCurrentTab('macros')}
+              variant="outline"
+              size="sm"
+            >
+              Configura Macros
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
           </div>
         )}
+
+        {/* Peso Corporeo Section - SEMPRE VISIBILE */}
+        <div className={hasMacros ? "border-t border-gray-100 pt-4" : "pt-2"}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-xs font-semibold text-muted-foreground font-heading">Peso Corporeo</div>
+            {trend !== null && (
+              <div className={`flex items-center gap-1 text-xs font-medium ${
+                trend < 0 ? 'text-green-600' : trend > 0 ? 'text-red-500' : 'text-gray-500'
+              }`}>
+                {trend < 0 ? <TrendingDown className="w-3 h-3" /> : 
+                 trend > 0 ? <TrendingUp className="w-3 h-3" /> : 
+                 <Minus className="w-3 h-3" />}
+                <span>{trend > 0 ? '+' : ''}{trend.toFixed(1)} kg</span>
+              </div>
+            )}
+          </div>
+          
+          {/* Input peso */}
+          <div className="flex gap-2 mb-3">
+            <Input
+              type="number"
+              step="0.1"
+              placeholder="es. 75.5"
+              value={weightInput}
+              onChange={(e) => setWeightInput(e.target.value)}
+              className="flex-1 h-9 text-sm"
+            />
+            <Button
+              size="sm"
+              onClick={handleSaveWeight}
+              disabled={!weightInput || isSaving}
+              className="h-9 px-4"
+            >
+              {isSaving ? '...' : todayWeight ? 'Aggiorna' : 'Salva'}
+            </Button>
+          </div>
+          
+          {/* Mini grafico peso - esteso ai bordi */}
+          {chartData.length > 1 ? (
+            <div className="-mx-6 -mb-6">
+              <ResponsiveContainer width="100%" height={120}>
+                <LineChart data={chartData} margin={{ top: 10, right: 15, left: 0, bottom: 5 }}>
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 9 }} 
+                    stroke="#9ca3af"
+                    interval="preserveStartEnd"
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis 
+                    domain={[minWeight, maxWeight]} 
+                    tick={{ fontSize: 9 }} 
+                    stroke="#9ca3af"
+                    width={35}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'white', 
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '12px'
+                    }}
+                    formatter={(value: number) => [`${value.toFixed(1)} kg`, 'Peso']}
+                  />
+                  <ReferenceLine y={avgWeight} stroke="#e5e7eb" strokeDasharray="3 3" />
+                  <Line 
+                    type="monotone" 
+                    dataKey="peso" 
+                    stroke="#6366f1" 
+                    strokeWidth={2}
+                    dot={{ fill: '#6366f1', strokeWidth: 0, r: 3 }}
+                    activeDot={{ r: 5, fill: '#6366f1' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : chartData.length === 1 ? (
+            <div className="text-center py-4">
+              <span className="block text-base font-bold text-foreground font-heading">{chartData[0].peso} kg</span>
+              <p className="text-xs mt-1 text-gray-500">Aggiungi altri dati per vedere il grafico</p>
+            </div>
+          ) : (
+            <div className="text-center py-4 text-xs text-gray-400">
+              Inserisci il tuo peso per iniziare il tracking
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
