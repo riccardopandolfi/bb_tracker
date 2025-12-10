@@ -271,8 +271,8 @@ export function MacrosSummaryWidget() {
           
           {/* Mini grafico peso - esteso in altezza fino al bordo inferiore */}
           {chartData.length > 1 ? (
-            <div className="-mb-6">
-              <ResponsiveContainer width="100%" height={140}>
+            <div className="-mb-6 mt-2">
+              <ResponsiveContainer width="100%" height={160}>
                 <LineChart data={chartData}>
                   <XAxis 
                     dataKey="date" 
