@@ -334,84 +334,84 @@ export function LogSessionModal({
           ) : (
             <>
               {/* Sets - UI standard */}
-              {Object.entries(setGroups).map(([setNumStr, sets]) => {
-                const setNum = parseInt(setNumStr, 10);
-                return (
-                  <Card key={setNum} className="p-4">
-                    <div className="flex justify-between items-center mb-3">
-                      <h4 className="font-bold flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-sm font-medium">
-                          S{setNum}
-                        </span>
-                      </h4>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemoveSet(setNum)}
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
-                    </div>
+          {Object.entries(setGroups).map(([setNumStr, sets]) => {
+            const setNum = parseInt(setNumStr, 10);
+            return (
+              <Card key={setNum} className="p-4">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="font-bold flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-sm font-medium">
+                      S{setNum}
+                    </span>
+                  </h4>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveSet(setNum)}
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </Button>
+                </div>
 
-                    <div className="space-y-2">
-                      {sets.map((set, clusterIndex) => {
-                        const globalIndex = tempLogSets.findIndex(
-                          (s) => s.setNum === set.setNum && s.clusterNum === set.clusterNum
-                        );
+                <div className="space-y-2">
+                  {sets.map((set, clusterIndex) => {
+                    const globalIndex = tempLogSets.findIndex(
+                      (s) => s.setNum === set.setNum && s.clusterNum === set.clusterNum
+                    );
 
-                        return (
-                          <div key={clusterIndex} className="flex gap-2 items-end bg-gray-50 p-2 rounded-md">
-                            {block.technique !== 'Normale' && (
-                              <div className="text-sm font-medium text-gray-600 w-16">
-                                C{set.clusterNum}
-                              </div>
-                            )}
-                            <div className="flex-1 grid grid-cols-3 gap-2">
-                              <div>
-                                <Label className="text-xs">Reps</Label>
-                                <Input
-                                  type="number"
-                                  value={set.reps}
-                                  onChange={(e) =>
-                                    handleUpdateSet(globalIndex, 'reps', e.target.value)
-                                  }
-                                />
-                              </div>
-                              <div>
-                                <Label className="text-xs">Carico (kg)</Label>
-                                <Input
-                                  type="text"
-                                  value={set.load}
-                                  onChange={(e) =>
-                                    handleUpdateSet(globalIndex, 'load', e.target.value)
-                                  }
-                                />
-                              </div>
-                              <div>
-                                <Label className="text-xs">RPE</Label>
-                                <Input
-                                  type="number"
-                                  step="0.5"
-                                  value={set.rpe}
-                                  onChange={(e) =>
-                                    handleUpdateSet(globalIndex, 'rpe', e.target.value)
-                                  }
-                                />
-                              </div>
-                            </div>
+                    return (
+                      <div key={clusterIndex} className="flex gap-2 items-end bg-gray-50 p-2 rounded-md">
+                        {block.technique !== 'Normale' && (
+                          <div className="text-sm font-medium text-gray-600 w-16">
+                            C{set.clusterNum}
                           </div>
-                        );
-                      })}
-                    </div>
-                  </Card>
-                );
-              })}
+                        )}
+                        <div className="flex-1 grid grid-cols-3 gap-2">
+                          <div>
+                            <Label className="text-xs">Reps</Label>
+                            <Input
+                              type="number"
+                              value={set.reps}
+                              onChange={(e) =>
+                                handleUpdateSet(globalIndex, 'reps', e.target.value)
+                              }
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Carico (kg)</Label>
+                            <Input
+                              type="text"
+                              value={set.load}
+                              onChange={(e) =>
+                                handleUpdateSet(globalIndex, 'load', e.target.value)
+                              }
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">RPE</Label>
+                            <Input
+                              type="number"
+                              step="0.5"
+                              value={set.rpe}
+                              onChange={(e) =>
+                                handleUpdateSet(globalIndex, 'rpe', e.target.value)
+                              }
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+            );
+          })}
 
-              {/* Add Set Button */}
-              <Button variant="outline" onClick={handleAddSet} className="w-full">
-                <Plus className="w-4 h-4 mr-2" />
-                Aggiungi Set
-              </Button>
+          {/* Add Set Button */}
+          <Button variant="outline" onClick={handleAddSet} className="w-full">
+            <Plus className="w-4 h-4 mr-2" />
+            Aggiungi Set
+          </Button>
             </>
           )}
 

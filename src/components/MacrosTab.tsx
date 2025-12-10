@@ -93,7 +93,7 @@ export function MacrosTab() {
     }
     return getCurrentMacrosWeek();
   }, [selectedWeekId, getCurrentMacrosWeek, getWeekPlanById]);
-  
+
   // Se non c'è settimana selezionata e ne esiste una corrente, selezionala
   useEffect(() => {
     if (!selectedWeekId && currentMacrosWeek?.id) {
@@ -309,7 +309,7 @@ export function MacrosTab() {
             ) : (
               <Badge variant="secondary" className="px-3 py-1 text-xs">
                 Nessuna settimana
-              </Badge>
+            </Badge>
             )}
             
             <Button
@@ -551,15 +551,15 @@ export function MacrosTab() {
 
                     {/* Copia (nascosto in modalità on_off) */}
                     {!isOnOffMode && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleCopyToAll(dayIndex)}
-                        disabled={!hasMacros}
-                        className="h-8 w-8 p-0 shrink-0"
-                      >
-                        <Copy className="w-3 h-3" />
-                      </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleCopyToAll(dayIndex)}
+                      disabled={!hasMacros}
+                      className="h-8 w-8 p-0 shrink-0"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
                     )}
                   </div>
                 </Card>

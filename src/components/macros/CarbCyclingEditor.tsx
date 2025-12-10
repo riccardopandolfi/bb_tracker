@@ -142,7 +142,7 @@ export function CarbCyclingEditor({ onApply }: CarbCyclingEditorProps) {
       mode === 'training_based' ? trainingDaysPerWeek : undefined,
       template // Passa il template direttamente
     );
-    
+
     onApply?.();
   };
 

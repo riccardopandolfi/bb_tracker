@@ -805,23 +805,23 @@ export function ExerciseBlockCard({
                         return (
                           <div key={i} className={`flex items-center gap-2 p-2 rounded-lg border ${isHalf ? 'bg-amber-50 border-amber-300' : 'bg-emerald-50 border-emerald-200'}`}>
                             <span className={`px-2 py-1 rounded text-white text-xs font-bold min-w-[3rem] text-center ${isHalf ? 'bg-amber-600' : 'bg-emerald-600'}`}>
-                              Set {i + 1}
-                            </span>
-                            <Input
-                              type="text"
-                              value={reps}
-                              onChange={(e) => {
-                                const value = e.target.value.toUpperCase();
-                                if (value === '' || value === 'MAX' || /^\d+$/.test(value)) {
-                                  const newReps = [...(block.targetReps || [])];
-                                  newReps[i] = value;
-                                  onUpdate(blockIndex, 'targetReps', newReps);
-                                }
-                              }}
-                              className="h-8 flex-1 text-sm"
-                              placeholder="10 o MAX"
-                            />
-                            <span className="text-xs font-medium text-muted-foreground">reps</span>
+                            Set {i + 1}
+                          </span>
+                          <Input
+                            type="text"
+                            value={reps}
+                            onChange={(e) => {
+                              const value = e.target.value.toUpperCase();
+                              if (value === '' || value === 'MAX' || /^\d+$/.test(value)) {
+                                const newReps = [...(block.targetReps || [])];
+                                newReps[i] = value;
+                                onUpdate(blockIndex, 'targetReps', newReps);
+                              }
+                            }}
+                            className="h-8 flex-1 text-sm"
+                            placeholder="10 o MAX"
+                          />
+                          <span className="text-xs font-medium text-muted-foreground">reps</span>
                             {/* Checkbox Half Rep */}
                             <div className="flex items-center gap-1.5 pl-2 border-l border-gray-200">
                               <Checkbox
@@ -845,7 +845,7 @@ export function ExerciseBlockCard({
                               >
                                 Half
                               </label>
-                            </div>
+                        </div>
                           </div>
                         );
                       })}
@@ -914,82 +914,82 @@ export function ExerciseBlockCard({
 
           {/* Intensità - Nascosto per Ad Hoc */}
           {!isAdHocTechnique && (
-            <div className="space-y-3">
-              <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-block">Intensità</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs text-gray-600 mb-1.5 block">Coefficiente</Label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    value={getFieldValue('coefficient', block.coefficient)}
-                    onFocus={() => handleNumericFocus('coefficient', block.coefficient)}
-                    onChange={(e) => handleNumericChange(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    onBlur={(e) => handleNumericBlur('coefficient', e.target.value, 0)}
-                    className="h-10"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs text-gray-600 mb-1.5 block">RPE Target</Label>
-                  <Input
-                    type="number"
-                    step="0.5"
-                    value={getFieldValue('targetRPE', block.targetRPE)}
-                    onFocus={() => handleNumericFocus('targetRPE', block.targetRPE)}
-                    onChange={(e) => handleNumericChange(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    onBlur={(e) => handleNumericBlur('targetRPE', e.target.value, 0)}
-                    className="h-10"
-                  />
-                </div>
+          <div className="space-y-3">
+            <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-block">Intensità</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-gray-600 mb-1.5 block">Coefficiente</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={getFieldValue('coefficient', block.coefficient)}
+                  onFocus={() => handleNumericFocus('coefficient', block.coefficient)}
+                  onChange={(e) => handleNumericChange(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onBlur={(e) => handleNumericBlur('coefficient', e.target.value, 0)}
+                  className="h-10"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-gray-600 mb-1.5 block">RPE Target</Label>
+                <Input
+                  type="number"
+                  step="0.5"
+                  value={getFieldValue('targetRPE', block.targetRPE)}
+                  onFocus={() => handleNumericFocus('targetRPE', block.targetRPE)}
+                  onChange={(e) => handleNumericChange(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onBlur={(e) => handleNumericBlur('targetRPE', e.target.value, 0)}
+                  className="h-10"
+                />
               </div>
             </div>
+          </div>
           )}
 
           {/* Rest - Nascosto per Ad Hoc (il rest viene inserito manualmente nella colonna REST) */}
           {!isAdHocTechnique && (
-            <div className="space-y-3">
-              <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-flex items-center gap-2">
-                <Clock className="w-3.5 h-3.5" />
-                Tempi di Recupero
+          <div className="space-y-3">
+            <Label className="text-sm font-medium bg-gray-100 text-gray-900 px-2 py-1 rounded inline-flex items-center gap-2">
+              <Clock className="w-3.5 h-3.5" />
+              Tempi di Recupero
+            </Label>
+            <div>
+              <Label className="text-xs text-gray-600 mb-1.5 block">
+                Rest globale (secondi)
+                {!isNormalTechnique && (
+                  <span className="text-muted-foreground ml-1 text-xs">
+                    - tra i set completi
+                  </span>
+                )}
               </Label>
+              <Input
+                type="number"
+                value={getFieldValue('rest', block.rest)}
+                onFocus={() => handleNumericFocus('rest', block.rest)}
+                onChange={(e) => handleNumericChange(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onBlur={(e) => handleNumericBlur('rest', e.target.value, 0)}
+                className="h-10"
+              />
+            </div>
+
+            {!isLast && (
               <div>
-                <Label className="text-xs text-gray-600 mb-1.5 block">
-                  Rest globale (secondi)
-                  {!isNormalTechnique && (
-                    <span className="text-muted-foreground ml-1 text-xs">
-                      - tra i set completi
-                    </span>
-                  )}
-                </Label>
+                <Label className="text-xs text-gray-600 mb-1.5 block">Rest dopo blocco (secondi)</Label>
                 <Input
                   type="number"
-                  value={getFieldValue('rest', block.rest)}
-                  onFocus={() => handleNumericFocus('rest', block.rest)}
+                  value={getFieldValue('blockRest2', block.blockRest)}
+                  onFocus={() => handleNumericFocus('blockRest2', block.blockRest)}
                   onChange={(e) => handleNumericChange(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  onBlur={(e) => handleNumericBlur('rest', e.target.value, 0)}
+                  onBlur={(e) => handleNumericBlur('blockRest', e.target.value, 0)}
                   className="h-10"
+                  placeholder="0"
                 />
               </div>
-
-              {!isLast && (
-                <div>
-                  <Label className="text-xs text-gray-600 mb-1.5 block">Rest dopo blocco (secondi)</Label>
-                  <Input
-                    type="number"
-                    value={getFieldValue('blockRest2', block.blockRest)}
-                    onFocus={() => handleNumericFocus('blockRest2', block.blockRest)}
-                    onChange={(e) => handleNumericChange(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    onBlur={(e) => handleNumericBlur('blockRest', e.target.value, 0)}
-                    className="h-10"
-                    placeholder="0"
-                  />
-                </div>
-              )}
-            </div>
+            )}
+          </div>
           )}
 
           {/* Note */}

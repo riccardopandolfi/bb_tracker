@@ -50,33 +50,33 @@ export function ProgramTab() {
             </Button>
           </div>
           
-          {currentProgram && (
-            <Badge variant="secondary" className="gap-2 px-3 py-1.5">
-              <Folder className="w-4 h-4" />
-              <span>{currentProgram.name}</span>
-            </Badge>
-          )}
+        {currentProgram && (
+          <Badge variant="secondary" className="gap-2 px-3 py-1.5">
+            <Folder className="w-4 h-4" />
+            <span>{currentProgram.name}</span>
+          </Badge>
+        )}
         </div>
       </div>
 
       {viewMode === 'cards' ? (
         <>
-          {/* Week Selector */}
-          <WeekSelector />
+      {/* Week Selector */}
+      <WeekSelector />
 
-          {/* Volume Summary */}
-          <VolumeSummary />
+      {/* Volume Summary */}
+      <VolumeSummary />
 
-          {/* Days & Exercises */}
-          <Card className="card-monetra">
-            <CardHeader>
-              <CardTitle className="font-heading">Giorni e Esercizi</CardTitle>
-              <CardDescription>Organizza i tuoi allenamenti per giorno</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <DaysTabs />
-            </CardContent>
-          </Card>
+      {/* Days & Exercises */}
+      <Card className="card-monetra">
+        <CardHeader>
+          <CardTitle className="font-heading">Giorni e Esercizi</CardTitle>
+          <CardDescription>Organizza i tuoi allenamenti per giorno</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DaysTabs />
+        </CardContent>
+      </Card>
         </>
       ) : (
         /* Vista Tabellare */

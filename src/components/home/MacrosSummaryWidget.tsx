@@ -269,26 +269,22 @@ export function MacrosSummaryWidget() {
             </Button>
           </div>
           
-          {/* Mini grafico peso - esteso ai bordi */}
+          {/* Mini grafico peso - esteso in altezza fino al bordo inferiore */}
           {chartData.length > 1 ? (
-            <div className="-mx-6 -mb-6">
-              <ResponsiveContainer width="100%" height={120}>
-                <LineChart data={chartData} margin={{ top: 10, right: 15, left: 0, bottom: 5 }}>
+            <div className="-mb-6">
+              <ResponsiveContainer width="100%" height={140}>
+                <LineChart data={chartData}>
                   <XAxis 
                     dataKey="date" 
                     tick={{ fontSize: 9 }} 
                     stroke="#9ca3af"
                     interval="preserveStartEnd"
-                    tickLine={false}
-                    axisLine={false}
                   />
                   <YAxis 
                     domain={[minWeight, maxWeight]} 
                     tick={{ fontSize: 9 }} 
                     stroke="#9ca3af"
-                    width={35}
-                    tickLine={false}
-                    axisLine={false}
+                    width={30}
                   />
                   <Tooltip 
                     contentStyle={{ 
@@ -299,7 +295,7 @@ export function MacrosSummaryWidget() {
                     }}
                     formatter={(value: number) => [`${value.toFixed(1)} kg`, 'Peso']}
                   />
-                  <ReferenceLine y={avgWeight} stroke="#e5e7eb" strokeDasharray="3 3" />
+                  <ReferenceLine y={avgWeight} stroke="#9ca3af" strokeDasharray="3 3" />
                   <Line 
                     type="monotone" 
                     dataKey="peso" 

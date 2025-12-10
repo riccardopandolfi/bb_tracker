@@ -264,10 +264,10 @@ export function WorkoutSchemaAnalyzer() {
                     </div>
                   </div>
                 ) : (
-                  <>
-                    <SchemaProgressionChart sessions={filteredSessions} filters={filters} mode={mode} />
-                    <SchemaDetailTable sessions={filteredSessions} mode={mode} />
-                  </>
+                <>
+                  <SchemaProgressionChart sessions={filteredSessions} filters={filters} mode={mode} />
+                  <SchemaDetailTable sessions={filteredSessions} mode={mode} />
+                </>
                 )
               ) : (
                 <div className="text-center py-8 sm:py-12 text-muted-foreground">

@@ -164,84 +164,84 @@ export function MacrosOverview({ onNavigateToWeek }: MacrosOverviewProps) {
         </CardHeader>
         <CardContent className="p-0">
           {allWeeks.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="text-left py-2 px-3 font-medium sticky left-0 bg-muted/50">Giorno</th>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="text-left py-2 px-3 font-medium sticky left-0 bg-muted/50">Giorno</th>
                     {allWeeks.map(week => {
                       const stats = getWeeklyTotals(week);
                       const isCurrent = isCurrentWeek(week.startDate, week.endDate);
-                      return (
-                        <th 
+                    return (
+                      <th 
                           key={week.id} 
-                          className={`text-center py-2 px-2 font-medium ${
+                        className={`text-center py-2 px-2 font-medium ${
                             isCurrent ? 'bg-primary/10' : ''
-                          }`}
-                        >
+                        }`}
+                      >
                           <div className="flex flex-col items-center gap-0.5">
                             <span className="text-[10px]">
                               {formatWeekShort(week.startDate, week.endDate)}
                             </span>
                             {(stats?.fromCycling || stats?.fromOnOff) && (
                               <div className="flex items-center gap-0.5">
-                                {stats?.fromCycling && (
+                          {stats?.fromCycling && (
                                   <RefreshCw className="w-2.5 h-2.5 text-primary" />
                                 )}
                                 {stats?.fromOnOff && (
                                   <span className="text-[8px]">⚡</span>
                                 )}
                               </div>
-                            )}
-                          </div>
-                        </th>
-                      );
-                    })}
-                  </tr>
-                </thead>
-                <tbody>
-                  {DAY_NAMES.map((day, dayIdx) => (
-                    <tr key={dayIdx} className="border-b hover:bg-muted/30">
-                      <td className="py-1 px-3 font-medium sticky left-0 bg-background">{day}</td>
+                          )}
+                        </div>
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {DAY_NAMES.map((day, dayIdx) => (
+                  <tr key={dayIdx} className="border-b hover:bg-muted/30">
+                    <td className="py-1 px-3 font-medium sticky left-0 bg-background">{day}</td>
                       {allWeeks.map(week => {
                         const isCurrent = isCurrentWeek(week.startDate, week.endDate);
                         return (
-                          <td 
+                      <td 
                             key={week.id} 
                             className={`text-center ${isCurrent ? 'bg-primary/5' : ''}`}
-                          >
+                      >
                             {renderCell(week, dayIdx)}
-                          </td>
+                      </td>
                         );
                       })}
-                    </tr>
-                  ))}
-                  {/* Totali / Media */}
-                  <tr className="bg-muted/50 font-medium">
-                    <td className="py-2 px-3 sticky left-0 bg-muted/50">Media</td>
+                  </tr>
+                ))}
+                {/* Totali / Media */}
+                <tr className="bg-muted/50 font-medium">
+                  <td className="py-2 px-3 sticky left-0 bg-muted/50">Media</td>
                     {allWeeks.map(week => {
                       const stats = getWeeklyTotals(week);
                       const isCurrent = isCurrentWeek(week.startDate, week.endDate);
-                      
-                      return (
+                    
+                    return (
                         <td key={week.id} className={`text-center py-2 ${isCurrent ? 'bg-primary/10' : ''}`}>
-                          {stats && stats.filledDays > 0 ? (
-                            <div className="text-[10px]">
-                              <div className="font-bold">{stats.avgKcal}</div>
-                              <div className="text-muted-foreground">
-                                {stats.checkedDays}/{stats.filledDays}
-                              </div>
+                        {stats && stats.filledDays > 0 ? (
+                          <div className="text-[10px]">
+                            <div className="font-bold">{stats.avgKcal}</div>
+                            <div className="text-muted-foreground">
+                              {stats.checkedDays}/{stats.filledDays}
                             </div>
-                          ) : (
-                            <span className="text-muted-foreground text-[10px]">-</span>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-[10px]">-</span>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              </tbody>
+            </table>
+          </div>
           ) : (
             <div className="py-8 text-center text-muted-foreground">
               <p>Nessuna settimana configurata.</p>
@@ -253,39 +253,39 @@ export function MacrosOverview({ onNavigateToWeek }: MacrosOverviewProps) {
 
       {/* Azioni per settimana */}
       {allWeeks.length > 0 && (
-        <Card>
-          <CardHeader className="py-3">
-            <CardTitle className="text-sm">Azioni</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="flex flex-wrap gap-2">
+      <Card>
+        <CardHeader className="py-3">
+          <CardTitle className="text-sm">Azioni</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="flex flex-wrap gap-2">
               {allWeeks.map(week => {
                 const stats = getWeeklyTotals(week);
-                const hasData = stats && stats.filledDays > 0;
+              const hasData = stats && stats.filledDays > 0;
                 const isCurrent = isCurrentWeek(week.startDate, week.endDate);
-                
-                return (
+              
+              return (
                   <div key={week.id} className="flex items-center gap-1 p-2 rounded-lg bg-muted/30">
                     <Badge variant={isCurrent ? 'default' : 'outline'} className="text-[10px]">
                       {formatWeekShort(week.startDate, week.endDate)}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0"
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
                       onClick={() => handleCopyWeek(week.id)}
-                      disabled={!hasData}
-                      title="Copia in altra settimana"
-                    >
-                      <Copy className="w-3 h-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                    disabled={!hasData}
+                    title="Copia in altra settimana"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                       className="h-6 w-6 p-0 text-orange-500 hover:text-orange-600"
                       onClick={() => handleResetWeek(week.id)}
-                      disabled={!hasData}
-                      title="Reset settimana"
+                    disabled={!hasData}
+                    title="Reset settimana"
                     >
                       <RefreshCw className="w-3 h-3" />
                     </Button>
@@ -295,13 +295,13 @@ export function MacrosOverview({ onNavigateToWeek }: MacrosOverviewProps) {
                       className="h-6 w-6 p-0 text-red-500 hover:text-red-600"
                       onClick={() => handleDeleteWeek(week.id)}
                       title="Elimina settimana"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
           </CardContent>
         </Card>
       )}
