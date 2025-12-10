@@ -258,23 +258,10 @@ export interface LoggedSession {
   adHocSchema?: string; // Schema testuale (copia dal blocco per storico)
 }
 
-// Daily Macros
+// Supplements
 export interface Supplement {
   name: string;
   grams: string;
-}
-
-export interface DayMacros {
-  kcal: string;
-  protein: string;
-  carbs: string;
-  fat: string;
-}
-
-export interface DailyMacrosWeek {
-  days: DayMacros[]; // Array di 7 giorni (0=Lunedì, 6=Domenica)
-  checked: boolean[]; // Array di 7 boolean per tracking spunte
-  supplements: Supplement[]; // Integratori comuni per tutta la settimana
 }
 
 // Macros Multi-Settimana e Carb Cycling
@@ -353,7 +340,6 @@ export interface UserData {
   muscleGroups: string[]; // Gruppi muscolari personalizzati
   muscleGroupColors: Record<string, string>; // Colori per gruppi muscolari personalizzati
   customTechniques: CustomTechnique[]; // Tecniche personalizzate
-  dailyMacros: DailyMacrosWeek | null; // Legacy (per migrazione)
   // Sistema macros multi-settimana unificato
   macrosPlans: WeekMacrosPlan[];      // Piano macro per ogni settimana del programma
   supplements: Supplement[];           // Integratori globali

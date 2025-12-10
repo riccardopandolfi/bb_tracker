@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
-import { AppState, Exercise, Week, LoggedSession, CustomTechnique, Program, DailyMacrosWeek, DayMacros, User, UserData, PercentageProgression, WeekMacrosPlan, PlannedDayMacros, CarbCyclingTemplate, Supplement, MacroMode, OnOffMacrosPlan, DayType, WeightEntry } from '@/types';
+import { AppState, Exercise, Week, LoggedSession, CustomTechnique, Program, User, UserData, PercentageProgression, WeekMacrosPlan, PlannedDayMacros, CarbCyclingTemplate, Supplement, MacroMode, OnOffMacrosPlan, DayType, WeightEntry } from '@/types';
 import { DEFAULT_EXERCISES, MUSCLE_COLORS } from '@/lib/constants';
 import { DEFAULT_MUSCLE_GROUPS } from '@/types';
 import { generateDemoPrograms, generateDemoLoggedSessions } from '@/lib/demoData';
@@ -45,14 +45,6 @@ interface AppContextType extends UserData {
   clearDemoData: () => void;
   clearDemoDataSilent: () => void;
   hasDemoData: () => boolean;
-
-  // Daily Macros (legacy)
-  initializeDailyMacros: () => void;
-  updateDailyMacros: (dayIndex: number, macros: DayMacros) => void;
-  checkDay: (dayIndex: number) => void;
-  getCurrentDayIndex: () => number;
-  getLastCheckedDayIndex: () => number | null;
-  updateSupplements: (supplements: import('@/types').Supplement[]) => void;
 
   // Macros Multi-Settimana (sistema unificato basato su date)
   // Core operations by ID
@@ -128,7 +120,6 @@ const createDefaultUserData = (): UserData => ({
   muscleGroups: [...DEFAULT_MUSCLE_GROUPS],
   muscleGroupColors: {},
   customTechniques: [],
-  dailyMacros: null, // Legacy
   // Sistema macros multi-settimana unificato
   macrosPlans: [],
   supplements: [],
@@ -459,10 +450,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       muscleGroups: data.muscleGroups || [...DEFAULT_MUSCLE_GROUPS],
       muscleGroupColors: data.muscleGroupColors || {},
       customTechniques: data.customTechniques || [],
-      dailyMacros: data.dailyMacros || null,
       // Sistema macros multi-settimana unificato (con migrazione)
       macrosPlans: migrateMacrosPlans(data.macrosPlans || []),
-      supplements: data.supplements || data.dailyMacros?.supplements || [],
+      supplements: data.supplements || [],
       carbCyclingTemplates: data.carbCyclingTemplates || [],
       activeCarbCyclingId: data.activeCarbCyclingId || null,
       // Sistema On/Off
@@ -854,70 +844,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         customTechniques: prev.customTechniques.filter((t) => t.name !== techniqueName),
       }));
     }
-  };
-
-  const initializeDailyMacros = () => {
-    const emptyDay: DayMacros = { kcal: '', protein: '', carbs: '', fat: '' };
-    const dailyMacros: DailyMacrosWeek = {
-      days: Array(7).fill(null).map(() => ({ ...emptyDay })),
-      checked: Array(7).fill(false),
-      supplements: [],
-    };
-    updateCurrentUser(() => ({ dailyMacros }));
-  };
-
-  const updateDailyMacros = (dayIndex: number, macros: DayMacros) => {
-    if (dayIndex < 0 || dayIndex > 6) return;
-    updateCurrentUser((prev) => {
-      if (!prev.dailyMacros) return {};
-      const updatedDays = [...prev.dailyMacros.days];
-      updatedDays[dayIndex] = macros;
-      return {
-        dailyMacros: { ...prev.dailyMacros, days: updatedDays },
-      };
-    });
-  };
-
-  const checkDay = (dayIndex: number) => {
-    if (dayIndex < 0 || dayIndex > 6) return;
-    updateCurrentUser((prev) => {
-      if (!prev.dailyMacros) return {};
-      const updatedChecked = [...prev.dailyMacros.checked];
-      updatedChecked[dayIndex] = true;
-      const allChecked = updatedChecked.every(c => c === true);
-      if (allChecked) {
-        return {
-          dailyMacros: { ...prev.dailyMacros, checked: Array(7).fill(false) },
-        };
-      }
-      return {
-        dailyMacros: { ...prev.dailyMacros, checked: updatedChecked },
-      };
-    });
-  };
-
-  const getCurrentDayIndex = (): number => {
-    const today = new Date();
-    const dayOfWeek = today.getDay();
-    return dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  };
-
-  const getLastCheckedDayIndex = (): number | null => {
-    const userData = state.userData[state.currentUserId];
-    if (!userData?.dailyMacros) return null;
-    for (let i = 6; i >= 0; i--) {
-      if (userData.dailyMacros.checked[i]) return i;
-    }
-    return null;
-  };
-
-  const updateSupplements = (supplements: import('@/types').Supplement[]) => {
-    updateCurrentUser((prev) => {
-      if (!prev.dailyMacros) return {};
-      return {
-        dailyMacros: { ...prev.dailyMacros, supplements },
-      };
-    });
   };
 
   // === MACROS MULTI-SETTIMANA (SISTEMA UNIFICATO) ===
@@ -1710,12 +1636,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         clearDemoData,
         clearDemoDataSilent,
         hasDemoData,
-        initializeDailyMacros,
-        updateDailyMacros,
-        checkDay,
-        getCurrentDayIndex,
-        getLastCheckedDayIndex,
-        updateSupplements,
         // Macros Multi-Settimana (sistema basato su date)
         // Core operations by ID
         getWeekPlanById,
