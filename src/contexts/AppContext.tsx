@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
-import { AppState, Exercise, Week, LoggedSession, CustomTechnique, Program, User, UserData, PercentageProgression, WeekMacrosPlan, PlannedDayMacros, CarbCyclingTemplate, Supplement, MacroMode, OnOffMacrosPlan, DayType, WeightEntry } from '@/types';
+import { AppState, Exercise, Week, LoggedSession, CustomTechnique, Program, User, UserData, PercentageProgression, WeekMacrosPlan, PlannedDayMacros, CarbCyclingTemplate, Supplement, MacroMode, OnOffMacrosPlan, DayType, WeightEntry, MacroMultiplier } from '@/types';
 import { DEFAULT_EXERCISES, MUSCLE_COLORS } from '@/lib/constants';
 import { DEFAULT_MUSCLE_GROUPS } from '@/types';
 import { generateDemoPrograms, generateDemoLoggedSessions } from '@/lib/demoData';
@@ -77,7 +77,7 @@ interface AppContextType extends UserData {
   applyCarbCyclingToWeekIds: (templateId: string, weekIds: string[], trainingDays?: number[][], templateData?: CarbCyclingTemplate) => void;
   
   // Utility
-  calculateMacrosFromBase: (baseMacros: { protein: number; carbs: number; fat: number }, multiplier: number) => PlannedDayMacros;
+  calculateMacrosFromBase: (baseMacros: { protein: number; carbs: number; fat: number }, multiplier: MacroMultiplier) => PlannedDayMacros;
   
   // Supplements (globali)
   updateGlobalSupplements: (supplements: Supplement[]) => void;
@@ -851,11 +851,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Utility per calcolare calorie da macro
   const calculateMacrosFromBase = (
     baseMacros: { protein: number; carbs: number; fat: number },
-    multiplier: number
+    multiplier: MacroMultiplier
   ): PlannedDayMacros => {
-    const protein = Math.round(baseMacros.protein * multiplier);
-    const carbs = Math.round(baseMacros.carbs * multiplier);
-    const fat = Math.round(baseMacros.fat * multiplier);
+    const protein = Math.round(baseMacros.protein * multiplier.protein);
+    const carbs = Math.round(baseMacros.carbs * multiplier.carbs);
+    const fat = Math.round(baseMacros.fat * multiplier.fat);
     const kcal = Math.round(protein * 4 + carbs * 4 + fat * 9);
     return { protein, carbs, fat, kcal };
   };
@@ -1235,6 +1235,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const existingDays = existingPlan?.days || [];
         
         const days: PlannedDayMacros[] = [];
+        const defaultMultiplier: MacroMultiplier = { protein: 1.0, carbs: 1.0, fat: 1.0 };
         
         for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
           // Se il giorno è già checked, mantieni i macro esistenti
@@ -1243,15 +1244,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
             continue;
           }
           
-          let multiplier = 1.0;
+          let multiplier: MacroMultiplier = defaultMultiplier;
           
           if (template.mode === 'per_day' && template.dayMultipliers) {
-            multiplier = template.dayMultipliers[dayIdx] ?? 1.0;
+            multiplier = template.dayMultipliers[dayIdx] ?? defaultMultiplier;
           } else if (template.mode === 'training_based') {
             const isTrainingDay = trainingDays?.[weekIdx]?.includes(dayIdx) ?? false;
             multiplier = isTrainingDay 
-              ? (template.trainingMultiplier ?? 1.0) 
-              : (template.restMultiplier ?? 1.0);
+              ? (template.trainingMultiplier ?? defaultMultiplier) 
+              : (template.restMultiplier ?? defaultMultiplier);
           }
           
           days.push(calculateMacrosFromBase(template.baseMacros, multiplier));
@@ -1306,6 +1307,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const existingDays = existingPlan.days || [];
         
         const days: PlannedDayMacros[] = [];
+        const defaultMultiplier: MacroMultiplier = { protein: 1.0, carbs: 1.0, fat: 1.0 };
         
         for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
           if (existingChecked[dayIdx] && existingDays[dayIdx]) {
@@ -1313,15 +1315,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
             continue;
           }
           
-          let multiplier = 1.0;
+          let multiplier: MacroMultiplier = defaultMultiplier;
           
           if (template.mode === 'per_day' && template.dayMultipliers) {
-            multiplier = template.dayMultipliers[dayIdx] ?? 1.0;
+            multiplier = template.dayMultipliers[dayIdx] ?? defaultMultiplier;
           } else if (template.mode === 'training_based') {
             const isTrainingDay = trainingDays?.[weekIdx]?.includes(dayIdx) ?? false;
             multiplier = isTrainingDay 
-              ? (template.trainingMultiplier ?? 1.0) 
-              : (template.restMultiplier ?? 1.0);
+              ? (template.trainingMultiplier ?? defaultMultiplier) 
+              : (template.restMultiplier ?? defaultMultiplier);
           }
           
           days.push(calculateMacrosFromBase(template.baseMacros, multiplier));

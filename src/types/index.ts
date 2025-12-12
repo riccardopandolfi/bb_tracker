@@ -304,6 +304,13 @@ export interface OnOffMacrosPlan {
   offDayMacros: PlannedDayMacros;  // Macro per giorni di riposo
 }
 
+// Moltiplicatore macro separato per ogni nutriente
+export interface MacroMultiplier {
+  protein: number;  // es. 1.0 = 100%
+  carbs: number;    // es. 1.2 = +20%
+  fat: number;      // es. 0.8 = -20%
+}
+
 // Template Carb Cycling
 export interface CarbCyclingTemplate {
   id: string;
@@ -311,10 +318,10 @@ export interface CarbCyclingTemplate {
   baseMacros: { protein: number; carbs: number; fat: number };
   mode: CarbCyclingMode;
   // Per mode 'per_day': moltiplicatori per ogni giorno (0-6, Lun-Dom)
-  dayMultipliers?: number[];  // es. [1.2, 0.8, 1.0, 1.2, 0.8, 1.0, 0.8]
+  dayMultipliers?: MacroMultiplier[];  // Moltiplicatore separato per P/C/G per ogni giorno
   // Per mode 'training_based'
-  trainingMultiplier?: number;  // es. 1.2 = +20%
-  restMultiplier?: number;      // es. 0.8 = -20%
+  trainingMultiplier?: MacroMultiplier;  // Moltiplicatore giorni allenamento
+  restMultiplier?: MacroMultiplier;      // Moltiplicatore giorni riposo
 }
 
 // Weight Tracking
